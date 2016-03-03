@@ -81,10 +81,13 @@ robar <- function(baraja){
   carta = baraja[indice,]
   baraja = baraja[-indice,]
   
+  listaResultado <- list("baraja" = baraja, "carta" = carta)  
 
 }
 
 baraja = crearBarajaEspañola()
 baraja = barajar(baraja)
 par = robar(baraja)
-
+baraja = par$baraja
+carta = par$carta
+carta
