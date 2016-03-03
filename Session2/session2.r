@@ -22,7 +22,7 @@ mayor <- function(x, y) {
   }
 }
 
-mayor(-1, -10) # invoca la función
+mayor(-1,-10) # invoca la función
 mayor # muestra la funcion
 
 ## Ejemplo 2
@@ -37,8 +37,8 @@ suma <- function(a1, n, d) {
 # Ejercicio 1
 ## Simula el lanzamiento de dos dados y que los sume
 
-puntuacion <- function(){
-  sum(sample(c(seq(1,6)), 2, replace = TRUE))
+puntuacion <- function() {
+  sum(sample(c(seq(1, 6)), 2, replace = TRUE))
 }
 
 puntuacion()
@@ -57,32 +57,47 @@ as.vector(replicate(100, puntuacion()))
 # Vamos a manipular una baraja española, a barajarla y a robar de la baraja. Para
 # ello, será necesario crear la baraja: un dataframe y dos funciones barajar y robar.
 
-crearBarajaEspañola <- function(){
+crearBarajaEspañola <- function() {
   # Define suits, cards, values
   palos <- c("Oros", "Bastones", "Espadas", "Copas")
-  cartas <- c("Uno", "Dos", "Tres", "Cuatro","Cinco", "Seis", "Siete", "Ocho", "Nueve", "Diéz", "Sota", "Caballo", "Rey")
+  cartas <-
+    c(
+      "Uno",
+      "Dos",
+      "Tres",
+      "Cuatro",
+      "Cinco",
+      "Seis",
+      "Siete",
+      "Ocho",
+      "Nueve",
+      "Diéz",
+      "Sota",
+      "Caballo",
+      "Rey"
+    )
   valores <- c(1:13)
   
   # Build deck, replicated proper number of times
   # Creamos un data frame con la baraja entera
-  baraja <- expand.grid(cartas=cartas, palos=palos)
+  baraja <- expand.grid(cartas = cartas, palos = palos)
   baraja$valores <- valores
   
   baraja
 }
 
-barajar <- function(baraja){
+barajar <- function(baraja) {
   ## Muestreamos el vector de 1:52 para coger un orden aleatorio, así barajamos todas las cartas
-  baraja[sample(nrow(baraja)),]
+  baraja[sample(nrow(baraja)), ]
 }
 
-robar <- function(baraja){
+robar <- function(baraja) {
   indice = sample(nrow(baraja), 1)
-  carta = baraja[indice,]
-  baraja = baraja[-indice,]
+  carta = baraja[indice, ]
+  baraja = baraja[-indice, ]
   
-  listaResultado <- list("baraja" = baraja, "carta" = carta)  
-
+  listaResultado <- list("baraja" = baraja, "carta" = carta)
+  
 }
 
 baraja = crearBarajaEspañola()

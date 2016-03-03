@@ -1,0 +1,43 @@
+---
+title: "Aprendizaje Automático - Práctica 1"
+author: "Alejandro Alcalde"
+date: "March 3, 2016"
+mainfont: Ubuntu Light
+monofont: "Ubuntu Mono"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# Ejercicio de Generación y Visualización de datos
+
+## 1 - Construir una función _lista = simula_unif (N, dim, rango)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios uniformes en el intervalo _rango_.
+
+```{r}
+simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
+  # Generate a list of vectors populated with uniform distributed random numbers
+  #
+  # Args:
+  #   N: Length of the list
+  #   dimen: The dimension of each vector in the list
+  #   rango: Range to use generating the numbers
+  #
+  # Returns:
+  #   A list of vectors populated randomly
+  array(runif(N, rango[1], rango[2]), dim = c(dimen, N))
+}
+
+simula_unif(10, 5, c(10,100))
+simula_unif(10, 5)
+simula_unif(10)
+```
+
+## 2 - SAd
