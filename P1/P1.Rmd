@@ -4,6 +4,7 @@ author: "Alejandro Alcalde"
 date: "March 3, 2016"
 mainfont: Ubuntu Light
 monofont: "Ubuntu Mono"
+fontsize: 12pt
 output:
   pdf_document:
     latex_engine: xelatex
@@ -19,7 +20,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Ejercicio de Generación y Visualización de datos
 
-## 1 - Construir una función _lista = simula_unif (N, dim, rango)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios uniformes en el intervalo _rango_.
+## Ejercicio 1
+
+Construir una función _lista = simula_unif (N, dim, rango)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios uniformes en el intervalo _rango_.
 
 ```{r}
 simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
@@ -40,4 +43,39 @@ simula_unif(10, 5)
 simula_unif(10)
 ```
 
-## 2 - SAd
+## Ejercicio 2
+
+Construir una función _lista = simula_gaus(N, dim, sigma)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.
+
+```{r}
+simula_gauss <- function(N, dimen = 1, sig = 1){
+  # Generate a list of vectors populated using the normal (Gaussian) distribution
+  #
+  # Args:
+  #   N: Length of the list
+  #   dimen: The dimension of each vector in the list
+  #   sigma: Vector of Standard deviations
+  #
+  # Returns:
+  #   A list of vectors populated randomly
+  array(rnorm(N, sd = sig), dim = c(dimen, N))
+}
+
+simula_gauss(10, 5, c(1,2))
+```
+
+## Ejercicio 3
+
+Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica de la salida de la función correspondiente.
+
+```{r}
+datos = simula_unif(50, 2, c(-50,50))
+plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
+     main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
+plot(datos[1,],datos[2,], col = "red", type = "b", 
+     main = "Gráfica datos de simula_unif(50, 2, c(-50,50))", lwd = 2, lty = 3)
+```
+
+## Ejercicio 4
+
+Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la función correspondiente.
