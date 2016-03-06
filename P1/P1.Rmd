@@ -14,6 +14,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+set.seed(1000000007)
 ```
 
 
@@ -69,7 +70,7 @@ simula_gauss(10, 5, c(1,2))
 Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica de la salida de la función correspondiente.
 
 ```{r}
-datos = simula_unif(50, 2, c(-50,50))
+datos = simula_unif(50, 2, c(-50,50)); datos
 plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
      main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
 plot(datos[1,],datos[2,], col = "red", type = "b", 
@@ -79,3 +80,59 @@ plot(datos[1,],datos[2,], col = "red", type = "b",
 ## Ejercicio 4
 
 Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la función correspondiente.
+
+```{r}
+datos = simula_gauss(50, 2, c(5,7)); datos
+
+plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
+     main="Gráfica datos de  simula_gauss(50, 2, c(5,7))")
+# points(datos[1,],datos[2,])
+plot(datos[1,],datos[2,], col = "red", type = "b",
+     main = "Gráfica datos de simula_gauss(50, 2, c(5,7))", lwd = 2, lty = 3)
+```
+
+## Ejercicio 5
+
+Construir la función _v = simula_recta(intervalo)_ que calcula los parámetros _v = (a,b)_ de una recta aleatoria, _y = ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.
+
+```{r}
+
+simula_recta <- function(interval = c(-50, 50)){
+  # Computes the slope and intercept values of two points in the given interval
+  #
+  # Args:
+  #   interval: Interval from which to pick to random points
+  #
+  # Returns:
+  #   A vector [m, l, p1, p2] where:
+  #     - m is the slope 
+  #     - l is the intercept
+  #     - p1, p2, are the points randomly selected
+  p1 = runif(2, interval[1], interval[2]);
+  p2 = runif(2, interval[1], interval[2]);
+  
+  ## Compute the slope
+  m = (p1[2] - p2[2]) / (p1[1] - p2[1])
+  
+  # Compute y − y1 = m(x − x1)
+  line = m * (p1[1] - p2[1]) + p2[2]
+  
+  c(m, line, p1, p2)
+}
+
+interval = c(-100, 100);
+result = simula_recta(interval)
+m = result[1]
+line = result[2]
+p1 = c(result[3],result[4])
+p2 = c(result[5], result[6])
+data = rbind(p1, p2)
+
+plot(interval, interval, type= "n", 
+     sub = paste(c("p1=", p1, "p2=", p2), collapse = " "), 
+     main = "Line that passes throught points P1, P2",
+     xlab = paste(c("m=", m, "line=", line), collapse = " "),
+     ylab = "")
+points(p1, p2)
+lines(p1, p2, lty="solid", col="red")
+```
