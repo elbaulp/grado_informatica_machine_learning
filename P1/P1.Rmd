@@ -144,7 +144,7 @@ Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usa
 ```{r}
 interval = c(-100, 100)
 # Generate a set of points
-x = simula_unif(2000, 2, interval);
+x = simula_unif(5000, 2, interval);
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -166,7 +166,7 @@ result[result < 0] = -1
 data = data.frame(x = x[,1], y = x[,2], result = result)
 
 # Draw the result
-plot(data$x,data$y, col=ifelse(data$result >= 0, "blue", "red"), pch=20,
+plot(data$x,data$y, col=ifelse(data$result == 1, "blue", "red"), pch=20,
      main = "Points labeled in function of y - m*x - b",
      xlab = paste(c("m=", m, "line=", line), collapse = " "),
      sub = paste(c("Interval = ", interval), collapse = " "),
@@ -186,8 +186,6 @@ Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando
 Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?
 
 ```{r}
-par(mfrow = c(2, 2))
-
 # Define the functions
 f1 <- function(x, y) {
   (x - 10) ^ 2 + (y - 20) ^ 2 - 400
@@ -209,15 +207,14 @@ multi.fun <- function(x, y) {
 
 # Apply the functions
 result = mapply(multi.fun, x[,1], x[,2])
+
+# Label the results
 result[result >= 0] = 1
 result[result < 0] = -1
-# Create a data frame to store the result
-data = data.frame(x = x[,1], y = x[,2])
 
-data$f1 = result[1,]
-data$f2 = result[2,]
-data$f3 = result[3,]
-data$f4 = result[4,]
+# Create a data frame to store the result
+data = data.frame(x = x[,1], y = x[,2], 
+                  f1 = result[1,], f2 = result[2,], f3 = result[3,], f4 = result[4,])
 
 # Draw the result
 plot(data$x,data$y, 
@@ -244,7 +241,6 @@ plot(data$x,data$y,
      main = "f4",
      ylab = "",
      xlab = "")
-?par
 ```
 
 # Ejercicio de Ajuste del Algoritmo Perceptron
