@@ -36,11 +36,11 @@ simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(runif(N, rango[1], rango[2]), dim = c(dimen, N))
+  array(runif(dimen*N, rango[1], rango[2]), dim = c(N, dimen))
 }
 
 simula_unif(10, 5, c(10,100))
-simula_unif(10, 5)
+simula_unif(10, 2)
 simula_unif(10)
 ```
 
@@ -59,7 +59,7 @@ simula_gauss <- function(N, dimen = 1, sig = 1){
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(rnorm(N, sd = sig), dim = c(dimen, N))
+  array(rnorm(dimen*N, sd = sig), dim = c(dimen, N))
 }
 
 simula_gauss(10, 5, c(1,2))
@@ -136,3 +136,42 @@ plot(interval, interval, type= "n",
 points(p1, p2)
 lines(p1, p2, lty="solid", col="red")
 ```
+
+## Ejercicio 6
+
+Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usando el signo de la función $f(x,y) = y - ax - b$ de cada punto a una recta simulada con _simula_recta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.
+
+```{r}
+interval = c(-100, 100)
+# Generate a set of points
+x = simula_unif(1000, 2, interval);
+
+fsign <- function(x, y, m, b){
+  # Function to label a 2D Point
+  y - m*x - b
+}
+
+straight = simula_recta(interval)
+m = straight[1]
+line = straight[2]
+p1 = c(straight[3],straight[4])
+p2 = c(straight[5], straight[6])
+
+# Apply fsign to each point of the set, each x,y will be passed to fsign
+result = mapply(fsign, x[,1], x[,2], m = m, b = line);
+# Create a data frame to store the result
+data = data.frame(x = x[,1], y = x[,2])
+data$Result = c(result)
+data$Colour[data$Result<0] = "red"
+data$Colour[data$Result>=0] = "blue"
+
+# Draw the result
+plot(data$x,data$y, col=data$Colour, pch=20,
+     main = "Points labeled in function of y - m*x - b",
+     xlab = paste(c("m=", m, "line=", line), collapse = " "),
+     sub = paste(c("Interval = ", interval), collapse = " "),
+     ylab = "")
+abline(line,m)
+```
+
+# Ejercicio de Ajuste del Algoritmo Perceptron
