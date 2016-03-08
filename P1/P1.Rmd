@@ -144,7 +144,7 @@ Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usa
 ```{r}
 interval = c(-100, 100)
 # Generate a set of points
-x = simula_unif(1000, 2, interval);
+x = simula_unif(5000, 2, interval);
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -172,6 +172,79 @@ plot(data$x,data$y, col=data$Colour, pch=20,
      sub = paste(c("Interval = ", interval), collapse = " "),
      ylab = "")
 abline(line,m)
+```
+
+## Ejercicio 7
+
+Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando el signo de cada una de las siguientes funciones.
+
+- $f(x, y) = (x - 10)^2 + (y - 20)^2 - 400$
+- $f(x, y) = 0.5(x + 10)^2 + (y - 20)^2 - 400$
+- $f(x, y) = 0.5(x - 10)^2 - (y + 20)^2 - 400$
+- $f(x, y) = y - 20x^2 - 5x + 3$
+
+Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?
+
+```{r}
+par(mfrow = c(2, 2))
+
+# Define the functions
+f1 <- function(x, y) {
+  (x - 10) ^ 2 + (y - 20) ^ 2 - 400
+}
+f2 <- function(x, y){
+  0.5 * (x + 10)^2 + (y - 20)^2 - 400
+}
+f3 <- function(x, y){
+  0.5 * (x - 10)^2 - (y + 20)^2 - 400
+}
+f4 <- function(x, y){
+  y - 20*x^2 - 5*x + 3
+}
+
+# Generate a vector of functions
+multi.fun <- function(x, y) {
+      c(f1 = f1(x, y), f2 = f2(x, y), f3 = f3(x, y), f4 = f4(x, y))
+}
+
+# Apply the functions
+result = mapply(multi.fun, x[,1], x[,2])
+result[result >= 0] = 1
+result[result < 0] = -1
+# Create a data frame to store the result
+data = data.frame(x = x[,1], y = x[,2])
+
+data$f1 = result[1,]
+data$f2 = result[2,]
+data$f3 = result[3,]
+data$f4 = result[4,]
+
+# Draw the result
+plot(data$x,data$y, 
+     col=ifelse(data$f1==1, "blue", "red"), 
+     pch=20,
+     main = "f1",
+     ylab = "",
+     xlab = "")
+plot(data$x,data$y, 
+     col=ifelse(data$f2==1, "blue", "red"), 
+     pch=20,
+     main = "f2",
+     ylab = "",
+     xlab = "")
+plot(data$x,data$y, 
+     col=ifelse(data$f3==1, "blue", "red"), 
+     pch=20,
+     main = "f3",
+     ylab = "",
+     xlab = "")
+plot(data$x,data$y, 
+     col=ifelse(data$f4==1, "blue", "red"), 
+     pch=20,
+     main = "f4",
+     ylab = "",
+     xlab = "")
+?par
 ```
 
 # Ejercicio de Ajuste del Algoritmo Perceptron
