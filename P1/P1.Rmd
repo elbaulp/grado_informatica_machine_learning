@@ -144,7 +144,7 @@ Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usa
 ```{r}
 interval = c(-100, 100)
 # Generate a set of points
-x = simula_unif(5000, 2, interval);
+x = simula_unif(2000, 2, interval);
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -158,15 +158,15 @@ p1 = c(straight[3],straight[4])
 p2 = c(straight[5], straight[6])
 
 # Apply fsign to each point of the set, each x,y will be passed to fsign
-result = mapply(fsign, x[,1], x[,2], m = m, b = line);
+result = mapply(fsign, x[,1], x[,2], m = m, b = line)
+# Label the result with -1/1
+result[result >= 0] = 1
+result[result < 0] = -1
 # Create a data frame to store the result
-data = data.frame(x = x[,1], y = x[,2])
-data$Result = c(result)
-data$Colour[data$Result<0] = "red"
-data$Colour[data$Result>=0] = "blue"
+data = data.frame(x = x[,1], y = x[,2], result = result)
 
 # Draw the result
-plot(data$x,data$y, col=data$Colour, pch=20,
+plot(data$x,data$y, col=ifelse(data$result >= 0, "blue", "red"), pch=20,
      main = "Points labeled in function of y - m*x - b",
      xlab = paste(c("m=", m, "line=", line), collapse = " "),
      sub = paste(c("Interval = ", interval), collapse = " "),
