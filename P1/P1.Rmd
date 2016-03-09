@@ -243,4 +243,8 @@ plot(data$x,data$y,
      xlab = "")
 ```
 
+Si observamos el caso lineal, vemos que las muestras son separables por una línea recta. Esto se debe a que la función que generó el etiquetado ($f(x,y) = y - ax - b$) es lineal.
+
+Las cuatro funciones usadas para el etiquetado en esta ocasión, son __no lineales__, lo cual implica que los datos etiquetados no serán separables por una simple recta. Se necesita una función más compleja que pueda realizar el particionamiento de los datos positivos y negativos.
+
 # Ejercicio de Ajuste del Algoritmo Perceptron
