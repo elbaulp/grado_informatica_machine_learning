@@ -17,8 +17,6 @@ knitr::opts_chunk$set(echo = TRUE)
 set.seed(1000000007)
 ```
 
-
-
 # Ejercicio de Generación y Visualización de datos
 
 ## Ejercicio 1
@@ -59,7 +57,7 @@ simula_gauss <- function(N, dimen = 1, sig = 1){
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(rnorm(dimen*N, sd = sig), dim = c(dimen, N))
+  array(rnorm(dimen*N, sd = sqrt(sig)), dim = c(dimen, N))
 }
 
 simula_gauss(10, 5, c(1,2))
@@ -166,7 +164,7 @@ result[result < 0] = -1
 datafsign = data.frame(x = x[,1], y = x[,2], result = result)
 
 # Draw the result
-plot(datafsign$x,datafsign$y, col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
+plot(datafsign[1:2], col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
      main = "Points labeled in function of y - m*x - b",
      xlab = paste(c("m=", m, "line=", line), collapse = " "),
      sub = paste(c("Interval = ", interval), collapse = " "),
@@ -217,25 +215,25 @@ datafunctions = data.frame(x = x[,1], y = x[,2],
                   f1 = result[1,], f2 = result[2,], f3 = result[3,], f4 = result[4,])
 
 # Draw the result
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2], 
      col=ifelse(datafunctions$f1==1, "blue", "red"), 
      pch=20,
      main = "f1",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2], 
      col=ifelse(datafunctions$f2==1, "blue", "red"), 
      pch=20,
      main = "f2",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2],
      col=ifelse(datafunctions$f3==1, "blue", "red"), 
      pch=20,
      main = "f3",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2],
      col=ifelse(datafunctions$f4==1, "blue", "red"), 
      pch=20,
      main = "f4",
@@ -257,6 +255,7 @@ Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las etiqu
 Observe las gráficas y diga qué consecuencias extrae del proceso de modificación de etiquetas en el proceso de aprendizaje.
 
 Para el primer apartado, cambiamos el 10% de las muestras positivas y negativas y obtenemos:
+
 ```{r Exercise 8.a}
 getPercentageOfData <- function(x, condition = 1, percentage = .1){
   # Get the percentage of samples that meet condition
@@ -280,14 +279,15 @@ indexNegative = getPercentageOfData(datafsign$result, -1)
 datafsign$result[indexNegative] = 1
 
 # Draw the result
-plot(datafsign$x,datafsign$y, col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
+plot(datafsign[1:2], col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
      main = "Points labeled in function of y - m*x - b",
      xlab = paste(c("m=", m, "line=", line), collapse = " "),
      sub = paste(c("Interval = ", interval), collapse = " "),
      ylab = "")
 abline(line,m)
 ```
-La única observación que puede hacerse, es que ahora los datos ya no son separables.
+
+La única observación que puede hacerse, es que ahora los datos ya no son separables y estamos introduciendo ruido a la muestra.
 
 ```{r Exercise 8.b}
 # Get a 10% of samples labeled with a 1 in all 4 functions
@@ -307,26 +307,26 @@ datafunctions$f3[indexNegative$f3] = 1
 datafunctions$f4[indexNegative$f4] = 1
 
 # Draw the result
-par(mfrow = c(2,2))
-plot(datafunctions$x,datafunctions$y, 
+# par(mfrow = c(2,2))
+plot(datafunctions[1:2], 
      col=ifelse(datafunctions$f1==1, "blue", "red"), 
      pch=20,
      main = "f1",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2],
      col=ifelse(datafunctions$f2==1, "blue", "red"), 
      pch=20,
      main = "f2",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2],
      col=ifelse(datafunctions$f3==1, "blue", "red"), 
      pch=20,
      main = "f3",
      ylab = "",
      xlab = "")
-plot(datafunctions$x,datafunctions$y, 
+plot(datafunctions[1:2],
      col=ifelse(datafunctions$f4==1, "blue", "red"), 
      pch=20,
      main = "f4",
@@ -334,4 +334,7 @@ plot(datafunctions$x,datafunctions$y,
      xlab = "")
 ```
 
+En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el valor de las etiquetas por su clase contraria, estamos introduciendo mucho ruido en los datos. Como en el caso anterior, los datos dejan de ser separables y difícilmente se aprenderá algo de este conjunto de datos, ya que las dos clases estás distribuidas uniformemente por todo el espacio.
+
 # Ejercicio de Ajuste del Algoritmo Perceptron
+
