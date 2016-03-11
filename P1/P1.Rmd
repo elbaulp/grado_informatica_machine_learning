@@ -163,10 +163,10 @@ result = mapply(fsign, x[,1], x[,2], m = m, b = line)
 result[result >= 0] = 1
 result[result < 0] = -1
 # Create a data frame to store the result
-data = data.frame(x = x[,1], y = x[,2], result = result)
+datafsign = data.frame(x = x[,1], y = x[,2], result = result)
 
 # Draw the result
-plot(data$x,data$y, col=ifelse(data$result == 1, "blue", "red"), pch=20,
+plot(datafsign$x,datafsign$y, col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
      main = "Points labeled in function of y - m*x - b",
      xlab = paste(c("m=", m, "line=", line), collapse = " "),
      sub = paste(c("Interval = ", interval), collapse = " "),
@@ -213,30 +213,30 @@ result[result >= 0] = 1
 result[result < 0] = -1
 
 # Create a data frame to store the result
-data = data.frame(x = x[,1], y = x[,2], 
+datafunctions = data.frame(x = x[,1], y = x[,2], 
                   f1 = result[1,], f2 = result[2,], f3 = result[3,], f4 = result[4,])
 
 # Draw the result
-plot(data$x,data$y, 
-     col=ifelse(data$f1==1, "blue", "red"), 
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f1==1, "blue", "red"), 
      pch=20,
      main = "f1",
      ylab = "",
      xlab = "")
-plot(data$x,data$y, 
-     col=ifelse(data$f2==1, "blue", "red"), 
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f2==1, "blue", "red"), 
      pch=20,
      main = "f2",
      ylab = "",
      xlab = "")
-plot(data$x,data$y, 
-     col=ifelse(data$f3==1, "blue", "red"), 
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f3==1, "blue", "red"), 
      pch=20,
      main = "f3",
      ylab = "",
      xlab = "")
-plot(data$x,data$y, 
-     col=ifelse(data$f4==1, "blue", "red"), 
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f4==1, "blue", "red"), 
      pch=20,
      main = "f4",
      ylab = "",
@@ -246,5 +246,92 @@ plot(data$x,data$y,
 Si observamos el caso lineal, vemos que las muestras son separables por una línea recta. Esto se debe a que la función que generó el etiquetado ($f(x,y) = y - ax - b$) es lineal.
 
 Las cuatro funciones usadas para el etiquetado en esta ocasión, son __no lineales__, lo cual implica que los datos etiquetados no serán separables por una simple recta. Se necesita una función más compleja que pueda realizar el particionamiento de los datos positivos y negativos.
+
+## Ejercicio 8
+
+Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las etiquetas de un 10% aleatorio de muestras positivas y otro 10% aleatorio de negativas.
+
+- Visualice los puntos con las nuevas etiquetas y la recta del ejercicio 6
+- En una gráfica a parte visualice de nuevo los mismos puntos pero junto con las funciones del ejercicio 7.
+
+Observe las gráficas y diga qué consecuencias extrae del proceso de modificación de etiquetas en el proceso de aprendizaje.
+
+Para el primer apartado, cambiamos el 10% de las muestras positivas y negativas y obtenemos:
+```{r Exercise 8.a}
+getPercentageOfData <- function(x, condition = 1, percentage = .1){
+  # Get the percentage of samples that meet condition
+  #
+  # Args:
+  #   x: A vector containing the data
+  #   condition: Condition that the data need to satisfy
+  #   percentaje: What percentage of samples to get
+  #
+  # Returns:
+  #   Indexes of the percentage of the samples that meet the condition
+  meetCondition = which(x == condition)
+  sample(meetCondition, length(meetCondition) * percentage)
+}
+
+# Get a 10% of samples labeled with a 1
+indexPositive = getPercentageOfData(datafsign$result)
+datafsign$result[indexPositive] = -1
+
+indexNegative = getPercentageOfData(datafsign$result, -1)
+datafsign$result[indexNegative] = 1
+
+# Draw the result
+plot(datafsign$x,datafsign$y, col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
+     main = "Points labeled in function of y - m*x - b",
+     xlab = paste(c("m=", m, "line=", line), collapse = " "),
+     sub = paste(c("Interval = ", interval), collapse = " "),
+     ylab = "")
+abline(line,m)
+```
+La única observación que puede hacerse, es que ahora los datos ya no son separables.
+
+```{r Exercise 8.b}
+# Get a 10% of samples labeled with a 1 in all 4 functions
+indexPositive = lapply(datafunctions[3:6], getPercentageOfData)
+# Change 1 by -1
+datafunctions$f1[indexPositive$f1] = -1
+datafunctions$f2[indexPositive$f2] = -1
+datafunctions$f3[indexPositive$f3] = -1
+datafunctions$f4[indexPositive$f4] = -1
+
+# Get a 10% of samples labeled with a 1 in all 4 functions
+indexNegative = lapply(datafunctions[3:6], getPercentageOfData, condition = -1)
+# Change -1 by 1
+datafunctions$f1[indexNegative$f1] = 1
+datafunctions$f2[indexNegative$f2] = 1
+datafunctions$f3[indexNegative$f3] = 1
+datafunctions$f4[indexNegative$f4] = 1
+
+# Draw the result
+par(mfrow = c(2,2))
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f1==1, "blue", "red"), 
+     pch=20,
+     main = "f1",
+     ylab = "",
+     xlab = "")
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f2==1, "blue", "red"), 
+     pch=20,
+     main = "f2",
+     ylab = "",
+     xlab = "")
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f3==1, "blue", "red"), 
+     pch=20,
+     main = "f3",
+     ylab = "",
+     xlab = "")
+plot(datafunctions$x,datafunctions$y, 
+     col=ifelse(datafunctions$f4==1, "blue", "red"), 
+     pch=20,
+     main = "f4",
+     ylab = "",
+     xlab = "")
+```
 
 # Ejercicio de Ajuste del Algoritmo Perceptron
