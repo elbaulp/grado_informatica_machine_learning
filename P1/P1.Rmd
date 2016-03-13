@@ -73,7 +73,7 @@ simula_unif(10)
 
 Construir una función _lista = simula_gaus(N, dim, sigma)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.
 
-```{r}
+```{r Exercise 2}
 simula_gauss <- function(N, dimen = 1, sig = 1){
   # Generate a list of vectors populated using the normal (Gaussian) distribution
   #
@@ -94,7 +94,7 @@ simula_gauss(10, 5, c(1,2))
 
 Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica de la salida de la función correspondiente.
 
-```{r}
+```{r Exercise 3}
 datos = simula_unif(50, 2, c(-50,50)); datos
 myPlot(datos, main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
 ```
@@ -103,7 +103,7 @@ myPlot(datos, main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
 
 Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la función correspondiente.
 
-```{r}
+```{r Exercise 4}
 datos = simula_gauss(50, 2, c(5,7)); datos
 myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))", type = "b")
 ```
@@ -112,7 +112,7 @@ myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))", type = "b")
 
 Construir la función _v = simula_recta(intervalo)_ que calcula los parámetros _v = (a,b)_ de una recta aleatoria, _y = ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.
 
-```{r}
+```{r Exercise 5}
 
 simula_recta <- function(interval = c(-50, 50)){
   # Computes the slope and intercept values of two points in the given interval
@@ -148,7 +148,7 @@ data = array(result[3:6], c(2,2)); data
 
 Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usando el signo de la función $f(x,y) = y - ax - b$ de cada punto a una recta simulada con _simula_recta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.
 
-```{r}
+```{r Exercise 6}
 interval = c(-100, 100)
 # Generate a set of points
 x = simula_unif(5000, 2, interval);
@@ -190,7 +190,7 @@ Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando
 
 Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?
 
-```{r}
+```{r Exercise 7}
 # Define the functions
 f1 <- function(x, y) {
   (x - 10) ^ 2 + (y - 20) ^ 2 - 400
