@@ -17,6 +17,33 @@ knitr::opts_chunk$set(echo = TRUE)
 set.seed(1000000007)
 ```
 
+# Funciones de utilidad
+
+```{r utilidades gráficas}
+myPlot = function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x", ylab = "y", ...) {
+  # Wrapper function for plotting
+  #
+  # Args:
+  #   Data: A data structure containing the data in the form x,y
+  #   labels: Labels to color the data points
+  #   rest of params: Graphical params to plot
+  if (length(labels) != 0) {
+    labels[labels == 1] = "#525F7F"
+    labels[labels == -1] = "#D2372B"
+  } else {
+    labels = "#525F7F"
+  }
+  
+  if (is.null(dim(labels))) {
+    plot(data, col = labels, pch = pch, xlab = xlab, ylab = ylab, ...)
+  } else {
+    for (i in seq(1, dim(labels)[2])) {
+      plot(data, col = unlist(labels[i]), main = myMain[i], pch = pch, xlab = xlab, ylab = ylab, ...)
+    }
+  }
+}
+```
+
 # Ejercicio de Generación y Visualización de datos
 
 ## Ejercicio 1
@@ -57,7 +84,7 @@ simula_gauss <- function(N, dimen = 1, sig = 1){
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(rnorm(dimen*N, sd = sqrt(sig)), dim = c(dimen, N))
+  array(rnorm(dimen*N, sd = sqrt(sig)), dim = c(N, dimen))
 }
 
 simula_gauss(10, 5, c(1,2))
@@ -69,10 +96,7 @@ Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica 
 
 ```{r}
 datos = simula_unif(50, 2, c(-50,50)); datos
-plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
-     main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
-plot(datos[1,],datos[2,], col = "red", type = "b", 
-     main = "Gráfica datos de simula_unif(50, 2, c(-50,50))", lwd = 2, lty = 3)
+myPlot(datos, main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
 ```
 
 ## Ejercicio 4
@@ -81,7 +105,7 @@ Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la fu
 
 ```{r}
 datos = simula_gauss(50, 2, c(5,7)); datos
-
+myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))")
 plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
      main="Gráfica datos de  simula_gauss(50, 2, c(5,7))")
 # points(datos[1,],datos[2,])
@@ -164,11 +188,11 @@ result[result < 0] = -1
 datafsign = data.frame(x = x[,1], y = x[,2], result = result)
 
 # Draw the result
-plot(datafsign[1:2], col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
-     main = "Points labeled in function of y - m*x - b",
-     xlab = paste(c("m=", m, "line=", line), collapse = " "),
-     sub = paste(c("Interval = ", interval), collapse = " "),
-     ylab = "")
+myPlot(datafsign[1:2], datafsign$result,
+       main = "Points labeled in function of y - m*x - b",
+       xlab = paste(c("m=", m, "line=", line), collapse = " "),
+       sub = paste(c("Interval = ", interval), collapse = " "),
+       ylab = "")
 abline(line,m)
 ```
 
@@ -215,30 +239,8 @@ datafunctions = data.frame(x = x[,1], y = x[,2],
                   f1 = result[1,], f2 = result[2,], f3 = result[3,], f4 = result[4,])
 
 # Draw the result
-plot(datafunctions[1:2], 
-     col=ifelse(datafunctions$f1==1, "blue", "red"), 
-     pch=20,
-     main = "f1",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2], 
-     col=ifelse(datafunctions$f2==1, "blue", "red"), 
-     pch=20,
-     main = "f2",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2],
-     col=ifelse(datafunctions$f3==1, "blue", "red"), 
-     pch=20,
-     main = "f3",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2],
-     col=ifelse(datafunctions$f4==1, "blue", "red"), 
-     pch=20,
-     main = "f4",
-     ylab = "",
-     xlab = "")
+
+myPlot(datafunctions[1:2], datafunctions[3:6], c("f1", "f2", "f3", "f4"))
 ```
 
 Si observamos el caso lineal, vemos que las muestras son separables por una línea recta. Esto se debe a que la función que generó el etiquetado ($f(x,y) = y - ax - b$) es lineal.
@@ -338,3 +340,12 @@ En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el val
 
 # Ejercicio de Ajuste del Algoritmo Perceptron
 
+## Ejercicio 1
+
+Implementar la función _sol = ajusta\_PLA(datos, label, max_iter, vini)_ que calcula el hiperplano solución a un problema de clasificación binaria usando el algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta está representado por una fila de la matriz, _label_ el vector de etiquetas (cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_ devuelve los coeficientes del hiperplano. 
+
+
+```{r Generate R file}
+# library(knitr)
+# purl("P1.Rmd")
+```
