@@ -50,7 +50,7 @@ myPlot = function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x", ylab
 
 Construir una función _lista = simula_unif (N, dim, rango)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios uniformes en el intervalo _rango_.
 
-```{r}
+```{r Exercise 1}
 simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
   # Generate a list of vectors populated with uniform distributed random numbers
   #
@@ -105,12 +105,7 @@ Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la fu
 
 ```{r}
 datos = simula_gauss(50, 2, c(5,7)); datos
-myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))")
-plot(datos[1,],datos[2,], col=2, xlab="x",ylab="y", 
-     main="Gráfica datos de  simula_gauss(50, 2, c(5,7))")
-# points(datos[1,],datos[2,])
-plot(datos[1,],datos[2,], col = "red", type = "b",
-     main = "Gráfica datos de simula_gauss(50, 2, c(5,7))", lwd = 2, lty = 3)
+myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))", type = "b")
 ```
 
 ## Ejercicio 5
@@ -130,33 +125,23 @@ simula_recta <- function(interval = c(-50, 50)){
   #     - m is the slope 
   #     - l is the intercept
   #     - p1, p2, are the points randomly selected
-  p1 = runif(2, interval[1], interval[2]);
-  p2 = runif(2, interval[1], interval[2]);
-  
+  thePoints  = simula_unif(2, 2, interval)
   ## Compute the slope
-  m = (p1[2] - p2[2]) / (p1[1] - p2[1])
+  m = (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
   
   # Compute y − y1 = m(x − x1)
-  line = m * (p1[1] - p2[1]) + p2[2]
+  line = m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
   
-  c(m, line, p1, p2)
+  c(m, line, thePoints)
 }
 
-interval = c(-100, 100);
-result = simula_recta(interval)
-m = result[1]
-line = result[2]
-p1 = c(result[3],result[4])
-p2 = c(result[5], result[6])
-data = rbind(p1, p2)
+interval = c(-50, 50);
+x = simula_unif(5000, 2, interval);
 
-plot(interval, interval, type= "n", 
-     sub = paste(c("p1=", p1, "p2=", p2), collapse = " "), 
-     main = "Line that passes throught points P1, P2",
-     xlab = paste(c("m=", m, "line=", line), collapse = " "),
-     ylab = "")
-points(p1, p2)
-lines(p1, p2, lty="solid", col="red")
+result = simula_recta(interval)
+m = result[1]; m
+line = result[2]; line
+data = array(result[3:6], c(2,2)); data
 ```
 
 ## Ejercicio 6
@@ -176,8 +161,6 @@ fsign <- function(x, y, m, b){
 straight = simula_recta(interval)
 m = straight[1]
 line = straight[2]
-p1 = c(straight[3],straight[4])
-p2 = c(straight[5], straight[6])
 
 # Apply fsign to each point of the set, each x,y will be passed to fsign
 result = mapply(fsign, x[,1], x[,2], m = m, b = line)
@@ -281,11 +264,11 @@ indexNegative = getPercentageOfData(datafsign$result, -1)
 datafsign$result[indexNegative] = 1
 
 # Draw the result
-plot(datafsign[1:2], col=ifelse(datafsign$result == 1, "blue", "red"), pch=20,
-     main = "Points labeled in function of y - m*x - b",
-     xlab = paste(c("m=", m, "line=", line), collapse = " "),
-     sub = paste(c("Interval = ", interval), collapse = " "),
-     ylab = "")
+myPlot(datafsign[1:2], datafsign$result,
+       main = "Points labeled in function of y - m*x - b",
+       xlab = paste(c("m=", m, "line=", line), collapse = " "),
+       sub = paste(c("Interval = ", interval), collapse = " "),
+       ylab = "")
 abline(line,m)
 ```
 
@@ -310,30 +293,7 @@ datafunctions$f4[indexNegative$f4] = 1
 
 # Draw the result
 # par(mfrow = c(2,2))
-plot(datafunctions[1:2], 
-     col=ifelse(datafunctions$f1==1, "blue", "red"), 
-     pch=20,
-     main = "f1",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2],
-     col=ifelse(datafunctions$f2==1, "blue", "red"), 
-     pch=20,
-     main = "f2",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2],
-     col=ifelse(datafunctions$f3==1, "blue", "red"), 
-     pch=20,
-     main = "f3",
-     ylab = "",
-     xlab = "")
-plot(datafunctions[1:2],
-     col=ifelse(datafunctions$f4==1, "blue", "red"), 
-     pch=20,
-     main = "f4",
-     ylab = "",
-     xlab = "")
+myPlot(datafunctions[1:2], datafunctions[3:6], c("f1", "f2", "f3", "f4"))
 ```
 
 En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el valor de las etiquetas por su clase contraria, estamos introduciendo mucho ruido en los datos. Como en el caso anterior, los datos dejan de ser separables y difícilmente se aprenderá algo de este conjunto de datos, ya que las dos clases estás distribuidas uniformemente por todo el espacio.
@@ -345,7 +305,7 @@ En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el val
 Implementar la función _sol = ajusta\_PLA(datos, label, max_iter, vini)_ que calcula el hiperplano solución a un problema de clasificación binaria usando el algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta está representado por una fila de la matriz, _label_ el vector de etiquetas (cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_ devuelve los coeficientes del hiperplano. 
 
 
-```{r Generate R file}
+```{r Generate R file, echo=FALSE}
 # library(knitr)
 # purl("P1.Rmd")
 ```
