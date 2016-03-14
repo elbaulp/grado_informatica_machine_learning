@@ -151,7 +151,7 @@ Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usa
 ```{r Exercise 6}
 interval = c(-100, 100)
 # Generate a set of points
-x = simula_unif(5000, 2, interval);
+x = simula_unif(5000, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -304,6 +304,118 @@ En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el val
 
 Implementar la función _sol = ajusta\_PLA(datos, label, max_iter, vini)_ que calcula el hiperplano solución a un problema de clasificación binaria usando el algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta está representado por una fila de la matriz, _label_ el vector de etiquetas (cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_ devuelve los coeficientes del hiperplano. 
 
+```{r Exercise 2.1}
+ajusta_PLA = function(data,
+                      label,
+                      max_iter = 100,
+                      vini = NULL) {
+  # Get the weight to learn the data passed as parameter
+  # using the 2D Perceptron algorithm 
+  #
+  # Args:
+  #   data: An array/dataframe of with four columns (x0, x1, x2, y)
+  #   label: How to label the dataset, must be of equal lenght of data
+  #   max_iter: How much iter to find a solution
+  #   vini: Initial weights
+  #
+  # Returns:
+  #   The weights learned to adjust the data set
+  
+  #### Helper functions ####
+  evaluate <- function(d,w){ 
+    # returns current classifications on data 
+    # for a given set of params, w
+    # 
+    # Args:
+    #   d: should be of shape m x n
+    #   w: should be of shape 1 x n
+    #
+    # Returns:
+    #   The labels for the data
+    
+    evaluation = apply(d, 1, function(x) sum(x*w))
+    
+    ifelse(evaluation > 0, 1, -1)
+  }
+  
+  random_row <- function(wrongClassified){
+    # select a random row number from a data frame of choices
+    #
+    # Args: 
+    #   wrongClassified: Data incorrectly classified from which to choose a random row
+    #
+    # Returns:
+    #   The index of the row picked
+    
+    pickedRandomRow <- if(nrow(wrongClassified)==1){ #if there is only one misclassification, choose it
+      as.numeric(rownames(wrongClassified))
+    } else { #otherwise, choose randomly from the misclassified rows
+      sample(as.numeric(rownames(wrongClassified)),1) 
+    }
+    pickedRandomRow
+  }
+  
+  # Check that the data parameter is of the correct form
+  if (dim(data)[2] != 4 ){
+    print("Data need to have 4 columns. (x0, x1, x2, y)")
+    return()
+  }
+  xs = data[-4]
+  
+  #### Begin the perceptron learning ####
+  
+  # If no vini was specified, generate one randomly
+  vini <- if (is.null(vini)) runif(3, -.5, .5)
+  
+  f_function = unname(unlist(data[4]))
+  g_function = label
+  
+  nIters = 0
+  
+  while (!all(g_function == f_function) && nIters <= max_iter) {
+    #while there are mis-classifications
+    
+    #store the number of iterations
+    nIters <- nIters + 1
+    
+    #randomly choose a mis-classified example
+    wrongClassified = xs[g_function != f_function, ]
+    pickRandomRow = random_row(wrongClassified)
+    
+    #update the weights
+    vini =
+      vini + f_function[pickRandomRow] * as.vector(wrongClassified[rownames(wrongClassified) ==
+                                                                pickRandomRow, ])
+    #update predictions with new boudary (and plot)
+    g_function = evaluate(xs, vini)
+  }
+  
+  if (nIters > max_iter){
+    print("Max iter reached, no solution found, the current vini was:")
+  } else {
+    print(paste("Finished in ", nIters, "iterations"))
+    # add_boundary(vini, color='red') #plot final boundary
+  }
+
+  vini
+}
+
+# Generate randomly the true weights
+w <- runif(3, -5, 5)
+
+# Generate Data to test
+N = 100
+x0 <- rep(1, N)
+x1 <- runif(N, -10, 10)
+x2 <- runif(N,-10, 10)
+df <- data.frame(x0, x1, x2)
+df$y = apply(df, 1, function(x) sum(x*w))
+df$y = ifelse(df$y > 0, 1, -1)
+dataset = df[-4]
+
+label = ifelse(runif(N, -1, 1) >0 , 1,-1)
+learnedWeights = ajusta_PLA(data = df, label = label); learnedWeights
+```
 
 ```{r Generate R file, echo=FALSE}
 # library(knitr)
