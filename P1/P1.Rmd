@@ -165,8 +165,8 @@ line = straight[2]
 # Apply fsign to each point of the set, each x,y will be passed to fsign
 result = mapply(fsign, x[,1], x[,2], m = m, b = line)
 # Label the result with -1/1
-result[result >= 0] = 1
-result[result < 0] = -1
+result = ifelse(result >= 0, 1, -1)
+
 # Create a data frame to store the result
 datafsign = data.frame(x = x[,1], y = x[,2], result = result)
 
@@ -214,8 +214,7 @@ multi.fun <- function(x, y) {
 result = mapply(multi.fun, x[,1], x[,2])
 
 # Label the results
-result[result >= 0] = 1
-result[result < 0] = -1
+result = ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
 datafunctions = data.frame(x = x[,1], y = x[,2], 
