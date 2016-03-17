@@ -257,13 +257,14 @@ getPercentageOfData <- function(x, condition = 1, percentage = .1){
 
 # Get a 10% of samples labeled with a 1
 indexPositive = getPercentageOfData(datafsign$result)
-datafsign$result[indexPositive] = -1
+noisyDatafSign = datafsign
+noisyDatafSign$result[indexPositive] = -1
 
 indexNegative = getPercentageOfData(datafsign$result, -1)
-datafsign$result[indexNegative] = 1
+noisyDatafSign$result[indexNegative] = 1
 
 # Draw the result
-myPlot(datafsign[1:2], datafsign$result,
+myPlot(noisyDatafSign[1:2], noisyDatafSign$result,
        main = "Points labeled in function of y - m*x - b",
        xlab = paste(c("m=", m, "line=", line), collapse = " "),
        sub = paste(c("Interval = ", interval), collapse = " "),
@@ -276,23 +277,24 @@ La única observación que puede hacerse, es que ahora los datos ya no son separ
 ```{r Exercise 8.b}
 # Get a 10% of samples labeled with a 1 in all 4 functions
 indexPositive = lapply(datafunctions[3:6], getPercentageOfData)
+noisyDataFunctions = datafunctions
 # Change 1 by -1
-datafunctions$f1[indexPositive$f1] = -1
-datafunctions$f2[indexPositive$f2] = -1
-datafunctions$f3[indexPositive$f3] = -1
-datafunctions$f4[indexPositive$f4] = -1
+noisyDataFunctions$f1[indexPositive$f1] = -1
+noisyDataFunctions$f2[indexPositive$f2] = -1
+noisyDataFunctions$f3[indexPositive$f3] = -1
+noisyDataFunctions$f4[indexPositive$f4] = -1
 
 # Get a 10% of samples labeled with a 1 in all 4 functions
 indexNegative = lapply(datafunctions[3:6], getPercentageOfData, condition = -1)
 # Change -1 by 1
-datafunctions$f1[indexNegative$f1] = 1
-datafunctions$f2[indexNegative$f2] = 1
-datafunctions$f3[indexNegative$f3] = 1
-datafunctions$f4[indexNegative$f4] = 1
+noisyDataFunctions$f1[indexNegative$f1] = 1
+noisyDataFunctions$f2[indexNegative$f2] = 1
+noisyDataFunctions$f3[indexNegative$f3] = 1
+noisyDataFunctions$f4[indexNegative$f4] = 1
 
 # Draw the result
 # par(mfrow = c(2,2))
-myPlot(datafunctions[1:2], datafunctions[3:6], c("f1", "f2", "f3", "f4"))
+myPlot(noisyDataFunctions[1:2], noisyDataFunctions[3:6], c("f1", "f2", "f3", "f4"))
 ```
 
 En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el valor de las etiquetas por su clase contraria, estamos introduciendo mucho ruido en los datos. Como en el caso anterior, los datos dejan de ser separables y difícilmente se aprenderá algo de este conjunto de datos, ya que las dos clases estás distribuidas uniformemente por todo el espacio.
@@ -306,114 +308,211 @@ Implementar la función _sol = ajusta\_PLA(datos, label, max_iter, vini)_ que ca
 ```{r Exercise 2.1}
 ajusta_PLA = function(data,
                       label,
-                      max_iter = 100,
-                      vini = NULL) {
-  # Get the weight to learn the data passed as parameter
-  # using the 2D Perceptron algorithm 
+                      max_iter = 1000,
+                      vini = matrix(0, 1, 3)) {
+  # Get the weight to learn from the data passed as parameter
+  # using the 2D Perceptron algorithm
   #
   # Args:
-  #   data: An array/dataframe of with four columns (x0, x1, x2, y)
-  #   label: How to label the dataset, must be of equal lenght of data
+  #   data: A matrix with the data (xn, yn)
+  #   label: The labels for the data passed in
   #   max_iter: How much iter to find a solution
   #   vini: Initial weights
   #
   # Returns:
-  #   The weights learned to adjust the data set
+  #   The weights learned to adjust the data set and how many iterations it did in a data frame.
+  #   If the PLA did not converged in within max_iter, the currents weights are returned and the iterations
+  #   are set to -1
   
-  #### Helper functions ####
-  evaluate <- function(d,w){ 
-    # returns current classifications on data 
-    # for a given set of params, w
-    # 
+  get.sign <- function(values){
+    # Return the sign for the values
+    #
     # Args:
-    #   d: should be of shape m x n
-    #   w: should be of shape 1 x n
+    #   values: The values to get the sign of.
     #
     # Returns:
-    #   The labels for the data
-    
-    evaluation = apply(d, 1, function(x) sum(x*w))
-    
-    ifelse(evaluation > 0, 1, -1)
+    #   The sign of the values
+    return(ifelse(values > 0, 1, -1))
   }
   
-  random_row <- function(wrongClassified){
-    # select a random row number from a data frame of choices
-    #
-    # Args: 
-    #   wrongClassified: Data incorrectly classified from which to choose a random row
-    #
-    # Returns:
-    #   The index of the row picked
+  add_boundary <- function(w, color = 'red') {
+    # Plot decision boundary defined by
+    # a parameter vector w
+
+# As your decision function is simply sgn(w1*x+w2*y+w3) then the decision boundary equation is a line with canonical form w1*x + w2*y + w3 = 0.
+# 
+# |w3|/||w|| is the distance from the origin, w3 itself does not have a good geometrical interpretation (as long as w is not unit-length).
+# 
+# In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
     
-    pickedRandomRow <- if(nrow(wrongClassified)==1){ #if there is only one misclassification, choose it
-      as.numeric(rownames(wrongClassified))
-    } else { #otherwise, choose randomly from the misclassified rows
-      sample(as.numeric(rownames(wrongClassified)),1) 
-    }
-    pickedRandomRow
+    w <- as.numeric(w)
+    
+    b = w[1]
+    w1 = w[2]
+    w2 = w[3]
+    
+    slope = -(w1 / w2)
+    intercept = -(b / w2)
+    
+    
+    abline(a = intercept, b = slope, col = color)
   }
   
-  # Check that the data parameter is of the correct form
-  if (dim(data)[2] != 4 ){
-    print("Data need to have 4 columns. (x0, x1, x2, y)")
-    return()
-  }
-  xs = data[-4]
+  converged = F
   
-  #### Begin the perceptron learning ####
+  # Add x0
+  data <- cbind(rep(1, nrow(data)), data)
+  # Convert weights as matrix
+  as.matrix(vini)
   
-  # If no vini was specified, generate one randomly
-  vini <- if (is.null(vini)) runif(3, -.5, .5)
-  
-  f_function = unname(unlist(data[4]))
-  g_function = label
-  
+  # Begin the perceptron
   nIters = 0
   
-  while (!all(g_function == f_function) && nIters <= max_iter) {
-    #while there are mis-classifications
+  
+  while (!converged && nIters <= max_iter) {
+    # while there are mis-classifications
     
-    #store the number of iterations
     nIters <- nIters + 1
     
-    #randomly choose a mis-classified example
-    wrongClassified = xs[g_function != f_function, ]
-    pickRandomRow = random_row(wrongClassified)
+    # Calculate h(x) with the weight vector vini and the data input data
+    h.function <- get.sign(vini %*% t(data))
     
-    #update the weights
-    vini =
-      vini + f_function[pickRandomRow] * as.vector(wrongClassified[rownames(wrongClassified) ==
-                                                                pickRandomRow, ])
-    #update predictions with new boudary (and plot)
-    g_function = evaluate(xs, vini)
+    # Calculate the misclassified mask
+    misclassified.subseting <- h.function != label
+    
+    if (all(misclassified.subseting == F)) {
+      converged = T
+    } else {
+      # Update the weight vector for a point randomly selected
+      
+      # Get the misclassified points out
+      misclassified.points <- data[misclassified.subseting, , drop = F]
+      misclassified.points.labels <- label[misclassified.subseting]
+      
+      # Get one of them
+      misclassified.point.index <- sample(dim(misclassified.points)[1], 1)
+      misclassified.point <- misclassified.points[misclassified.point.index,, drop = F]
+      misclassified.point.label <- misclassified.points.labels[misclassified.point.index]
+      
+      # update the weights
+      vini <- vini + misclassified.point.label %*% misclassified.point
+    }
   }
   
-  if (nIters > max_iter){
-    print("Max iter reached, no solution found, the current vini was:")
-  } else {
-    print(paste("Finished in ", nIters, "iterations"))
-    # add_boundary(vini, color='red') #plot final boundary
+  if (!converged){
+    nIters = -1
   }
-
-  vini
+  
+  data.frame(vini = vini, iter = nIters)
 }
 
-# Generate randomly the true weights
-w <- runif(3, -5, 5)
+Label.Data <- function(p){
+  # Returns the corresponding label to the data, giving +1/-1 depending on which side
+  # of the line the point lies
+  #
+  # Args:
+  #   p: The points to label
+  #
+  # Returns:
+  #   The labels (+1/-1) for the data
+  
+  # Initialize a random plane to separate the -1, +1
+  line <- matrix(runif(4, -1, 1), 2, 2)
+  line[1,2] <- -1
+  line[2,2] <- +1
+  
+  # Given two points, determine if a point from the data set lies on the -1 side or the 1 side.
+  # The points are A, B, the query points (X,Y)
+  # The equation is (Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax)
+  values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
+    (line[2,2] - line[1,2]) * (p[,1] - line[1,1])
+  
+  return(ifelse(values > 0, 1, -1))
+}
 
-# Generate Data to test
-N = 100
-x0 <- rep(1, N)
-x1 <- runif(N, -10, 10)
-x2 <- runif(N,-10, 10)
-df <- data.frame(x0, x1, x2)
-df$y = apply(df, 1, function(x) sum(x*w))
-df$y = ifelse(df$y > 0, 1, -1)
-dataset = df[-4]
+add_boundary <- function(w, color = 'red') {
+  # Plot decision boundary defined by
+  # a parameter vector w
+  
+  w <- as.numeric(w)
+  
+  b = w[1]
+  w1 = w[2]
+  w2 = w[3]
+  
+  slope = -(w1 / w2)
+  intercept = -(b / w2)
+  
+  
+  abline(a = intercept, b = slope, col = color)
+}
 
-label = ifelse(runif(N, -1, 1) >0 , 1,-1)
-learnedWeights = ajusta_PLA(data = df, label = label); learnedWeights
+# Initialize N random points, and Y
+N <- 100
+X <- matrix(runif(N*2, -1, 1), N, 2)
+Y <- Label.Data(X)
+
+# Run perceptron algorithm
+W <- ajusta_PLA(X, Y)
+
+iter = W[4]
+W = as.double(W[-4])
+
+if (iter != -1) {
+  ## PLA converged
+  
+  # Plot the points according to its actual class
+  myPlot(X, Y, main = paste("Perceptron training against N = ", N))
+  
+  # Plot the learned boundary
+  add_boundary(W)
+  
+  # legend(0, -1, c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
+} else {
+  cat("PLA did not converge")
+}
+```
+
+## Ejercicio 2
+
+Ejecutar el algoritmo PLA con los valores simulados en el apartado 6, inicializando el algoritmo con el vector cero y con vectores de números aleatorios en \[0,1\](10 veces). Anotar el número medio de iteraciones necesarias en ambos para converger. Valorar el resultado.
+
+```{r Exercise 2.2}
+
+perceptronData = as.matrix(datafsign[1:2])
+y <- Label.Data(perceptronData)
+
+pla10TimesWithViniZero = replicate(10, {
+  plaResult = ajusta_PLA(
+    data = perceptronData,
+    label = y)
+  
+  plaResult[4]
+})
+
+pla10TimesWithViniAtRandom = replicate(10, {
+  weights = matrix(runif(3), 1,3)
+  
+  plaResult = ajusta_PLA(
+    data = perceptronData,
+    label = y,
+    vini = weights)
+  
+  plaResult[4]
+})
+
+
+print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ", mean(as.numeric(pla10TimesWithViniZero))))
+print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ", mean(as.numeric(pla10TimesWithViniAtRandom))))
+
+```
+
+## Ejercicio 3
+
+Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del ejercicio 4.2 usando valores de 10, 100 y 1000 para _max_iter_. Etiquetar los datos de la muestra usando la función solución encontrada y contar el número de errores respecto de las etiquetas originales. Valorar el resultado.
+
+```{r Exercise 2.3}
+
 ```
 
 ```{r Generate R file, echo=FALSE}
