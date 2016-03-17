@@ -151,7 +151,7 @@ Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usa
 ```{r Exercise 6}
 interval = c(-100, 100)
 # Generate a set of points
-x = simula_unif(5000, 2, interval)
+x = simula_unif(1000, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -395,7 +395,7 @@ ajusta_PLA = function(data,
       misclassified.point.label <- misclassified.points.labels[misclassified.point.index]
       
       # update the weights
-      vini <- vini + misclassified.point.label %*% misclassified.point
+      vini <- vini + 0.4 %*% misclassified.point.label %*% misclassified.point
     }
   }
   
@@ -467,6 +467,8 @@ if (iter != -1) {
   # Plot the learned boundary
   add_boundary(W)
   
+  iter
+  
   # legend(0, -1, c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
 } else {
   cat("PLA did not converge")
@@ -507,6 +509,7 @@ print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ", 
 
 ```
 
+Por lo general, cuando se inicializa el vector a cero el preceptrón tiende a converger en menos iteraciones
 ## Ejercicio 3
 
 Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del ejercicio 4.2 usando valores de 10, 100 y 1000 para _max_iter_. Etiquetar los datos de la muestra usando la función solución encontrada y contar el número de errores respecto de las etiquetas originales. Valorar el resultado.
