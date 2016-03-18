@@ -29,10 +29,10 @@ MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
   #   labels: Labels to color the data points
   #   rest of params: Graphical params to plot
   if (length(labels) != 0) {
-    labels[labels == 1] <- "#525F7F"
+    labels[labels == 1] <- "#1A1314"
     labels[labels == -1] <- "#D2372B"
   } else {
-    labels <- "#525F7F"
+    labels <- "#1A1314"
   }
   
   if (is.null(dim(labels))) {
@@ -400,7 +400,7 @@ AjustaPla <- function(data,
     return(ifelse(values > 0, 1, -1))
   }
   
-  DrawBoundary <- function(w, color = 'red') {
+  DrawBoundary <- function(w, color = '#525F7F', ...) {
   # Plot decision boundary defined by
   # a parameter vector w
   
@@ -410,29 +410,36 @@ AjustaPla <- function(data,
   # 
   # In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
   
-  w <- as.numeric(w)
-  
-  b <- w[1]
-  w1 <- w[2]
-  w2 <- w[3]
-  
-  slope <- -(w1 / w2)
-  intercept <- -(b / w2)
-  
-  
-  abline(a   = intercept,
-         b   = slope,
-         col = color)
-}
+    w <- as.numeric(w)
+    
+    b <- w[1]
+    w1 <- w[2]
+    w2 <- w[3]
+    
+    slope <- -(w1 / w2)
+    intercept <- -(b / w2)
+    
+    abline(a   = intercept,
+           b   = slope,
+           col = color,
+           ...)
+  }
   
   converged <- F
+  alpha <- 50
   
   if (visual == T) {
     MyPlot(data, label)
+    legend('bottomright',
+           c("Final", "PLA History"),
+           lty = c(1,1),
+           lwd = c(2.5,2.5),
+           col = c("#F9CE0C","#525F7F"))
   }
   
   # Add x0
   data <- cbind(rep(1, nrow(data)), data)
+  
   # Convert weights as matrix
   as.matrix(vini)
   
@@ -468,10 +475,14 @@ AjustaPla <- function(data,
         misclassified.points.labels[misclassified.point.index]
       
       # update the weights
-      vini <- vini +  misclassified.point.label %*% misclassified.point
+      vini <- vini + misclassified.point.label %*% misclassified.point
       
       if (visual == T) {
-        DrawBoundary(vini, "green")
+        if (alpha >= 128) {
+          alpha <- 10
+        }
+        DrawBoundary(vini, rgb(82/255,95/255,127/255, alpha/255))
+        alpha <- alpha + 1
       }
     }
   }
@@ -479,7 +490,7 @@ AjustaPla <- function(data,
   if (!converged) {
     nIters <- -1
   } else if (visual == T) {
-    DrawBoundary(vini, "blue")
+    DrawBoundary(vini, "#F9CE0C", lwd = 2)
   }
   
   data.frame(vini = vini,
@@ -511,42 +522,15 @@ LabelData <- function(p){
   return(ifelse(values > 0, 1, -1))
 }
 
-DrawBoundary <- function(w, color = 'red') {
-  # Plot decision boundary defined by
-  # a parameter vector w
-  
-  # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
-  # 
-  # |w3|/||w|| is the distance from the origin, w3 itself does not have a good geometrical interpretation (as long as w is not unit-length).
-  # 
-  # In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
-  
-  w <- as.numeric(w)
-  
-  b <- w[1]
-  w1 <- w[2]
-  w2 <- w[3]
-  
-  slope <- -(w1 / w2)
-  intercept <- -(b / w2)
-  
-  
-  abline(a   = intercept,
-         b   = slope,
-         col = color)
-}
-
 # Initialize N random points, and Y
 n <- 100
 x <- matrix(runif(n*2, -1, 1), n, 2)
 y <- LabelData(x)
 
 # Run perceptron algorithm
-w <- AjustaPla(x, y, visual = F)
-DrawBoundary(w[-4], "blue")
+w <- AjustaPla(x, y, visual = T)
 
 ShowPlaResult <- function(w, x, y){
-  ## TODO: PASS X, Y
   iter <- w[4]
   w <- as.double(w[-4])
   
@@ -557,15 +541,14 @@ ShowPlaResult <- function(w, x, y){
     MyPlot(x, y, main = paste("Perceptron training against N <- ", n))
     
     # Plot the learned boundary
-    DrawBoundary(w)
-    
-    # legend(0, -1, c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
+    # DrawBoundary(w)
+    # legend('bottomright', c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
   } else {
     cat("PLA did not converge")
   }
 }
 
-ShowPlaResult(w, x, y)
+# ShowPlaResult(w, x, y)
 ```
 
 ## Ejercicio 2
@@ -583,10 +566,8 @@ perceptron.data <- as.matrix(data.fsign[1:2])
 y <- LabelData(perceptron.data)
 
 perceptron.result.10times.weights.zero <- replicate(10, {
-  perceptron.result <- AjustaPla(
-    data <- perceptron.data,
-    label <- y)
-  
+  perceptron.result <- AjustaPla(data  = perceptron.data,
+                                 label = y)
   perceptron.result[4]
 })
 
@@ -594,11 +575,9 @@ perceptron.result.10times.weights.random <- replicate(10, {
   
   weights <- matrix(runif(3, -1, 1), 1,3)
   
-  perceptron.result <- AjustaPla(
-    data <- perceptron.data,
-    label <- y,
-    vini <- weights)
-  
+  perceptron.result <- AjustaPla(data  = perceptron.data,
+                                 label = y,
+                                 vini  = weights)
   perceptron.result[4]
 })
 
@@ -609,7 +588,8 @@ print(paste("The mean iterations of execute PLA 10 times with a random vini ",
 ```
 
 Por lo general, cuando se inicializa el vector a cero el preceptrón tiende a
-converger en menos iteraciones
+converger en menos iteraciones. Todo depende del punto de partida. No importa
+como se inicialce
 
 ## Ejercicio 3
 
@@ -619,22 +599,25 @@ datos de la muestra usando la función solución encontrada y contar el número 
 errores respecto de las etiquetas originales. Valorar el resultado.
 
 ```{r Exercise 2.3}
-library(animation)
+MyPlot(data.fsign.noisy[1:2], data.fsign.noisy[3])
 perceptron.data <- as.matrix(data.fsign.noisy[1:2])
 y <- LabelData(perceptron.data)
 MyPlot(perceptron.data, labels = y)
 w = AjustaPla(perceptron.data, y, visual = T)
-
-saveGIF({
-  MyPlot(perceptron.data, labels = y)
-  AjustaPla(perceptron.data, y, visual = T)
-})
-
-
-
 ```
 
 ```{r Generate R file, echo=FALSE}
 # library(knitr)
 # purl("P1.Rmd")
 ```
+
+
+## PAra regresión, images(nivelesdeGrises)
+## Ficheros, read.table(, ..., ...) stringfactor = False.
+
+# EN lugar de trabajar con todas, reducimos a dos caracteristicas, la media de la intensidad, 
+
+a = info de los 16x16, 
+
+cogemos la variable a complementaria, para restarla
+
