@@ -427,6 +427,10 @@ AjustaPla <- function(data,
   
   converged <- F
   
+  if (visual == T) {
+    MyPlot(data, label)
+  }
+  
   # Add x0
   data <- cbind(rep(1, nrow(data)), data)
   # Convert weights as matrix
@@ -434,6 +438,7 @@ AjustaPla <- function(data,
   
   # Begin the perceptron
   nIters <- 0
+  
   
   while (!converged && nIters <= max_iter) {
     # while there are mis-classifications
@@ -473,7 +478,7 @@ AjustaPla <- function(data,
   
   if (!converged) {
     nIters <- -1
-  } else {
+  } else if (visual == T) {
     DrawBoundary(vini, "blue")
   }
   
@@ -537,8 +542,7 @@ x <- matrix(runif(n*2, -1, 1), n, 2)
 y <- LabelData(x)
 
 # Run perceptron algorithm
-MyPlot(data = x, labels = y)
-w <- AjustaPla(x, y, visual = T)
+w <- AjustaPla(x, y, visual = F)
 DrawBoundary(w[-4], "blue")
 
 ShowPlaResult <- function(w, x, y){
@@ -615,10 +619,19 @@ datos de la muestra usando la función solución encontrada y contar el número 
 errores respecto de las etiquetas originales. Valorar el resultado.
 
 ```{r Exercise 2.3}
+library(animation)
 perceptron.data <- as.matrix(data.fsign.noisy[1:2])
 y <- LabelData(perceptron.data)
 MyPlot(perceptron.data, labels = y)
 w = AjustaPla(perceptron.data, y, visual = T)
+
+saveGIF({
+  MyPlot(perceptron.data, labels = y)
+  AjustaPla(perceptron.data, y, visual = T)
+})
+
+
+
 ```
 
 ```{r Generate R file, echo=FALSE}
