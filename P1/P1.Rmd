@@ -12,7 +12,7 @@ output:
     highlight: zenburn
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 set.seed(1000000007)
 ```
@@ -20,7 +20,8 @@ set.seed(1000000007)
 # Funciones de utilidad
 
 ```{r utilidades gráficas}
-myPlot = function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x", ylab = "y", ...) {
+MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
+                   ylab = "y", ...) {
   # Wrapper function for plotting
   #
   # Args:
@@ -28,17 +29,28 @@ myPlot = function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x", ylab
   #   labels: Labels to color the data points
   #   rest of params: Graphical params to plot
   if (length(labels) != 0) {
-    labels[labels == 1] = "#525F7F"
-    labels[labels == -1] = "#D2372B"
+    labels[labels == 1] <- "#525F7F"
+    labels[labels == -1] <- "#D2372B"
   } else {
-    labels = "#525F7F"
+    labels <- "#525F7F"
   }
   
   if (is.null(dim(labels))) {
-    plot(data, col = labels, pch = pch, xlab = xlab, ylab = ylab, ...)
+    plot(data,
+         col = labels,
+         pch = pch,
+         xlab = xlab,
+         ylab = ylab,
+         ...)
   } else {
     for (i in seq(1, dim(labels)[2])) {
-      plot(data, col = unlist(labels[i]), main = myMain[i], pch = pch, xlab = xlab, ylab = ylab, ...)
+      plot(data, 
+           col = unlist(labels[i]),
+           main = myMain[i],
+           pch = pch,
+           xlab = xlab,
+           ylab = ylab,
+           ...)
     }
   }
 }
@@ -48,10 +60,12 @@ myPlot = function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x", ylab
 
 ## Ejercicio 1
 
-Construir una función _lista = simula_unif (N, dim, rango)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios uniformes en el intervalo _rango_.
+Construir una función _lista <- SimulaUnif (N, dim, rango)_ que calcule una 
+lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números
+aleatorios uniformes en el intervalo _rango_.
 
 ```{r Exercise 1}
-simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
+SimulaUnif <- function(N, dimen = 1, rango = c(0:1)) {
   # Generate a list of vectors populated with uniform distributed random numbers
   #
   # Args:
@@ -61,21 +75,25 @@ simula_unif <- function(N, dimen = 1, rango = c(0:1)) {
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(runif(dimen*N, rango[1], rango[2]), dim = c(N, dimen))
+  array(runif(dimen*N, rango[1], rango[2]),
+        dim = c(N, dimen))
 }
 
-simula_unif(10, 5, c(10,100))
-simula_unif(10, 2)
-simula_unif(10)
+SimulaUnif(10, 5, c(10,100))
+SimulaUnif(10, 2)
+SimulaUnif(10)
 ```
 
 ## Ejercicio 2
 
-Construir una función _lista = simula_gaus(N, dim, sigma)_ que calcule una lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.
+Construir una función _lista <- simula_gaus(N, dim, sigma)_ que calcule una
+lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números
+aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.
 
 ```{r Exercise 2}
 simula_gauss <- function(N, dimen = 1, sig = 1){
-  # Generate a list of vectors populated using the normal (Gaussian) distribution
+  # Generate a list of vectors populated using the normal (Gaussian)
+  # distribution
   #
   # Args:
   #   N: Length of the list
@@ -84,7 +102,8 @@ simula_gauss <- function(N, dimen = 1, sig = 1){
   #
   # Returns:
   #   A list of vectors populated randomly
-  array(rnorm(dimen*N, sd = sqrt(sig)), dim = c(N, dimen))
+  array(rnorm(dimen*N, sd = sqrt(sig)),
+        dim = c(N, dimen))
 }
 
 simula_gauss(10, 5, c(1,2))
@@ -92,25 +111,32 @@ simula_gauss(10, 5, c(1,2))
 
 ## Ejercicio 3
 
-Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica de la salida de la función correspondiente.
+Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica
+de la salida de la función correspondiente.
 
 ```{r Exercise 3}
-datos = simula_unif(50, 2, c(-50,50)); datos
-myPlot(datos, main="Gráfica datos de simula_unif(50, 2, c(-50,50))")
+datos <- SimulaUnif(50, 2, c(-50,50))
+print(datos)
+MyPlot(datos,
+       main = "Gráfica datos de SimulaUnif(50, 2, c(-50,50))")
 ```
 
 ## Ejercicio 4
 
-Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la función correspondiente.
+Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la
+función correspondiente.
 
 ```{r Exercise 4}
-datos = simula_gauss(50, 2, c(5,7)); datos
-myPlot(datos, main="Gráfica datos de  simula_gauss(50, 2, c(5,7))", type = "b")
+datos <- simula_gauss(50, 2, c(5,7))
+print(datos)
+MyPlot(datos,
+       main = "Gráfica datos de  simula_gauss(50, 2, c(5,7))",
+       type = "b")
 ```
 
 ## Ejercicio 5
 
-Construir la función _v = simula_recta(intervalo)_ que calcula los parámetros _v = (a,b)_ de una recta aleatoria, _y = ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.
+Construir la función _v <- simula_recta(intervalo)_ que calcula los parámetros _v <- (a,b)_ de una recta aleatoria, _y <- ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.
 
 ```{r Exercise 5}
 
@@ -125,56 +151,65 @@ simula_recta <- function(interval = c(-50, 50)){
   #     - m is the slope 
   #     - l is the intercept
   #     - p1, p2, are the points randomly selected
-  thePoints  = simula_unif(2, 2, interval)
-  ## Compute the slope
-  m = (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
+  thePoints  <- SimulaUnif(2, 2, interval)
   
-  # Compute y − y1 = m(x − x1)
-  line = m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
+  # Compute the slope
+  m <- (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
+  
+  # Compute y − y1 <- m(x − x1)
+  line <- m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
   
   c(m, line, thePoints)
 }
 
-interval = c(-50, 50);
-x = simula_unif(5000, 2, interval);
+interval <- c(-50, 50);
+x <- SimulaUnif(5000, 2, interval);
 
-result = simula_recta(interval)
-m = result[1]; m
-line = result[2]; line
-data = array(result[3:6], c(2,2)); data
+result <- simula_recta(interval)
+m <- result[1]
+print(m)
+line <- result[2]
+print(line)
+data <- array(result[3:6], c(2,2))
+print(data)
 ```
 
 ## Ejercicio 6
 
-Generar una muestra 2D de puntos usando _simula_unif_ y etiquetar la muestra usando el signo de la función $f(x,y) = y - ax - b$ de cada punto a una recta simulada con _simula_recta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.
+Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usando el signo de la función $f(x,y) <- y - ax - b$ de cada punto a una recta simulada con _simula_recta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.
 
 ```{r Exercise 6}
-interval = c(-100, 100)
+interval <- c(-100, 100)
 # Generate a set of points
-x = simula_unif(1000, 2, interval)
+x <- SimulaUnif(100, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
-  y - m*x - b
+  y - m * x - b
 }
 
-straight = simula_recta(interval)
-m = straight[1]
-line = straight[2]
+straight <- simula_recta(interval)
+m <- straight[1]
+line <- straight[2]
 
 # Apply fsign to each point of the set, each x,y will be passed to fsign
-result = mapply(fsign, x[,1], x[,2], m = m, b = line)
+result <- mapply(fsign, x[,1], x[,2],
+                 m = m,
+                 b = line)
 # Label the result with -1/1
-result = ifelse(result >= 0, 1, -1)
+result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
-datafsign = data.frame(x = x[,1], y = x[,2], result = result)
+datafsign <- data.frame(x      = x[,1],
+                        y      = x[,2],
+                        result = result)
 
 # Draw the result
-myPlot(datafsign[1:2], datafsign$result,
+MyPlot(datafsign[1:2],
+       datafsign$result,
        main = "Points labeled in function of y - m*x - b",
        xlab = paste(c("m=", m, "line=", line), collapse = " "),
-       sub = paste(c("Interval = ", interval), collapse = " "),
+       sub  = paste(c("Interval <- ", interval), collapse = " "),
        ylab = "")
 abline(line,m)
 ```
@@ -183,65 +218,81 @@ abline(line,m)
 
 Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando el signo de cada una de las siguientes funciones.
 
-- $f(x, y) = (x - 10)^2 + (y - 20)^2 - 400$
-- $f(x, y) = 0.5(x + 10)^2 + (y - 20)^2 - 400$
-- $f(x, y) = 0.5(x - 10)^2 - (y + 20)^2 - 400$
-- $f(x, y) = y - 20x^2 - 5x + 3$
+- $f(x, y) <- (x - 10)^2 + (y - 20)^2 - 400$
+- $f(x, y) <- 0.5(x + 10)^2 + (y - 20)^2 - 400$
+- $f(x, y) <- 0.5(x - 10)^2 - (y + 20)^2 - 400$
+- $f(x, y) <- y - 20x^2 - 5x + 3$
 
 Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?
 
 ```{r Exercise 7}
 # Define the functions
-f1 <- function(x, y) {
+F1 <- function(x, y) {
   (x - 10) ^ 2 + (y - 20) ^ 2 - 400
 }
-f2 <- function(x, y){
-  0.5 * (x + 10)^2 + (y - 20)^2 - 400
+F2 <- function(x, y){
+  0.5 * (x + 10) ^ 2 + (y - 20) ^ 2 - 400
 }
-f3 <- function(x, y){
-  0.5 * (x - 10)^2 - (y + 20)^2 - 400
+F3 <- function(x, y){
+  0.5 * (x - 10) ^ 2 - (y + 20) ^ 2 - 400
 }
-f4 <- function(x, y){
-  y - 20*x^2 - 5*x + 3
+F4 <- function(x, y){
+  y - 20 * x ^ 2 - 5 * x + 3
 }
 
 # Generate a vector of functions
 multi.fun <- function(x, y) {
-      c(f1 = f1(x, y), f2 = f2(x, y), f3 = f3(x, y), f4 = f4(x, y))
+      c(F1 = F1(x, y), 
+        F2 = F2(x, y),
+        F3 = F3(x, y),
+        F4 = F4(x, y))
 }
 
 # Apply the functions
-result = mapply(multi.fun, x[,1], x[,2])
+result <- mapply(multi.fun, x[,1], x[,2])
 
 # Label the results
-result = ifelse(result >= 0, 1, -1)
+result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
-datafunctions = data.frame(x = x[,1], y = x[,2], 
-                  f1 = result[1,], f2 = result[2,], f3 = result[3,], f4 = result[4,])
+datafunctions <- data.frame(x  = x[,1],
+                            y  = x[,2],
+                            F1 = result[1,],
+                            F2 = result[2,],
+                            F3 = result[3,],
+                            F4 = result[4,])
 
 # Draw the result
-
-myPlot(datafunctions[1:2], datafunctions[3:6], c("f1", "f2", "f3", "f4"))
+MyPlot(datafunctions[1:2], datafunctions[3:6], c("F1", "F2", "F3", "F4"))
 ```
 
-Si observamos el caso lineal, vemos que las muestras son separables por una línea recta. Esto se debe a que la función que generó el etiquetado ($f(x,y) = y - ax - b$) es lineal.
+Si observamos el caso lineal, vemos que las muestras son separables por una 
+línea recta. Esto se debe a que la función que generó el etiquetado
+($f(x,y) <- y - ax - b$) es lineal.
 
-Las cuatro funciones usadas para el etiquetado en esta ocasión, son __no lineales__, lo cual implica que los datos etiquetados no serán separables por una simple recta. Se necesita una función más compleja que pueda realizar el particionamiento de los datos positivos y negativos.
+Las cuatro funciones usadas para el etiquetado en esta ocasión, son
+__no lineales__, lo cual implica que los datos etiquetados no serán separables
+por una simple recta. Se necesita una función más compleja que pueda realizar el
+particionamiento de los datos positivos y negativos.
 
 ## Ejercicio 8
 
-Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las etiquetas de un 10% aleatorio de muestras positivas y otro 10% aleatorio de negativas.
+Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las
+etiquetas de un 10% aleatorio de muestras positivas y otro 10% aleatorio de
+negativas.
 
 - Visualice los puntos con las nuevas etiquetas y la recta del ejercicio 6
-- En una gráfica a parte visualice de nuevo los mismos puntos pero junto con las funciones del ejercicio 7.
+- En una gráfica a parte visualice de nuevo los mismos puntos pero junto con
+las funciones del ejercicio 7.
 
-Observe las gráficas y diga qué consecuencias extrae del proceso de modificación de etiquetas en el proceso de aprendizaje.
+Observe las gráficas y diga qué consecuencias extrae del proceso de modificación
+de etiquetas en el proceso de aprendizaje.
 
-Para el primer apartado, cambiamos el 10% de las muestras positivas y negativas y obtenemos:
+Para el primer apartado, cambiamos el 10% de las muestras positivas y negativas
+y obtenemos:
 
 ```{r Exercise 8.a}
-getPercentageOfData <- function(x, condition = 1, percentage = .1){
+GetPercentageOfData <- function(x, condition = 1, percentage = .1){
   # Get the percentage of samples that meet condition
   #
   # Args:
@@ -251,23 +302,24 @@ getPercentageOfData <- function(x, condition = 1, percentage = .1){
   #
   # Returns:
   #   Indexes of the percentage of the samples that meet the condition
-  meetCondition = which(x == condition)
+  meetCondition <- which(x == condition)
   sample(meetCondition, length(meetCondition) * percentage)
 }
 
 # Get a 10% of samples labeled with a 1
-indexPositive = getPercentageOfData(datafsign$result)
-noisyDatafSign = datafsign
-noisyDatafSign$result[indexPositive] = -1
+indexPositive <- GetPercentageOfData(datafsign$result)
+noisyDatafSign <- datafsign
+noisyDatafSign$result[indexPositive] <- -1
 
-indexNegative = getPercentageOfData(datafsign$result, -1)
-noisyDatafSign$result[indexNegative] = 1
+indexNegative <- GetPercentageOfData(datafsign$result, -1)
+noisyDatafSign$result[indexNegative] <- 1
 
 # Draw the result
-myPlot(noisyDatafSign[1:2], noisyDatafSign$result,
+MyPlot(noisyDatafSign[1:2],
+       noisyDatafSign$result,
        main = "Points labeled in function of y - m*x - b",
-       xlab = paste(c("m=", m, "line=", line), collapse = " "),
-       sub = paste(c("Interval = ", interval), collapse = " "),
+       xlab = paste(c("m=", m, "line=", line), collapse <- " "),
+       sub  = paste(c("Interval <- ", interval), collapse <- " "),
        ylab = "")
 abline(line,m)
 ```
@@ -276,40 +328,51 @@ La única observación que puede hacerse, es que ahora los datos ya no son separ
 
 ```{r Exercise 8.b}
 # Get a 10% of samples labeled with a 1 in all 4 functions
-indexPositive = lapply(datafunctions[3:6], getPercentageOfData)
-noisyDataFunctions = datafunctions
+indexPositive <- lapply(datafunctions[3:6], GetPercentageOfData)
+noisyDataFunctions <- datafunctions
 # Change 1 by -1
-noisyDataFunctions$f1[indexPositive$f1] = -1
-noisyDataFunctions$f2[indexPositive$f2] = -1
-noisyDataFunctions$f3[indexPositive$f3] = -1
-noisyDataFunctions$f4[indexPositive$f4] = -1
+noisyDataFunctions$F1[indexPositive$F1] <- -1
+noisyDataFunctions$F2[indexPositive$F2] <- -1
+noisyDataFunctions$F3[indexPositive$F3] <- -1
+noisyDataFunctions$F4[indexPositive$F4] <- -1
 
 # Get a 10% of samples labeled with a 1 in all 4 functions
-indexNegative = lapply(datafunctions[3:6], getPercentageOfData, condition = -1)
+indexNegative <- lapply(datafunctions[3:6], GetPercentageOfData, condition = -1)
 # Change -1 by 1
-noisyDataFunctions$f1[indexNegative$f1] = 1
-noisyDataFunctions$f2[indexNegative$f2] = 1
-noisyDataFunctions$f3[indexNegative$f3] = 1
-noisyDataFunctions$f4[indexNegative$f4] = 1
+noisyDataFunctions$F1[indexNegative$F1] <- 1
+noisyDataFunctions$F2[indexNegative$F2] <- 1
+noisyDataFunctions$F3[indexNegative$F3] <- 1
+noisyDataFunctions$F4[indexNegative$F4] <- 1
 
 # Draw the result
-# par(mfrow = c(2,2))
-myPlot(noisyDataFunctions[1:2], noisyDataFunctions[3:6], c("f1", "f2", "f3", "f4"))
+# par(mfrow <- c(2,2))
+MyPlot(noisyDataFunctions[1:2], noisyDataFunctions[3:6],
+       c("F1", "F2", "F3", "F4"))
 ```
 
-En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el valor de las etiquetas por su clase contraria, estamos introduciendo mucho ruido en los datos. Como en el caso anterior, los datos dejan de ser separables y difícilmente se aprenderá algo de este conjunto de datos, ya que las dos clases estás distribuidas uniformemente por todo el espacio.
+En esta ocasión, al igual que en la anterior, al cambiar deliberadamente el
+valor de las etiquetas por su clase contraria, estamos introduciendo mucho
+ruido en los datos. Como en el caso anterior, los datos dejan de ser separables
+y difícilmente se aprenderá algo de este conjunto de datos, ya que las dos
+clases estás distribuidas uniformemente por todo el espacio.
 
 # Ejercicio de Ajuste del Algoritmo Perceptron
 
 ## Ejercicio 1
 
-Implementar la función _sol = ajusta\_PLA(datos, label, max_iter, vini)_ que calcula el hiperplano solución a un problema de clasificación binaria usando el algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta está representado por una fila de la matriz, _label_ el vector de etiquetas (cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_ devuelve los coeficientes del hiperplano. 
+Implementar la función _sol <- ajusta\_PLA(datos, label, max_iter, vini)_ que
+calcula el hiperplano solución a un problema de clasificación binaria usando el
+algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta
+está representado por una fila de la matriz, _label_ el vector de etiquetas
+(cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de
+iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_
+devuelve los coeficientes del hiperplano. 
 
 ```{r Exercise 2.1}
-ajusta_PLA = function(data,
-                      label,
-                      max_iter = 1000,
-                      vini = matrix(0, 1, 3)) {
+AjustaPla <- function(data,
+                       label,
+                       max_iter = 1000,
+                       vini     = matrix(0, 1, 3)) {
   # Get the weight to learn from the data passed as parameter
   # using the 2D Perceptron algorithm
   #
@@ -320,11 +383,12 @@ ajusta_PLA = function(data,
   #   vini: Initial weights
   #
   # Returns:
-  #   The weights learned to adjust the data set and how many iterations it did in a data frame.
-  #   If the PLA did not converged in within max_iter, the currents weights are returned and the iterations
-  #   are set to -1
+  #   The weights learned to adjust the data set and how many iterations it 
+  #   did in a data frame.
+  #   If the PLA did not converged in within max_iter, the currents weights
+  #   are returned and the iterations are set to -1
   
-  get.sign <- function(values){
+  GetSign <- function(values){
     # Return the sign for the values
     #
     # Args:
@@ -335,30 +399,7 @@ ajusta_PLA = function(data,
     return(ifelse(values > 0, 1, -1))
   }
   
-  add_boundary <- function(w, color = 'red') {
-    # Plot decision boundary defined by
-    # a parameter vector w
-
-# As your decision function is simply sgn(w1*x+w2*y+w3) then the decision boundary equation is a line with canonical form w1*x + w2*y + w3 = 0.
-# 
-# |w3|/||w|| is the distance from the origin, w3 itself does not have a good geometrical interpretation (as long as w is not unit-length).
-# 
-# In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
-    
-    w <- as.numeric(w)
-    
-    b = w[1]
-    w1 = w[2]
-    w2 = w[3]
-    
-    slope = -(w1 / w2)
-    intercept = -(b / w2)
-    
-    
-    abline(a = intercept, b = slope, col = color)
-  }
-  
-  converged = F
+  converged <- F
   
   # Add x0
   data <- cbind(rep(1, nrow(data)), data)
@@ -366,8 +407,7 @@ ajusta_PLA = function(data,
   as.matrix(vini)
   
   # Begin the perceptron
-  nIters = 0
-  
+  nIters <- 0
   
   while (!converged && nIters <= max_iter) {
     # while there are mis-classifications
@@ -375,13 +415,13 @@ ajusta_PLA = function(data,
     nIters <- nIters + 1
     
     # Calculate h(x) with the weight vector vini and the data input data
-    h.function <- get.sign(vini %*% t(data))
+    h.function <- GetSign(vini %*% t(data))
     
     # Calculate the misclassified mask
     misclassified.subseting <- h.function != label
     
     if (all(misclassified.subseting == F)) {
-      converged = T
+      converged <- T
     } else {
       # Update the weight vector for a point randomly selected
       
@@ -391,24 +431,27 @@ ajusta_PLA = function(data,
       
       # Get one of them
       misclassified.point.index <- sample(dim(misclassified.points)[1], 1)
-      misclassified.point <- misclassified.points[misclassified.point.index,, drop = F]
-      misclassified.point.label <- misclassified.points.labels[misclassified.point.index]
+      misclassified.point <- misclassified.points[misclassified.point.index,
+                                                  , drop = F]
+      misclassified.point.label <-
+        misclassified.points.labels[misclassified.point.index]
       
       # update the weights
-      vini <- vini + 0.4 %*% misclassified.point.label %*% misclassified.point
+      vini <- vini +  misclassified.point.label %*% misclassified.point
     }
   }
   
-  if (!converged){
-    nIters = -1
+  if (!converged) {
+    nIters <- -1
   }
   
-  data.frame(vini = vini, iter = nIters)
+  data.frame(vini = vini,
+             iter = nIters)
 }
 
-Label.Data <- function(p){
-  # Returns the corresponding label to the data, giving +1/-1 depending on which side
-  # of the line the point lies
+LabelData <- function(p){
+  # Returns the corresponding label to the data, giving +1/-1 depending on
+  # which side of the line the point lies
   #
   # Args:
   #   p: The points to label
@@ -421,7 +464,8 @@ Label.Data <- function(p){
   line[1,2] <- -1
   line[2,2] <- +1
   
-  # Given two points, determine if a point from the data set lies on the -1 side or the 1 side.
+  # Given two points, determine if a point from the data set lies on the -1
+  # side or the 1 side.
   # The points are A, B, the query points (X,Y)
   # The equation is (Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax)
   values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
@@ -430,92 +474,110 @@ Label.Data <- function(p){
   return(ifelse(values > 0, 1, -1))
 }
 
-add_boundary <- function(w, color = 'red') {
+DrawBoundary <- function(w, color = 'red') {
   # Plot decision boundary defined by
   # a parameter vector w
   
+  # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
+  # 
+  # |w3|/||w|| is the distance from the origin, w3 itself does not have a good geometrical interpretation (as long as w is not unit-length).
+  # 
+  # In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
+  
   w <- as.numeric(w)
   
-  b = w[1]
-  w1 = w[2]
-  w2 = w[3]
+  b <- w[1]
+  w1 <- w[2]
+  w2 <- w[3]
   
-  slope = -(w1 / w2)
-  intercept = -(b / w2)
+  slope <- -(w1 / w2)
+  intercept <- -(b / w2)
   
   
-  abline(a = intercept, b = slope, col = color)
+  abline(a   = intercept,
+         b   = slope,
+         col = color)
 }
 
 # Initialize N random points, and Y
 N <- 100
 X <- matrix(runif(N*2, -1, 1), N, 2)
-Y <- Label.Data(X)
+Y <- LabelData(X)
 
 # Run perceptron algorithm
-W <- ajusta_PLA(X, Y)
+W <- AjustaPla(X, Y)
 
-iter = W[4]
-W = as.double(W[-4])
-
-if (iter != -1) {
-  ## PLA converged
+ShowPlaResult <- function(W){
   
-  # Plot the points according to its actual class
-  myPlot(X, Y, main = paste("Perceptron training against N = ", N))
+  iter <- W[4]
+  W <- as.double(W[-4])
   
-  # Plot the learned boundary
-  add_boundary(W)
-  
-  iter
-  
-  # legend(0, -1, c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
-} else {
-  cat("PLA did not converge")
+  if (iter != -1) {
+    ## PLA converged
+    
+    # Plot the points according to its actual class
+    MyPlot(X, Y, main = paste("Perceptron training against N <- ", N))
+    
+    # Plot the learned boundary
+    DrawBoundary(W)
+    
+    # legend(0, -1, c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
+  } else {
+    cat("PLA did not converge")
+  }
 }
+
+ShowPlaResult(W)
 ```
 
 ## Ejercicio 2
 
-Ejecutar el algoritmo PLA con los valores simulados en el apartado 6, inicializando el algoritmo con el vector cero y con vectores de números aleatorios en \[0,1\](10 veces). Anotar el número medio de iteraciones necesarias en ambos para converger. Valorar el resultado.
+Ejecutar el algoritmo PLA con los valores simulados en el apartado 6, inicializando
+el algoritmo con el vector cero y con vectores de números aleatorios en [0,1], (10 veces). 
+Anotar el número medio de iteraciones necesarias en ambos para converger. Valorar el resultado.
 
 ```{r Exercise 2.2}
 
-perceptronData = as.matrix(datafsign[1:2])
-y <- Label.Data(perceptronData)
+perceptronData <- as.matrix(datafsign[1:2])
+y <- LabelData(perceptronData)
 
-pla10TimesWithViniZero = replicate(10, {
-  plaResult = ajusta_PLA(
-    data = perceptronData,
-    label = y)
+pla10TimesWithViniZero <- replicate(10, {
+  plaResult <- AjustaPla(
+    data <- perceptronData,
+    label <- y)
   
   plaResult[4]
 })
 
-pla10TimesWithViniAtRandom = replicate(10, {
-  weights = matrix(runif(3), 1,3)
+pla10TimesWithViniAtRandom <- replicate(10, {
+  weights <- matrix(runif(3, -1, 1), 1,3)
   
-  plaResult = ajusta_PLA(
-    data = perceptronData,
-    label = y,
-    vini = weights)
+  plaResult <- AjustaPla(
+    data <- perceptronData,
+    label <- y,
+    vini <- weights)
   
   plaResult[4]
 })
 
-
-print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ", mean(as.numeric(pla10TimesWithViniZero))))
-print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ", mean(as.numeric(pla10TimesWithViniAtRandom))))
-
+print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ",
+            mean(as.numeric(pla10TimesWithViniZero))))
+print(paste("The mean iterations of execute PLA 10 times with a random vini ",
+            mean(as.numeric(pla10TimesWithViniAtRandom))))
 ```
 
 Por lo general, cuando se inicializa el vector a cero el preceptrón tiende a converger en menos iteraciones
+
 ## Ejercicio 3
 
-Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del ejercicio 4.2 usando valores de 10, 100 y 1000 para _max_iter_. Etiquetar los datos de la muestra usando la función solución encontrada y contar el número de errores respecto de las etiquetas originales. Valorar el resultado.
+Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del ejercicio
+4.2 usando valores de 10, 100 y 1000 para _max_iter_. Etiquetar los datos de la 
+muestra usando la función solución encontrada y contar el número de errores
+respecto de las etiquetas originales. Valorar el resultado.
 
 ```{r Exercise 2.3}
-
+perceptronData <- as.matrix(noisyDatafSign[1:2])
+y <- LabelData(perceptronData)
 ```
 
 ```{r Generate R file, echo=FALSE}
