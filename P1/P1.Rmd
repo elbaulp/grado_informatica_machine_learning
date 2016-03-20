@@ -14,6 +14,12 @@ output:
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# library(parallel)
+# Calculate the number of cores
+# cores.number <- detectCores()
+# Initialize seed
+# clusterSetRNGStream(cl, iseed = 1000000007)
 set.seed(1000000007)
 ```
 
@@ -34,7 +40,7 @@ MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
   } else {
     labels <- "#1A1314"
   }
-  
+
   if (is.null(dim(labels))) {
     plot(data,
          col = labels,
@@ -44,7 +50,7 @@ MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
          ...)
   } else {
     for (i in seq(1, dim(labels)[2])) {
-      plot(data, 
+      plot(data,
            col = unlist(labels[i]),
            main = myMain[i],
            pch = pch,
@@ -181,7 +187,7 @@ Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usan
 ```{r Exercise 6}
 interval <- c(-100, 100)
 # Generate a set of points
-x <- SimulaUnif(100, 2, interval)
+x <- SimulaUnif(500, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -196,6 +202,7 @@ line <- straight[2]
 result <- mapply(fsign, x[,1], x[,2],
                  m = m,
                  b = line)
+
 # Label the result with -1/1
 result <- ifelse(result >= 0, 1, -1)
 
@@ -327,8 +334,12 @@ abline(line,m)
 La única observación que puede hacerse, es que ahora los datos ya no son separables y estamos introduciendo ruido a la muestra.
 
 ```{r Exercise 8.b}
+# Initiate cluster
+# cl <- makeCluster(cores.number, type = "FORK")
 # Get a 10% of samples labeled with a 1 in all 4 functions
+# system.time(positive.index <- parLapply(cl, data.functions[3:6], GetPercentageOfData))
 positive.index <- lapply(data.functions[3:6], GetPercentageOfData)
+
 data.functions.noisy <- data.functions
 # Change 1 by -1
 data.functions.noisy$F1[positive.index$F1] <- -1
@@ -337,7 +348,12 @@ data.functions.noisy$F3[positive.index$F3] <- -1
 data.functions.noisy$F4[positive.index$F4] <- -1
 
 # Get a 10% of samples labeled with a 1 in all 4 functions
+# negative.index <- parLapply(cl, data.functions[3:6], GetPercentageOfData, condition = -1)
 negative.index <- lapply(data.functions[3:6], GetPercentageOfData, condition = -1)
+
+# Free memory of the cluster
+# stopCluster(cl)
+
 # Change -1 by 1
 data.functions.noisy$F1[negative.index$F1] <- 1
 data.functions.noisy$F2[negative.index$F2] <- 1
@@ -490,7 +506,7 @@ AjustaPla <- function(data,
   if (!converged) {
     nIters <- -1
   } else if (visual == T) {
-    DrawBoundary(vini, "#F9CE0C", lwd = 2)
+    DrawBoundary(vini, "#F9CE0C", lwd = 5)
   }
   
   data.frame(vini = vini,
@@ -523,7 +539,7 @@ LabelData <- function(p){
 }
 
 # Initialize N random points, and Y
-n <- 100
+n <- 500
 x <- matrix(runif(n*2, -1, 1), n, 2)
 y <- LabelData(x)
 
@@ -600,10 +616,10 @@ errores respecto de las etiquetas originales. Valorar el resultado.
 
 ```{r Exercise 2.3}
 MyPlot(data.fsign.noisy[1:2], data.fsign.noisy[3])
-perceptron.data <- as.matrix(data.fsign.noisy[1:2])
-y <- LabelData(perceptron.data)
-MyPlot(perceptron.data, labels = y)
-w = AjustaPla(perceptron.data, y, visual = T)
+perceptron.data.noisy <- as.matrix(data.fsign.noisy[1:2])
+# y <- LabelData(perceptron.data.noisy)
+w = AjustaPla(perceptron.data.noisy, data.fsign.noisy[3], visual = T)
+
 ```
 
 ```{r Generate R file, echo=FALSE}
