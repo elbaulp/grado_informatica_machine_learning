@@ -10,6 +10,7 @@ output:
     latex_engine: xelatex
     toc: true
     highlight: zenburn
+    # keep_tex: yes
 ---
 
 ```{r setup, include = FALSE}
@@ -187,7 +188,7 @@ Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usan
 ```{r Exercise 6}
 interval <- c(-100, 100)
 # Generate a set of points
-x <- SimulaUnif(500, 2, interval)
+x <- SimulaUnif(50, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -208,8 +209,8 @@ result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
 data.fsign <- data.frame(x      = x[,1],
-                        y      = x[,2],
-                        result = result)
+                         y      = x[,2],
+                         result = result)
 
 # Draw the result
 MyPlot(data.fsign[1:2],
@@ -263,11 +264,11 @@ result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
 data.functions <- data.frame(x  = x[,1],
-                            y  = x[,2],
-                            F1 = result[1,],
-                            F2 = result[2,],
-                            F3 = result[3,],
-                            F4 = result[4,])
+                             y  = x[,2],
+                             F1 = result[1,],
+                             F2 = result[2,],
+                             F3 = result[3,],
+                             F4 = result[4,])
 
 # Draw the result
 MyPlot(data.functions[1:2], data.functions[3:6], c("F1", "F2", "F3", "F4"))
@@ -387,10 +388,11 @@ devuelve los coeficientes del hiperplano.
 ```{r Exercise 2.1}
 AjustaPla <- function(data,
                       label,
-                      max_iter = 1000,
-                      vini     = matrix(0, 1, 3),
-                      visual = F,
-                      show.last.iter = F) {
+                      max_iter       = 1000,
+                      vini           = matrix(0, 1, 3),
+                      visual         = F,
+                      show.last.iter = F,
+                      memory         = F) {
   # Get the weight to learn from the data passed as parameter
   # using the 2D Perceptron algorithm
   #
@@ -402,6 +404,8 @@ AjustaPla <- function(data,
   #   visual: Draw each hyperplane found
   #   show.last.iter: Draw the last hyperplane found, even when the algorithm
   #     does not converge
+  #   memory: Tells the algorithm if it has to store the best result in each
+  #     iteration in the case of not converging
   #
   # Returns:
   #   The weights learned to adjust the data set and how many iterations it 
@@ -417,7 +421,7 @@ AjustaPla <- function(data,
     #
     # Returns:
     #   The sign of the values
-    return(ifelse(values > 0, 1, -1))
+    return(ifelse(values >= 0, 1, -1))
   }
   
   DrawBoundary <- function(w, color = '#525F7F', ...) {
@@ -449,7 +453,10 @@ AjustaPla <- function(data,
   alpha <- 50
   
   if (visual == T) {
-    MyPlot(data, label)
+    x.lim = max(data) + 50
+    MyPlot(data, label, xlim = c(-x.lim, x.lim), ylim = c(-x.lim, x.lim))
+    # Fix for rmd pdf generation, this put every plot below each other, no overflows
+    cat('\r\n\r\n')
   }
   
   # Add x0
@@ -461,6 +468,8 @@ AjustaPla <- function(data,
   # Begin the perceptron
   nIters <- 0
   
+  vini.best <- vini
+  e.in.best <- nrow(data)
   
   while (!converged && nIters <= max_iter) {
     # while there are mis-classifications
@@ -472,7 +481,7 @@ AjustaPla <- function(data,
     
     # Calculate the misclassified mask
     misclassified.subseting <- h.function != label
-    
+
     if (all(misclassified.subseting == F)) {
       converged <- T
     } else {
@@ -489,8 +498,18 @@ AjustaPla <- function(data,
       misclassified.point.label <-
         misclassified.points.labels[misclassified.point.index]
       
+      # Always store the best of all results
+      if (memory == T && !all(vini == 0)) {
+        e.in.current <- sum(misclassified.subseting)
+        if (e.in.current < e.in.best) {
+          e.in.best <- e.in.current
+          vini.best <- vini
+        }
+      }
+      
       # update the weights
       vini <- vini + misclassified.point.label %*% misclassified.point
+      
       
       if (visual == T) {
         if (alpha >= 128) {
@@ -499,22 +518,38 @@ AjustaPla <- function(data,
         DrawBoundary(vini, rgb(82/255,95/255,127/255, alpha/255))
         alpha <- alpha + 1
       }
+      
     }
   }
-  
+
   if (!converged) {
     nIters <- -1
-    if (show.last.iter == T && visual == T) {
-      DrawBoundary(vini, "#D2372B", lwd = 5)
+    
+    # Return the best solution found in all iterations, not just the last one
+    if (memory == T && !all(vini == 0)) {
+      vini <- vini.best
     }
+    
+    if (show.last.iter == T && visual == T) {
+      DrawBoundary(vini, "#D2372B", lwd = 3)
+      legend('bottomright',
+           c("Last Iter", "PLA History"),
+           lty = c(1,1),
+           lwd = c(2.5,2.5),
+           col = c("#D2372B","#525F7F"))
+    }
+    
   } else if (visual == T) {
-    DrawBoundary(vini, "#F9CE0C", lwd = 5)
+    DrawBoundary(vini, "#F9CE0C", lwd = 3)
     legend('bottomright',
            c("Final", "PLA History"),
            lty = c(1,1),
            lwd = c(2.5,2.5),
            col = c("#F9CE0C","#525F7F"))
   }
+  
+  # return as a unit vector
+  vini <- vini / sqrt(sum(vini * vini))
   
   data.frame(vini = vini,
              iter = nIters)
@@ -588,13 +623,13 @@ Valorar el resultado.
 perceptron.data <- as.matrix(data.fsign[1:2])
 y <- LabelData(perceptron.data)
 
-perceptron.result.10times.weights.zero <- replicate(10, {
+perceptron.result.10times.weights.zero <- replicate(100, {
   perceptron.result <- AjustaPla(data  = perceptron.data,
                                  label = y)
   perceptron.result[4]
 })
 
-perceptron.result.10times.weights.random <- replicate(10, {
+perceptron.result.10times.weights.random <- replicate(100, {
   
   weights <- matrix(runif(3, -1, 1), 1,3)
   
@@ -604,15 +639,22 @@ perceptron.result.10times.weights.random <- replicate(10, {
   perceptron.result[4]
 })
 
-print(paste("The mean iterations of execute PLA 10 times with a vini of 0 is ",
-            mean(as.numeric(perceptron.result.10times.weights.zero))))
-print(paste("The mean iterations of execute PLA 10 times with a random vini ",
-            mean(as.numeric(perceptron.result.10times.weights.random))))
+cat("The mean iterations of execute PLA 100 times with a vini of 0 is",
+    as.character(mean(as.numeric(perceptron.result.10times.weights.zero))),
+    "\nIts sd is ", 
+    as.character(sd(as.numeric(perceptron.result.10times.weights.zero))))
+
+cat("The mean iterations of execute PLA 100 times with a random vini",
+    as.character(mean(as.numeric(perceptron.result.10times.weights.random))),
+    "\nIts sd is ", 
+    as.character(sd(as.numeric(perceptron.result.10times.weights.random))))
 ```
 
-Por lo general, cuando se inicializa el vector a cero el preceptrón tiende a
-converger en menos iteraciones. Todo depende del punto de partida. No importa
-como se inicialce
+Con 1000 iteraciones como máximo, y ejecutándolo 100 veces, no se puede decir 
+nada sobre si el vector inicial afecta al comportamiento del algoritmo. Como 
+se aprecia en la salida, tanto la media como la desviación estándar del número de 
+iteraciones necesarias para converger es similar, ya se inicialize el vector
+a cero o de forma aleatoria.
 
 ## Ejercicio 3
 
@@ -625,6 +667,7 @@ errores respecto de las etiquetas originales. Valorar el resultado.
 # Show the noisy data
 MyPlot(data   = data.fsign.noisy[1:2],
        labels = data.fsign.noisy[3])
+
 perceptron.data.noisy <- as.matrix(data.fsign.noisy[1:2])
 
 #  Parallel version
@@ -639,9 +682,9 @@ perceptron.data.noisy <- as.matrix(data.fsign.noisy[1:2])
 # and draw the result of the last hyperplane calculated
 ws <- mapply(AjustaPla, 
              max_iter = c(10, 100, 1000),
-             MoreArgs = list(data   = perceptron.data.noisy,
-                             label  = data.fsign.noisy[3],
-                             visual = F,
+             MoreArgs = list(data           = perceptron.data.noisy,
+                             label          = data.fsign.noisy[3],
+                             visual         = T,
                              show.last.iter = T))
 ws <- ws[-4,]
     
@@ -679,7 +722,7 @@ cat("Missclassified points with 10 iters: ", error.10.iters)
 cat("Missclassified points with 100 iters: ", error.100.iters)
 cat("Missclassified points with 1000 iters: ", error.1000.iters)
 
-user.input <- readline("Press <return> to continue to the next exercise") 
+# user.input <- readline("Press <return> to continue to the next exercise") 
 ```
 
 En esta ocasión, al haber introducido en uno de los ejercicios ruido en los
@@ -691,9 +734,168 @@ de iteraciones que haga el algoritmo, ya que al no tener memoria, en algunas
 ejecuciones el número de datos mal clasificados puede ser muy bajo para 10 
 iteraciones y muy alto para 1000 iteraciones, y en otras ocasiones al contrario.
 
-```{r Generate R file, echo=FALSE}
-# library(knitr)
-# purl("P1.Rmd")
+## Ejercicio 4
+
+Repetir el análisis del punto anterior usando la primera función del ejercicio 7.
+
+```{r Exercise 2.4}
+MyPlot(data   = data.functions[1:2],
+       labels = data.functions$F1,
+       main   = "The data labeles with the function F1")
+
+perceptron.data <- as.matrix(data.functions[1:2])
+
+ws <- mapply(AjustaPla, 
+             max_iter = c(10, 100, 1000),
+             MoreArgs = list(data           = perceptron.data,
+                             label          = data.functions$F1,
+                             visual         = T,
+                             show.last.iter = T))
+ws <- ws[-4,]
+w.10.iters <- ws[,1]
+w.100.iters <- ws[,2]
+w.1000.iters <- ws[,3]
+
+error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data) != data.functions$F1)
+error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data) != data.functions$F1)
+error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data) != data.functions$F1)
+
+cat("Missclassified points with 10 iters: ", error.10.iters)
+cat("Missclassified points with 100 iters: ", error.100.iters)
+cat("Missclassified points with 1000 iters: ", error.1000.iters)
+
+# user.input <- readline("Press <return> to continue to the next exercise") 
+```
+
+En el ejercicio 7 ya se vio que los datos etiquetados usando la función F1 no 
+son linealmente separables. Nos encontramos por tanto ante el mismo problema
+del ejercicio anterior, el Perceptrón no será capaz de dividir los datos nunca.
+
+## Ejercicio 5
+
+Modique la función `AjustaPla` para que le permita visualizar los datos y
+soluciones que va encontrando a lo largo de las iteraciones. Ejecute con la nueva
+versión el ejercicio 3.
+
+Este ejercicio se hizo sin querer al implementar el algoritmo en el ejercicio 1
+con motivo de tener una ayuda visual y de esta forma ver que se ejecutaba
+correctamente. Se explica a continuación el significado de los parámetros de
+`AjustaPla`:
+
+```{r exercise 2.5, eval=F}
+AjustaPla <- function(data,
+                      label,
+                      max_iter       = 1000,
+                      vini           = matrix(0, 1, 3),
+                      visual         = F,
+                      show.last.iter = F)
+```
+
+Los parámetros relevantes para la visualización son `visual` y `show.last.iter`.
+Si el primero es verdadero, se mostrará una gráfica con todos los hiperplanos
+calculados en cada iteración, y en caso de converger, se mostrará el correcto 
+de otro color. Cuando el algoritmo no converge, pero aún así queremos ver cual
+fue el último hiperplano encontrado, hay que establecer a verdadero el segundo
+parámetro.
+
+Ejecutemos ahora el ejercicio 3 de forma visual:
+
+```{r exercise 2.5b}
+mapply(AjustaPla, 
+             max_iter = c(10, 100, 1000),
+             MoreArgs = list(data           = perceptron.data.noisy,
+                             label          = data.fsign.noisy[3],
+                             visual         = T,
+                             show.last.iter = T))
+```
+
+Como se aprecia en las gráficas, se agotan todas las iteraciones antes de encontrar
+una solución, lo cual es lógico al no ser los datos separables. Debido al
+funcionamiento del perceptrón, que no tiene memoria, el hiperplano que escoja
+será el que calcule en la última iteración, y no el mejor encontrado hasta el 
+momento. El no tener memoria junto a la propiedad estocástica propia del algoritmo, 
+hacen que en distintas ejecuciones se obtengan muy pocos datos mal clasificados,
+mientras que en otras existan muchos datos mal clasificados.
+
+## Ejercicio 6
+
+A la vista de la conducta de las soluciones observada en el apartado anterior, 
+proponga e implemente una modicación de la función original _sol = AjustaPLA\_MOD_
+que permita obtener soluciones razonables sobre datos no linealmente separables. Mostrar
+y valorar el resultado encontrado usando los datos del ejercicio 7.
+
+Para mejorar el algoritmo se ha realizado una pequeña modificación sobre el
+anterior, ahora, se recuerda cual es el hiperplano que clasificaba incorrectamente
+el menor número de puntos, de este modo, si llegamos a la última iteración sin 
+haber encontrado solución, se devolverá el mejor encontrado. La modificación
+es la siguiente:
+
+```{r eval = F}
+best.weight <- vini
+best.e.in <- nrow(data)
+
+current.e.in <- sum(misclassified.subseting)
+
+if (current.e.in < best.e.in) {
+  best.e.in <- current.e.in
+  best.weight <- vini
+}
+```
+
+Veamos primero cómo mejora la solución, para ello, ejecutaremos el algoritmo
+con los mismos números aleatorios dos veces, una con esta mejora, y otra sin ella
+
+```{r}
+MyPlot(perceptron.data, data.fsign[3])
+set.seed(1000000007)
+w.no.memory <- AjustaPla(data           = perceptron.data.noisy,
+                         label          = data.fsign.noisy[3],
+                         visual         = T,
+                         show.last.iter = T)
+set.seed(1000000007)
+w.memory <- AjustaPla(data           = perceptron.data.noisy,
+                      label          = data.fsign.noisy[3],
+                      visual         = T,
+                      show.last.iter = T,
+                      memory         = T)
+```
+
+Como vemos, la línea encontrada es distinta, así como el número de errores cometidos:
+
+```{r}
+sum(GetLabelsFromWeight(w.memory[-4], perceptron.data.noisy) != data.fsign.noisy[3])
+sum(GetLabelsFromWeight(w.no.memory[-4], perceptron.data.noisy) != data.fsign.noisy[3])
+```
+
+Ahora veamos la mejora con respecto a los datos del ejercicio 7:
+
+```{r exercise 2.6}
+perceptron.data <- as.matrix(data.functions[1:2])
+ws <- mapply(AjustaPla, 
+             max_iter = c(10, 100, 1000),
+             MoreArgs = list(data           = perceptron.data,
+                             label          = data.functions$F1,
+                             visual         = T,
+                             show.last.iter = T,
+                             memory = F))
+ws <- ws[-4,]
+w.10.iters <- ws[,1]
+w.100.iters <- ws[,2]
+w.1000.iters <- ws[,3]
+
+error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data) != data.functions$F1)
+error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data) != data.functions$F1)
+error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data) != data.functions$F1)
+
+DrawBoundary(w.1000.iters, 'green')
+
+# MyPlot(perceptron.data, data.functions$F1)
+
+cat("Missclassified points with 10 iters: ", error.10.iters)
+cat("Missclassified points with 100 iters: ", error.100.iters)
+cat("Missclassified points with 1000 iters: ", error.1000.iters)
+
+# user.input <- readline("Press <return> to continue to the next exercise") 
 ```
 
 
@@ -706,3 +908,9 @@ a = info de los 16x16,
 
 cogemos la variable a complementaria, para restarla
 
+
+
+```{r Generate R file, echo=FALSE}
+# library(knitr)
+# purl("P1.Rmd")
+```
