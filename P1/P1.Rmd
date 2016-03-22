@@ -58,6 +58,7 @@ MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
            xlab = xlab,
            ylab = ylab,
            ...)
+      cat("\r\n\r\n") # Fix for pdf generation
     }
   }
 }
@@ -188,7 +189,7 @@ Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usan
 ```{r Exercise 6}
 interval <- c(-100, 100)
 # Generate a set of points
-x <- SimulaUnif(50, 2, interval)
+x <- SimulaUnif(500, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
@@ -453,7 +454,8 @@ AjustaPla <- function(data,
   alpha <- 50
   
   if (visual == T) {
-    x.lim = max(data) + 50
+    max.item = max(data)
+    x.lim = max.item + max.item * .15
     MyPlot(data, label, xlim = c(-x.lim, x.lim), ylim = c(-x.lim, x.lim))
     # Fix for rmd pdf generation, this put every plot below each other, no overflows
     cat('\r\n\r\n')
@@ -877,7 +879,7 @@ ws <- mapply(AjustaPla,
                              label          = data.functions$F1,
                              visual         = T,
                              show.last.iter = T,
-                             memory = F))
+                             memory         = T))
 ws <- ws[-4,]
 w.10.iters <- ws[,1]
 w.100.iters <- ws[,2]
@@ -887,16 +889,21 @@ error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data) != data.f
 error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data) != data.functions$F1)
 error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data) != data.functions$F1)
 
-DrawBoundary(w.1000.iters, 'green')
-
-# MyPlot(perceptron.data, data.functions$F1)
-
 cat("Missclassified points with 10 iters: ", error.10.iters)
 cat("Missclassified points with 100 iters: ", error.100.iters)
 cat("Missclassified points with 1000 iters: ", error.1000.iters)
 
 # user.input <- readline("Press <return> to continue to the next exercise") 
 ```
+
+Como vemos, hay una mejora substancial con respecto al número de errores que 
+comete el algoritmo perceptrón sin memoria, y esta última implementación. Al 
+guardar la mejor solución encontrada hasta el momento, nos aseguramos obtener
+un mejor resultado cuando los datos no son separables.
+
+# Ejercicios sobre Regresión Lineal
+
+
 
 
 ## PAra regresión, images(nivelesdeGrises)
