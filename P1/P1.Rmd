@@ -594,20 +594,21 @@ AjustaPla <- function(data,
              iter = nIters)
 }
 
-LabelData <- function(p){
+LabelData <- function(p, line = NULL){
   # Returns the corresponding label to the data, giving +1/-1 depending on
   # which side of the line the point lies
   #
   # Args:
   #   p: The points to label
+  #   line: If we want to give a line instead of generate one randomly
   #
   # Returns:
-  #   The labels (+1/-1) for the data
+  #   A list with the labels (+1/-1) and the line
   
-  # Initialize a random plane to separate the -1, +1
-  line <- matrix(runif(4, -1, 1), 2, 2)
-  # line[1,2] <- -1
-  # line[2,2] <- +1
+  if (is.null(line)) {
+    # Initialize a random plane to separate the -1, +1
+    line <- matrix(runif(4, -1, 1), 2, 2)
+  }
   
   # Given two points, determine if a point from the data set lies on the -1
   # side or the 1 side.
@@ -616,7 +617,10 @@ LabelData <- function(p){
   values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
     (line[2,2] - line[1,2]) * (p[,1] - line[1,1])
   
-  return(ifelse(values > 0, 1, -1))
+  res = list(labels = ifelse(values > 0, 1, -1), 
+             line = line)
+  
+  return(res)
 }
 
 # Initialize N random points, and Y
@@ -625,7 +629,7 @@ x <- matrix(runif(n*2, -1, 1), n, 2)
 y <- LabelData(x)
 
 # Run perceptron algorithm
-w <- AjustaPla(x, y, visual = T)
+w <- AjustaPla(x, y$labels, visual = T)
 
 ShowPlaResult <- function(w, x, y){
   iter <- w[4]
@@ -660,7 +664,7 @@ Valorar el resultado.
 ```{r Exercise 2.2}
 
 perceptron.data <- as.matrix(data.fsign[1:2])
-y <- LabelData(perceptron.data)
+y <- LabelData(perceptron.data)$labels
 
 perceptron.result.10times.weights.zero <- replicate(100, {
   perceptron.result <- AjustaPla(data  = perceptron.data,
@@ -753,6 +757,7 @@ GetLabelsFromWeight <- function(w, data) {
 }
 
 # this are where the points divided by the perceptron lies
+# TODO, replace with sign
 error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data.noisy) != data.fsign.noisy[3])
 error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data.noisy) != data.fsign.noisy[3])
 error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data.noisy) != data.fsign.noisy[3])
@@ -939,13 +944,12 @@ guardar la mejor solución encontrada hasta el momento, nos aseguramos obtener
 un mejor resultado cuando los datos no son separables.
 
 ```{r reset env}
-tmp <- ls()
-tmp <- tmp[tmp != "MyPlot" &
-           tmp != "DrawBoundary" &
-           tmp != "SimulaUnif" &
-           tmp != "LabelData" &
-           tmp != "GetLabelsFromWeight"]
-rm(list = tmp)
+# tmp <- ls()
+# tmp <- tmp[tmp != "MyPlot" &
+#            tmp != "DrawBoundary" &
+#            tmp != "SimulaUnif" &
+#            tmp != "LabelData"]
+# rm(list = tmp)
 ```
 
 
@@ -1092,6 +1096,14 @@ y <- matrix(data = c(rep(1, ones.length), rep(-1, fives.length)),
             nrow = nrow(X))
 
 w <- RegressLin(X, y)
+plot(X[,-1],
+     pch  = 20, 
+     col  = factor(y),
+     xlab = "Mean Intensity",
+     ylab = "Vertical Symmetry",
+     main = "Mean intensity and Vertical Symmetry")
+legend("bottomright", legend = levels(symmetry.intensity$class),
+       col = unique(symmetry.intensity$class), ncol = 3, pch = 20, bty = "n")
 DrawBoundary(w)
 ```
 
@@ -1106,7 +1118,7 @@ a los cincos que están muy cercanos a la frontera.
 
 En este ejercicio exploramos cómo funciona regresión lineal en problemas de
 clasificación. Para ello generamos datos usando el mismo procedimiento que en
-ejercicios anteriores. Suponemos $\mathcal{X} = [-10, 10]x[-10,10]$ y elegimos
+ejercicios anteriores. Suponemos $\mathcal{X} = [-10, 10]\times [-10,10]$ y elegimos
 muestras aleatorias uniformes dentro de $\mathcal{X}$. La función f en cada
 caso será una recta aleatoria que corta a X y que asigna etiqueta a cada punto
 con el valor de su signo. En cada apartado generamos una muestra y le asignamos
@@ -1119,20 +1131,23 @@ Repetir el experimento 1000 veces y promediar los resultados ¿Qué valor obtien
 para $E_{in}$?
 
 ```{r ex 3.7.1}
-NewDataSet <- function(n, range = c(-10, 10)) {
+NewDataSet <- function(n, range = c(-10, 10), line = NULL) {
   # Generate a new data set from uniform random data in the given range
   # 
   # Args:
   #   n: The size of the data set
   #   range: In which range get the data
+  #   line: If we want to give a line instead of generate one randomly 
   # 
   # Returns:
   #   A matrix with the data labeled by a random plane
   x <- SimulaUnif(n, 2, range)
   x <- cbind(rep(1, n), x)
-  res <- list(x = x)
-  res$y <- LabelData(x)
+  labels.line <- LabelData(x, line = line)
   
+  res <- list(x = x,
+              y = labels.line$labels,
+              line = labels.line$line)
   return(res)
 }
 
@@ -1183,6 +1198,87 @@ cat("Ein mean over 1000 iterations:",
     ". ~",
     as.character(mean(e.in.1000.times) * 100), "%")
 ```
+
+- Fijar el tamaño de la muestra $N = 100$. Usar regresión lineal para encontrar
+g y evaluar $E_{out}$. Para ello generar 1000 puntos nuevos y usarlos para
+estimar el error fuera de la muestra, $E_{out}$ (Porcentaje de puntos mal 
+clasificados). De nuevo, ejecutar el experimento 1000 veces y tomar el promedio.
+¿Qué valor obtiene de $E_{out}$? Valore los resultados.
+
+```{r ex 3.7.2}
+data <- NewDataSet(100)
+x <- data$x
+y <- data$y
+w <- RegressLin(x, y)
+MyPlot(x[,-1], y)
+DrawBoundary(w)
+h.label <- sign(t(w) %*% t(x))
+cat("In sample error: ", sum(h.label != y)/nrow(x))
+
+data <- NewDataSet(1000, line = data$line)
+x <- data$x
+y <- data$y
+MyPlot(x[,-1], y)
+DrawBoundary(w)
+h.label <- sign(t(w) %*% t(x))
+cat("Out of sample error: ", sum(h.label != y)/nrow(x))
+
+e.out.1000.times <- replicate(1000, {
+  data <- NewDataSet(100)
+  x <- data$x
+  y <- data$y
+  w <- RegressLin(x, y)
+  h.label <- sign(t(w) %*% t(x))
+  
+  res <- list(ein = sum(h.label != y)/nrow(x))
+  
+  data <- NewDataSet(1000, line = data$line)
+  x <- data$x
+  y <- data$y
+  h.label <- sign(t(w) %*% t(x))
+  
+  res$eout <- sum(h.label != y)/nrow(x)
+  
+  res
+})
+cat("Ein mean:",
+    as.character(mean(unlist(e.out.1000.times["ein",]))),
+    ". ~",
+    as.character(mean(unlist(e.out.1000.times["ein",])) * 100), "%")
+
+cat("Eout mean:",
+    as.character(mean(unlist(e.out.1000.times["eout",]))),
+    ". ~",
+    as.character(mean(unlist(e.out.1000.times["eout",])) * 100), "%")
+
+```
+
+Cuando se trata de aproximar la función original, hemos de encontar el
+equilibrio entre $E_{out}$ y $E_{in}$. Nos interesa tener
+$E_{out}\approx E_{in}$, pero además también nos interesa un
+$E_{in} \approx 0$. Lo ideal es tener $E_{out}\approx E_{in}$ y que además
+estos valores sean cercanos a cero, pero esto no siempre es posible.
+
+En este caso, al estar jungando con tan pocos datos, 100 para training
+y 1000 para test, tenemos unos valores para $E_{out}$ entorno al 2.5%, y para
+$E_{in}$ en torno al 1.9%. Para conseguir bajar estos valores, y que sigan
+siendo cercanos el uno al otro, es necesario tener una cantidad de datos
+para training que representen lo mejor posible la función f, la real pero
+desconocida. De este modo, conseguiremos ajustar bien los datos, obteniendo
+un $E_{in}$ pequeño y además cercano a $E_{out}$, representando con una mayor
+exactitud por tanto, la función f.
+
+También entra en juego la complejidad de la función f, cuando la f es compleja,
+usaremos un conjunto de hipótesis $\mathcal{H}$ más complejo para obtener un
+$E_{in} \approx 0$, pero para conseguirlo necesitaremos más datos.
+
+Podemos comprobar que efectivamente, que a mayor representación de la f obtenemos
+mejores resultados para ambas medidas, si fijamos los datos para estimar fuera
+de la muestra a 1000, y usamos para calcular $E_{out}$ 10000 datos, los 
+porcentajes de error están en torno a $E_{out} = 1.96\%$ y $E_{in} = 1.83\%$, como
+se aprecia, son mucho más similares entre sí, y más cercanos a cero. Si incrementamos
+10 veces el tamaño de los datos, obtenemos $E_{in} = 1.84465\%$ y $E_{out} = 1.85712\%$
+
 
 
 ## PAra regresión, images(nivelesdeGrises)
