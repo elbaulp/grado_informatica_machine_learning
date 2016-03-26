@@ -606,8 +606,8 @@ LabelData <- function(p){
   
   # Initialize a random plane to separate the -1, +1
   line <- matrix(runif(4, -1, 1), 2, 2)
-  line[1,2] <- -1
-  line[2,2] <- +1
+  # line[1,2] <- -1
+  # line[2,2] <- +1
   
   # Given two points, determine if a point from the data set lies on the -1
   # side or the 1 side.
@@ -745,7 +745,7 @@ GetLabelsFromWeight <- function(w, data) {
   b <- w[1]
   w1 <- w[2]
   w2 <- w[3]
-  
+
   slope <- -(w1 / w2)
   intercept <- -(b / w2)
   
@@ -940,7 +940,11 @@ un mejor resultado cuando los datos no son separables.
 
 ```{r reset env}
 tmp <- ls()
-tmp <- tmp[tmp != "MyPlot"]
+tmp <- tmp[tmp != "MyPlot" &
+           tmp != "DrawBoundary" &
+           tmp != "SimulaUnif" &
+           tmp != "LabelData" &
+           tmp != "GetLabelsFromWeight"]
 rm(list = tmp)
 ```
 
@@ -1025,12 +1029,13 @@ symmetry.intensity <- data.frame(
                                 class = c(rep("1", ones.length),
                                           rep("5", fives.length)))
 
-plot(symmetry.intensity$int, symmetry.intensity$sym,
+plot(symmetry.intensity$sym ~ symmetry.intensity$int,
+     data = symmetry.intensity,
      pch  = 20, 
      col  = symmetry.intensity$class,
      xlab = "Mean Intensity",
      ylab = "Vertical Symmetry",
-     main = "Intensidad media y simetría vertical de los 1 y 5")
+     main = "Mean intensity and Vertical Symmetry")
 legend("bottomright", legend = levels(symmetry.intensity$class),
        col = unique(symmetry.intensity$class), ncol = 3, pch = 20, bty = "n")
 ```
@@ -1064,22 +1069,19 @@ RegressLin <- function(data, labels) {
   # Now compute the pseudoinverse of X
   x.pseudo.inv <- x.inv %*% t(data)
   # Finally, get the weights
-  w <- x.pseudo.inv %*% y
+  w <- x.pseudo.inv %*% labels
   
   return(w)
 }
+```
 
-digits <- read.table("./DigitosZip/zip.train",
-                     quote = "",
-                     comment.char = "",
-                     stringsAsFactors = F)
-digits.test <- read.table("./DigitosZip/zip.test",
-                     quote = "",
-                     comment.char = "",
-                     stringsAsFactors = F)
+## Ejercicio 6
 
+Ajustar un modelo de regresión lineal a los datos de (Intensidad promedio,
+simetría) y pintar la solución con los datos, valorar el resultado.
+
+```{r ex 3.6}
 ones.fives.train <- digits[digits$V1 == 1 | digits$V1 == 5,]
-ones.fives.test <- digits.test[digits.test$V1 == 1 | digits.test$V1 == 5,]
 
 rm(digits)
 
@@ -1090,9 +1092,96 @@ y <- matrix(data = c(rep(1, ones.length), rep(-1, fives.length)),
             nrow = nrow(X))
 
 w <- RegressLin(X, y)
-DrawBoundary(w, "pink")
+DrawBoundary(w)
+```
 
-# t(sign(t(w) %*% t(X)))
+Con los datos que tenemos, el modelo ajusta bastante bien los datos. A
+diferencia del perceptrón, aunque estos datos no son separables, se 
+encuentra una buena solución. 
+
+Quizá se estén sobre ajustando un poco, ya que hay dos puntos correspondientes
+a los cincos que están muy cercanos a la frontera. 
+
+## Ejercicio 7
+
+En este ejercicio exploramos cómo funciona regresión lineal en problemas de
+clasificación. Para ello generamos datos usando el mismo procedimiento que en
+ejercicios anteriores. Suponemos $\mathcal{X} = [-10, 10]x[-10,10]$ y elegimos
+muestras aleatorias uniformes dentro de $\mathcal{X}$. La función f en cada
+caso será una recta aleatoria que corta a X y que asigna etiqueta a cada punto
+con el valor de su signo. En cada apartado generamos una muestra y le asignamos
+etiqueta con la función f generada. En cada ejecución generamos una nueva
+función f.
+
+- Fijar el tamaño de muestra $N = 100$. Usar regresión lineal para encontrar
+$g$ y evaluar $E_{in}$, (el porcentaje de puntos incorrectamente clasificados).
+Repetir el experimento 1000 veces y promediar los resultados ¿Qué valor obtiene
+para $E_{in}$?
+
+```{r ex 3.7.1}
+NewDataSet <- function(n, range = c(-10, 10)) {
+  # Generate a new data set from uniform random data in the given range
+  # 
+  # Args:
+  #   n: The size of the data set
+  #   range: In which range get the data
+  # 
+  # Returns:
+  #   A matrix with the data labeled by a random plane
+  x <- SimulaUnif(n, 2, range)
+  x <- cbind(rep(1, n), x)
+  res <- list(x = x)
+  res$y <- LabelData(x)
+  
+  return(res)
+}
+
+# GetEin <- function(x, w, y) {
+#   # Computes the in sample error
+#   # 
+#   # Args:
+#   #   x: The data
+#   #   w: The weight vector
+#   #   y: The labels for the data
+#   # 
+#   # Returns:
+#   #   The squared in-sample error
+#   if (!is.matrix(x))
+#     x <- as.matrix(x)
+#   if (!is.matrix(w))
+#     w <- as.matrix(w)
+#   if (!is.matrix(y))
+#     y <- as.matrix(y)
+#   
+#   n <- nrow(x)
+#   
+#   1/n * (x %*% w - y) ^ 2
+# }
+
+data <- NewDataSet(100)
+x <- data$x
+y <- data$y
+w <- RegressLin(x, y)
+MyPlot(x[,-1], y)
+DrawBoundary(w)
+h.label <- sign(t(w) %*% t(x))
+sum(h.label != y)/nrow(x)
+
+# TODO, do this for all code, sign
+e.in.1000.times <- replicate(1000, {
+  data <- NewDataSet(100)
+  x <- data$x
+  y <- data$y
+  w <- RegressLin(x, y)
+  h.label <- sign(t(w) %*% t(x))
+
+  sum(h.label != y)/nrow(x)
+})
+
+cat("Ein mean over 1000 iterations:",
+    as.character(mean(e.in.1000.times)),
+    ". ~",
+    as.character(mean(e.in.1000.times) * 100), "%")
 ```
 
 
