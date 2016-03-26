@@ -62,6 +62,37 @@ MyPlot <- function(data, labels = NULL, myMain = NULL, pch = 20, xlab = "x",
     }
   }
 }
+
+DrawBoundary <- function(w, color = '#525F7F', ...) {
+  # Draw the line defined by the weight vector w.
+  #
+  # Thanks to http://stackoverflow.com/a/19069020/1612432 for the explanation:
+  # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision
+  # boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
+  # 
+  # |w3|/||w|| is the distance from the origin, w3 itself does not have a good
+  # geometrical interpretation (as long as w is not unit-length).
+  # 
+  # In order to plot line with such equation you can simply draw a line through
+  # (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
+  # 
+  # Args:
+  #   w: The weight vector
+  #   color: The color of the line to draw
+  w <- as.numeric(w)
+  
+  b <- w[1]
+  w1 <- w[2]
+  w2 <- w[3]
+  
+  slope <- -(w1 / w2)
+  intercept <- -(b / w2)
+  
+  abline(a   = intercept,
+         b   = slope,
+         col = color,
+         ...)
+}
 ```
 
 # Ejercicio de Generación y Visualización de datos
@@ -425,16 +456,22 @@ AjustaPla <- function(data,
     return(ifelse(values >= 0, 1, -1))
   }
   
-  DrawBoundary <- function(w, color = '#525F7F', ...) {
-  # Plot decision boundary defined by
-  # a parameter vector w
-  
-  # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
-  # 
-  # |w3|/||w|| is the distance from the origin, w3 itself does not have a good geometrical interpretation (as long as w is not unit-length).
-  # 
-  # In order to plot line with such equation you can simply draw a line through (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
-  
+  PLADrawBoundary <- function(w, color = '#525F7F', ...) {
+    # Draw the line defined by the weight vector w.
+    #
+    # Thanks to http://stackoverflow.com/a/19069020/1612432 for the explanation:
+    # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision
+    # boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
+    # 
+    # |w3|/||w|| is the distance from the origin, w3 itself does not have a good
+    # geometrical interpretation (as long as w is not unit-length).
+    # 
+    # In order to plot line with such equation you can simply draw a line through
+    # (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
+    # 
+    # Args:
+    #   w: The weight vector
+    #   color: The color of the line to draw
     w <- as.numeric(w)
     
     b <- w[1]
@@ -517,7 +554,7 @@ AjustaPla <- function(data,
         if (alpha >= 128) {
           alpha <- 10
         }
-        DrawBoundary(vini, rgb(82/255,95/255,127/255, alpha/255))
+        PLADrawBoundary(vini, rgb(82/255,95/255,127/255, alpha/255))
         alpha <- alpha + 1
       }
       
@@ -533,7 +570,7 @@ AjustaPla <- function(data,
     }
     
     if (show.last.iter == T && visual == T) {
-      DrawBoundary(vini, "#D2372B", lwd = 3)
+      PLADrawBoundary(vini, "#D2372B", lwd = 3)
       legend('bottomright',
            c("Last Iter", "PLA History"),
            lty = c(1,1),
@@ -542,7 +579,7 @@ AjustaPla <- function(data,
     }
     
   } else if (visual == T) {
-    DrawBoundary(vini, "#F9CE0C", lwd = 3)
+    PLADrawBoundary(vini, "#F9CE0C", lwd = 3)
     legend('bottomright',
            c("Final", "PLA History"),
            lty = c(1,1),
@@ -901,9 +938,162 @@ comete el algoritmo perceptrón sin memoria, y esta última implementación. Al
 guardar la mejor solución encontrada hasta el momento, nos aseguramos obtener
 un mejor resultado cuando los datos no son separables.
 
+```{r reset env}
+tmp <- ls()
+tmp <- tmp[tmp != "MyPlot"]
+rm(list = tmp)
+```
+
+
 # Ejercicios sobre Regresión Lineal
 
+## Ejercicio 2
 
+Leer el fichero _ZipDigits.train_ y visualice las imágenes. Seleccione sólo las 
+instancias de los números 1 y 5. Guárdelas como matrices de tamaño 16x16.
+
+```{r ex 3.2}
+digits <- read.table("./DigitosZip/zip.train",
+                     quote = "",
+                     comment.char = "",
+                     stringsAsFactors = F)
+
+# ones.and.fives <- digits[which( digits$V1 == 5 | digits$V1 == 1) , ]
+ones <- digits[digits$V1 == 1, -1]
+fives <- digits[digits$V1 == 5, -1]
+
+# Thanks to http://stackoverflow.com/a/36196635/1612432
+# Create a list of 16x16 matrix
+ones <- lapply(1:nrow(ones), function(i){matrix(ones[i, ], nrow = 16)})
+fives <- lapply(1:nrow(fives), function(i){matrix(fives[i, ], nrow = 16)})
+
+par(mfrow = c(2,2))
+tmp <- lapply(1:4, function(i){
+  image(matrix(unlist(ones[[i]][, 16:1]),
+               nrow = 16),
+        col = grey.colors(256))
+})
+tmp <- lapply(1:4, function(i){
+  image(matrix(unlist(fives[[i]][, 16:1]),
+               nrow = 16),
+        col = grey.colors(256))
+})
+par(mfrow = c(1,1))
+```
+
+## Ejercicio 3
+
+Para cada matriz de números calcularemos su valor medio y su grado de simetría
+vertical. Para calcular la simetría calculamos la suma del valor absoluto de
+las diferencias en cada píxel entre la imagen original y la imagen que obtenemos
+invertiendo el orden de las columnas. Finalmente le cambiamos el signo.
+
+```{r ex 3.3}
+ones.length <- length(ones)
+fives.length <- length(fives)
+
+ones.mean <- sapply(1:ones.length, function(i) mean(as.double(ones[[i]])))
+fives.mean <- sapply(1:fives.length, function(i) mean(as.double(fives[[i]])))
+
+
+# Compute vertical simmetry
+ones.inverted <- lapply(1:ones.length,
+                        function(i) ones[[i]][, 16:1])
+fives.inverted <- lapply(1:fives.length,
+                        function(i) fives[[i]][, 16:1])
+
+ones.vertical.symmetry <- sapply(1:ones.length,
+                                 function(i) -sum(abs(as.numeric(ones[[i]]) 
+                                             - as.numeric(ones.inverted[[i]]))))
+
+fives.vertical.symmetry <- sapply(1:fives.length,
+                                 function(i) -sum(abs(as.numeric(fives[[i]])
+                                             - as.numeric(fives.inverted[[i]]))))
+```
+
+## Ejercicio 4
+
+Representar en los ejes {X = Intensidad promedio, Y = Simetría} las instancias
+seleccionadas de 1 y 5.
+
+```{r ex 3.4}
+symmetry.intensity <- data.frame(
+                                int = c(ones.mean,
+                                        fives.mean),
+                                sym = c(ones.vertical.symmetry,
+                                        fives.vertical.symmetry),
+                                class = c(rep("1", ones.length),
+                                          rep("5", fives.length)))
+
+plot(symmetry.intensity$int, symmetry.intensity$sym,
+     pch  = 20, 
+     col  = symmetry.intensity$class,
+     xlab = "Mean Intensity",
+     ylab = "Vertical Symmetry",
+     main = "Intensidad media y simetría vertical de los 1 y 5")
+legend("bottomright", legend = levels(symmetry.intensity$class),
+       col = unique(symmetry.intensity$class), ncol = 3, pch = 20, bty = "n")
+```
+
+## Ejercicio 5
+
+Implementar la función _RegressLin(data, label)_ que permita ajustar un modelo
+de regesión lineal (Usar SVD). Los datos de entrada se interpretan igual que 
+en clasificación.
+
+```{r ex 3.5}
+RegressLin <- function(data, labels) {
+  # Fit a Regression model using SVD (Singular Value Decomposition)
+  #
+  # Args:
+  #   data: A matrix with the data (xn, yn)
+  #   labels: The labels corresponding to the data, only binary classification
+  #
+  # Returns:
+  #   The weigths fitting the data using Linear Regression
+  if (!is.matrix(data)) {
+    data <- as.matrix(data)
+  }
+  if (!is.matrix(labels)) {
+    labels <- as.matrix(labels)
+  }
+  # Get the inverse of Xt*X
+  x <- t(data) %*% data
+  duv <- svd(x)
+  x.inv <- duv$v %*% diag(1 / duv$d) %*% t(duv$u)
+  # Now compute the pseudoinverse of X
+  x.pseudo.inv <- x.inv %*% t(data)
+  # Finally, get the weights
+  w <- x.pseudo.inv %*% y
+  
+  return(w)
+}
+
+digits <- read.table("./DigitosZip/zip.train",
+                     quote = "",
+                     comment.char = "",
+                     stringsAsFactors = F)
+digits.test <- read.table("./DigitosZip/zip.test",
+                     quote = "",
+                     comment.char = "",
+                     stringsAsFactors = F)
+
+ones.fives.train <- digits[digits$V1 == 1 | digits$V1 == 5,]
+ones.fives.test <- digits.test[digits.test$V1 == 1 | digits.test$V1 == 5,]
+
+rm(digits)
+
+nrows <- nrow(symmetry.intensity)
+X <- matrix(data  = c(rep(1, nrows), symmetry.intensity$int, symmetry.intensity$sym), 
+             nrow = nrows)
+y <- matrix(data = c(rep(1, ones.length), rep(-1, fives.length)),
+            nrow = nrow(X))
+
+w <- RegressLin(X, y)
+DrawBoundary(w, "pink")
+
+# t(sign(t(w) %*% t(X)))
+```
 
 
 ## PAra regresión, images(nivelesdeGrises)
@@ -914,7 +1104,6 @@ un mejor resultado cuando los datos no son separables.
 a = info de los 16x16, 
 
 cogemos la variable a complementaria, para restarla
-
 
 
 ```{r Generate R file, echo=FALSE}
