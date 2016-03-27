@@ -2,8 +2,8 @@
 title: "Aprendizaje Automático - Práctica 1"
 author: "Alejandro Alcalde"
 date: "March 3, 2016"
-mainfont: Ubuntu Light
-monofont: "Ubuntu Mono"
+# mainfont: Ubuntu Light
+# monofont: "Ubuntu Mono"
 fontsize: 11pt
 output:
   pdf_document:
@@ -474,17 +474,19 @@ AjustaPla <- function(data,
     #   color: The color of the line to draw
     w <- as.numeric(w)
     
-    b <- w[1]
-    w1 <- w[2]
-    w2 <- w[3]
-    
-    slope <- -(w1 / w2)
-    intercept <- -(b / w2)
-    
-    abline(a   = intercept,
-           b   = slope,
-           col = color,
-           ...)
+    if (w[3] != 0) {
+      b <- w[1]
+      w1 <- w[2]
+      w2 <- w[3]
+      
+      slope <- -(w1 / w2)
+      intercept <- -(b / w2)
+      
+      abline(a   = intercept,
+             b   = slope,
+             col = color,
+             ...)
+    }
   }
   
   converged <- F
@@ -944,12 +946,14 @@ guardar la mejor solución encontrada hasta el momento, nos aseguramos obtener
 un mejor resultado cuando los datos no son separables.
 
 ```{r reset env}
-# tmp <- ls()
-# tmp <- tmp[tmp != "MyPlot" &
-#            tmp != "DrawBoundary" &
-#            tmp != "SimulaUnif" &
-#            tmp != "LabelData"]
-# rm(list = tmp)
+tmp <- ls()
+tmp <- tmp[tmp != "MyPlot" &
+           tmp != "DrawBoundary" &
+           tmp != "SimulaUnif" &
+           tmp != "LabelData" &
+           tmp != "AjustaPla" &
+           tmp != "GetPercentageOfData"]
+rm(list = tmp)
 ```
 
 
@@ -1151,28 +1155,6 @@ NewDataSet <- function(n, range = c(-10, 10), line = NULL) {
   return(res)
 }
 
-# GetEin <- function(x, w, y) {
-#   # Computes the in sample error
-#   # 
-#   # Args:
-#   #   x: The data
-#   #   w: The weight vector
-#   #   y: The labels for the data
-#   # 
-#   # Returns:
-#   #   The squared in-sample error
-#   if (!is.matrix(x))
-#     x <- as.matrix(x)
-#   if (!is.matrix(w))
-#     w <- as.matrix(w)
-#   if (!is.matrix(y))
-#     y <- as.matrix(y)
-#   
-#   n <- nrow(x)
-#   
-#   1/n * (x %*% w - y) ^ 2
-# }
-
 data <- NewDataSet(100)
 x <- data$x
 y <- data$y
@@ -1259,36 +1241,91 @@ $E_{out}\approx E_{in}$, pero además también nos interesa un
 $E_{in} \approx 0$. Lo ideal es tener $E_{out}\approx E_{in}$ y que además
 estos valores sean cercanos a cero, pero esto no siempre es posible.
 
-En este caso, al estar jungando con tan pocos datos, 100 para training
-y 1000 para test, tenemos unos valores para $E_{out}$ entorno al 2.5%, y para
-$E_{in}$ en torno al 1.9%. Para conseguir bajar estos valores, y que sigan
+En este caso, al estar jungando con tan pocos datos, $100$ para estimar $E_{in}$
+y $1000$ para $E_{out}$, tenemos unos valores para $E_{out}$ entorno al $2.5\%$, y para
+$E_{in}$ en torno al $1.9\%$. Para conseguir bajar estos valores, y que sigan
 siendo cercanos el uno al otro, es necesario tener una cantidad de datos
-para training que representen lo mejor posible la función f, la real pero
-desconocida. De este modo, conseguiremos ajustar bien los datos, obteniendo
-un $E_{in}$ pequeño y además cercano a $E_{out}$, representando con una mayor
-exactitud por tanto, la función f.
+a estimar dentro de la muestra que representen lo mejor posible la función $f$, 
+la real pero desconocida. De este modo, conseguiremos ajustar bien los datos,
+obteniendo un $E_{in}$ pequeño y además cercano a $E_{out}$, representando con
+una mayor exactitud por tanto, la función $f$.
 
-También entra en juego la complejidad de la función f, cuando la f es compleja,
+También entra en juego la complejidad de la función $f$, cuando la $f$ es compleja,
 usaremos un conjunto de hipótesis $\mathcal{H}$ más complejo para obtener un
 $E_{in} \approx 0$, pero para conseguirlo necesitaremos más datos.
 
-Podemos comprobar que efectivamente, que a mayor representación de la f obtenemos
+Podemos comprobar que efectivamente, a mayor representación de la $f$ obtenemos
 mejores resultados para ambas medidas, si fijamos los datos para estimar fuera
-de la muestra a 1000, y usamos para calcular $E_{out}$ 10000 datos, los 
+de la muestra a $1000$, y usamos para calcular $E_{out}$ $10000$ datos, los 
 porcentajes de error están en torno a $E_{out} = 1.96\%$ y $E_{in} = 1.83\%$, como
 se aprecia, son mucho más similares entre sí, y más cercanos a cero. Si incrementamos
-10 veces el tamaño de los datos, obtenemos $E_{in} = 1.84465\%$ y $E_{out} = 1.85712\%$
+$10$ veces el tamaño de los datos, obtenemos $E_{in} = 1.84465\%$ y $E_{out} = 1.85712\%$
+
+- Ahora fijamos $N = 10$, ajustamos regresión lineal y usamos el vector de pesos
+encontrado como un vector inicial de pesos para PLA. Ejecutar PLA hasta que
+converja a un vector de pesos final que separe completamente la muestra de 
+entrenamiento. Anote el número de iteraciones y repita el experimento 1.000 veces
+¿Cual es valor promedio de iteraciones que tarda PLA en converger? (En cada
+iteración de PLA elija un punto aleatorio del conjunto de mal clasificados). Valore
+los resultados
 
 
+```{r ex 3.7.3}
+perceptron.mean.iter <- replicate(1000, {
+  data <- NewDataSet(10)
+  x <- data$x
+  y <- data$y
+  w <- RegressLin(x, y)
 
-## PAra regresión, images(nivelesdeGrises)
-## Ficheros, read.table(, ..., ...) stringfactor = False.
+    res <- AjustaPla(data = x[,-1],
+            label = y,
+            vini = t(w))
+  
+  res$iter
+})
 
-# EN lugar de trabajar con todas, reducimos a dos caracteristicas, la media de la intensidad, 
+cat("Mean iterations of running PLA 1000 times with w set to the one found
+    by Linear Regression:", mean(perceptron.mean.iter))
+```
 
-a = info de los 16x16, 
+Por lo general, la media de iteraciones de PLA oscila entre las $4$ y $5.5$. En 
+bastantes ocasiones PLA encuentra una solución en una sola iteración. Cosa que
+no es sorprendente, ya que coincide cuando el vector de pesos encontrado por 
+regresión lineal separa completamente los datos. Es por esto que en esas ocasiones
+PLA itera una única vez y devuelve una solución, ya que le estamos pasando el 
+vector de pesos que separa totalmente los datos.
 
-cogemos la variable a complementaria, para restarla
+Sin embargo, el evento que dispara la media de iteraciones sucede cuando el 
+algoritmo de regresión lineal encuentra una solución que no separa por completo
+los datos, es aquí cuando PLA necesita iterar hasta conseguir una solución
+correcta.
+
+## Ejercicio 8
+
+En este ejercicio exploramos el uso de transformaciones no lineales. Consideremos la
+función objetivo $f (x1 , x2 ) = sign(x1^2 + x2^2 − 25,0)$ Generar una muestra
+de entrenamiento de $N = 1000$ puntos a partir de
+$\mathcal{X} = [-10, 10]\times[-10, 10]$ muestreando cada punto $x\in \mathcal{X}$
+uniformemente. Generar las salidas usando el signo de la función en los puntos
+muestreados. Generar ruido sobre las etiquetas cambiando el signo de las salidas
+a un $10\%$ de puntos del conjunto aleatorio generado.
+
+```{r ex 3.8}
+F.sign8 <- function(x1, x2) sign(x1 ^ 2 + x2 ^ 2 - 25)
+
+data <- SimulaUnif(N     = 1000,
+                   dimen = 2,
+                   rango = c(-10, 10))
+y <- mapply(F.sign8, data[,1], data[,2])
+
+# Generate a 10% noise
+noise <- sample(1:length(y), length(y) * .1)
+y[noise] <- -y[noise]
+
+MyPlot(data, labels = y)
+```
+
+- Ajustar 
 
 
 ```{r Generate R file, echo=FALSE}
