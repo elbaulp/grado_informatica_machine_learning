@@ -14,7 +14,7 @@ output:
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = T, cache = T)
 
 # library(parallel)
 # Calculate the number of cores
@@ -1070,6 +1070,7 @@ RegressLin <- function(data, labels) {
   if (!is.matrix(labels)) {
     labels <- as.matrix(labels)
   }
+  
   # Get the inverse of Xt*X
   x <- t(data) %*% data
   duv <- svd(x)
@@ -1316,19 +1317,153 @@ F.sign8 <- function(x1, x2) sign(x1 ^ 2 + x2 ^ 2 - 25)
 data <- SimulaUnif(N     = 1000,
                    dimen = 2,
                    rango = c(-10, 10))
+
 y <- mapply(F.sign8, data[,1], data[,2])
+data <- cbind(rep(1, nrow(data)), data)
+# Generate a 10% noise
+noise <- sample(1:length(y), length(y) * .1)
+y[noise] <- -y[noise]
+
+MyPlot(data[,-1], labels = y, xlim = c(-100, 100), ylim = c(-100, 100))
+```
+
+- Ajustar regresion lineal, para estimar los pesos $w$. Ejecutar el experimento
+$1000$ veces y calcular el valor promedio del error de entrenamiento $E_{in}$.
+Valorar el resultado.
+
+```{r Ex 3.8.1}
+non.separable.linear.regress <- replicate(1000, {
+  data <- SimulaUnif(N     = 1000,
+                     dimen = 2,
+                     rango = c(-10, 10))
+  
+  y <- mapply(F.sign8, data[,1], data[,2])
+  data <- cbind(rep(1, nrow(data)), data)
+  # Generate a 10% noise
+  noise <- sample(1:length(y), length(y) * .1)
+  y[noise] <- -y[noise]
+  w <- RegressLin(data, y)
+  h.label <- sign(t(w) %*% t(data))
+  
+  sum(h.label != y)/nrow(x)
+})
+
+cat("Ein mean:",
+    mean(unlist(non.separable.linear.regress)),
+    ". ~",
+    mean(unlist(non.separable.linear.regress)) * 100, "%")
+```
+
+Con la fórmula usada, los datos no son linealmente separables y por tanto
+regresión lineal no puede encontrar ninguna solución buena. Termina por dejar
+todos los puntos a un lado de la recta y por tanto clasificará mal toda una 
+categoría de datos, en este caso los puntos rojos. Así, $E_{in}$ corresponde 
+con el número de puntos rojos mal clasificados, que como hemos dicho son todos.
+
+Por lo mencionado en el párrafo anterior, el error medio en la muestra está en
+torno al $25\%$, que coincide con el porcentaje total de puntos rojos en la muestra.
+
+- Ahora consideremos $N = 1000$ datos de entrenamiento y el siguiente vector de
+variables: $(1, x_1, x_2, x_1 x_2, x_1^2, x_2^2)$. Ajustar de nuevo regresión
+lineal y calcular el nuevo vector de pesos $\hat{w}$. Mostrar el resultado
+
+```{r ex 3.8.2}
+range <- c(-10, 10)
+data <- SimulaUnif(N     = 1000,
+                   dimen = 2,
+                   rango = range)
+  
+y <- mapply(F.sign8, data[,1], data[,2])
+data <- cbind(data, data[,1] * data[,2], data[,1] ^ 2, data[,2] ^ 2)
+data <- cbind(rep(1, nrow(data)), data)
 
 # Generate a 10% noise
 noise <- sample(1:length(y), length(y) * .1)
 y[noise] <- -y[noise]
 
-MyPlot(data, labels = y)
+w <- RegressLin(data, y)
+labels.with.new.variables <- sign(t(w) %*% t(data))
+labels.with.new.variables[noise] <- -labels.with.new.variables[noise]
+
+MyPlot(data[,c(2,3)], labels = y)
+
+xs <- seq(range[1],range[2],.1)
+ys <- seq(range[1],range[2],.1)
+zs <- outer(xs, ys, 
+            function(x1, x2) w[1] + w[2] * x1 + w[3] * x2 + w[4] * x1 * x2 + w[5] * x1 ^ 2 + w[6] * x2 ^ 2)
+zs2 <- outer(xs, ys, F.sign8)
+
+contour(xs, ys, zs, nlev = 0, add = T, col = "blue", lty = 2)
+contour(xs, ys, zs2, nlev = 0, add = T, col = "green", lty = 2)
 ```
 
-- Ajustar 
+Como vemos, ahora sí que es posible separar los datos, aunque no con una función
+lineal. El $\hat{w}$ calculado mediante regresión es: 
 
 
-```{r Generate R file, echo=FALSE}
+- Repetir el experimento anterior $1000$ veces calculando en cada ocasión el 
+error fuera de la muestra. Para ello generar en cada ejecución $1000$ puntos
+nuevos y valorar sobre ellos la función ajustada. Promediar los valores obtenidos.
+¿Qué valor obtiene? Valorar el resultado.
+
+```{r ex 3.8.3}
+e.out.1000.times <- replicate(1000, {
+  data <- SimulaUnif(N     = 1000,
+                     dimen = 2,
+                     rango = range)
+  
+  y <- mapply(F.sign8, data[,1], data[,2])
+  data <- cbind(data, data[,1] * data[,2], data[,1] ^ 2, data[,2] ^ 2)
+  data <- cbind(rep(1, nrow(data)), data)
+  
+  w <- RegressLin(data, y)
+  labels.with.new.variables <- sign(t(w) %*% t(data))
+  
+  res <- list(ein = sum(labels.with.new.variables != y)/nrow(data))
+  
+  data <- SimulaUnif(N     = 100,
+                     dimen = 2,
+                     rango = range)
+  
+  y <- mapply(F.sign8, data[,1], data[,2])
+  data <- cbind(data, data[,1] * data[,2], data[,1] ^ 2, data[,2] ^ 2)
+  data <- cbind(rep(1, nrow(data)), data)
+  
+  labels.with.new.variables <- sign(t(w) %*% t(data))
+  
+  res$eout <- sum(labels.with.new.variables != y)/nrow(data)
+  
+  res
+})
+
+ein <- mean(unlist(e.out.1000.times["ein",]))
+eout <- mean(unlist(e.out.1000.times["eout",]))
+
+cat("Ein mean:",
+    ein,
+    ". ~",
+    ein * 100, "%")
+
+cat("Eout mean:",
+    eout,
+    ". ~",
+    eout * 100, "%")
+```
+
+Como vemos, el $\hat{w}$ ahora tiene $6$ componentes
+
+```{r}
+w
+```
+
+Ya que ha sido necesario hacer un cambio de espacio para poder separar los datos
+usando regresión lineal. Hasta ahora habíamos tenido porcentajes de errores bajos
+tanto dentro como fuera de la muestra, en esta ocasión han subido entorno al 
+`r ein * 100`$\%$ para $E_{in}$ y el `r eout * 100`$\%$ para $E_{out}$. Aunque 
+es buena señal que sigan teniendo valores cercanos entre ellos, eso significa
+que el muestreo realizado representa con bastante exactitud la función $f$.
+
+```{r Generate R file, echo=FALSE, include = FALSE}
 # library(knitr)
 # purl("P1.Rmd")
 ```
