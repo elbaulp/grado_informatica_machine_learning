@@ -2,8 +2,8 @@
 title: "Aprendizaje Automático - Práctica 1"
 author: "Alejandro Alcalde"
 date: "March 3, 2016"
-# mainfont: Ubuntu Light
-# monofont: "Ubuntu Mono"
+mainfont: Ubuntu Light
+monofont: "Ubuntu Mono"
 fontsize: 11pt
 output:
   pdf_document:
@@ -12,9 +12,8 @@ output:
     highlight: zenburn
     # keep_tex: yes
 ---
-
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = T, cache = T)
+knitr::opts_chunk$set(echo = TRUE)
 
 # library(parallel)
 # Calculate the number of cores
@@ -22,6 +21,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = T, cache = T)
 # Initialize seed
 # clusterSetRNGStream(cl, iseed = 1000000007)
 set.seed(1000000007)
+prompt <- "Press <return> to continue to the next exercise"
 ```
 
 # Funciones de utilidad
@@ -99,9 +99,9 @@ DrawBoundary <- function(w, color = '#525F7F', ...) {
 
 ## Ejercicio 1
 
-Construir una función _lista <- SimulaUnif (N, dim, rango)_ que calcule una 
+*Construir una función _lista <- SimulaUnif (N, dim, rango)_ que calcule una 
 lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números
-aleatorios uniformes en el intervalo _rango_.
+aleatorios uniformes en el intervalo _rango_.*
 
 ```{r Exercise 1}
 SimulaUnif <- function(N, dimen = 1, rango = c(0:1)) {
@@ -117,17 +117,21 @@ SimulaUnif <- function(N, dimen = 1, rango = c(0:1)) {
   array(runif(dimen*N, rango[1], rango[2]),
         dim = c(N, dimen))
 }
+```
 
-SimulaUnif(10, 5, c(10,100))
-SimulaUnif(10, 2)
-SimulaUnif(10)
+Vemos ahora unos cuantos ejemplos de uso de esta función:
+
+```{r}
+head(SimulaUnif(10, 5, c(10,100)), n = 3)
+head(SimulaUnif(10, 2), n = 3)
+head(SimulaUnif(10), n = 3)
 ```
 
 ## Ejercicio 2
 
-Construir una función _lista <- simula_gaus(N, dim, sigma)_ que calcule una
+*Construir una función _lista <- simula_gaus(N, dim, sigma)_ que calcule una
 lista de longitud _N_ de vectores de dimensión _dim_ conteniendo números
-aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.
+aleatorios gaussianos de media 0 y varianza dadas por el vector de _sigma_.*
 
 ```{r Exercise 2}
 SimulaGauss <- function(N, dimen = 1, sig = 1){
@@ -145,29 +149,29 @@ SimulaGauss <- function(N, dimen = 1, sig = 1){
         dim = c(N, dimen))
 }
 
-SimulaGauss(10, 5, c(1,2))
+head(SimulaGauss(10, 5, c(1,2)), n = 3)
 ```
 
 ## Ejercicio 3
 
-Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica
-de la salida de la función correspondiente.
+*Suponer _N=50, dim=2, rango=[-50,+50]_ en cada dimensión. Dibujar una gráfica
+de la salida de la función correspondiente.*
 
 ```{r Exercise 3}
 datos <- SimulaUnif(50, 2, c(-50,50))
-print(datos)
+head(datos, n = 3)
 MyPlot(datos,
-       main = "Gráfica datos de SimulaUnif(50, 2, c(-50,50))")
+       main = "Plot of SimulaUnif(50, 2, c(-50,50))")
 ```
 
 ## Ejercicio 4
 
-Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la
-función correspondiente.
+*Suponer _N=50, dim=2, $\sigma=[5,7]$_ dibujar una gráfica de la salida de la
+función correspondiente.*
 
 ```{r Exercise 4}
 datos <- SimulaGauss(50, 2, c(5,7))
-print(datos)
+head(datos, n = 3)
 MyPlot(datos,
        main = "Gráfica datos de  SimulaGauss(50, 2, c(5,7))",
        type = "b")
@@ -175,7 +179,7 @@ MyPlot(datos,
 
 ## Ejercicio 5
 
-Construir la función _v <- SimulaRecta(intervalo)_ que calcula los parámetros _v <- (a,b)_ de una recta aleatoria, _y <- ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.
+*Construir la función _v <- SimulaRecta(intervalo)_ que calcula los parámetros _v <- (a,b)_ de una recta aleatoria, _y <- ax + b_, que corte al cuadrado _[-50, 50] x [-50, 50]_.*
 
 ```{r Exercise 5}
 
@@ -198,24 +202,26 @@ SimulaRecta <- function(interval = c(-50, 50)){
   # Compute y − y1 <- m(x − x1)
   line <- m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
   
-  c(m, line, thePoints)
+  res <- list(slope  = m,
+              line   = line,
+              points = thePoints)
+  
+  res
 }
 
 interval <- c(-50, 50);
 x <- SimulaUnif(5000, 2, interval);
 
 result <- SimulaRecta(interval)
-m <- result[1]
-print(m)
-line <- result[2]
-print(line)
-data <- array(result[3:6], c(2,2))
+print(result$slope)
+print(result$line)
+data <- array(result$points, c(2,2))
 print(data)
 ```
 
 ## Ejercicio 6
 
-Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usando el signo de la función $f(x,y) <- y - ax - b$ de cada punto a una recta simulada con _SimulaRecta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.
+*Generar una muestra 2D de puntos usando _SimulaUnif_ y etiquetar la muestra usando el signo de la función $f(x,y) <- y - ax - b$ de cada punto a una recta simulada con _SimulaRecta_. Mostrar una gráfica con el resultado de la muestra etiquetada junto con la recta usada para ello.*
 
 ```{r Exercise 6}
 interval <- c(-100, 100)
@@ -224,20 +230,17 @@ x <- SimulaUnif(500, 2, interval)
 
 fsign <- function(x, y, m, b){
   # Function to label a 2D Point
-  y - m * x - b
+  ifelse(y - m * x - b >= 0, 1, -1)
 }
 
 straight <- SimulaRecta(interval)
-m <- straight[1]
-line <- straight[2]
+m <- straight$slope
+line <- straight$line
 
 # Apply fsign to each point of the set, each x,y will be passed to fsign
 result <- mapply(fsign, x[,1], x[,2],
                  m = m,
                  b = line)
-
-# Label the result with -1/1
-result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
 data.fsign <- data.frame(x      = x[,1],
@@ -256,28 +259,28 @@ abline(line,m)
 
 ## Ejercicio 7
 
-Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando el signo de cada una de las siguientes funciones.
+*Usar la muestra generada en el apartado anterior y etiquetarla con +1, -1 usando el signo de cada una de las siguientes funciones.*
 
 - $f(x, y) <- (x - 10)^2 + (y - 20)^2 - 400$
 - $f(x, y) <- 0.5(x + 10)^2 + (y - 20)^2 - 400$
 - $f(x, y) <- 0.5(x - 10)^2 - (y + 20)^2 - 400$
 - $f(x, y) <- y - 20x^2 - 5x + 3$
 
-Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?
+*Visualizar el resultado del etiquetado de cada función junto con su gráfica y comparar el resultado con el caso lineal. ¿Qué consecuencias extrae sobre las regiones positiva y negativa?*
 
 ```{r Exercise 7}
 # Define the functions
 F1 <- function(x, y) {
-  (x - 10) ^ 2 + (y - 20) ^ 2 - 400
+  ifelse( ((x - 10) ^ 2 + (y - 20) ^ 2 - 400 ) >= 0, 1, -1)
 }
 F2 <- function(x, y){
-  0.5 * (x + 10) ^ 2 + (y - 20) ^ 2 - 400
+  ifelse( (0.5 * (x + 10) ^ 2 + (y - 20) ^ 2 - 400) >= 0, 1, -1)
 }
 F3 <- function(x, y){
-  0.5 * (x - 10) ^ 2 - (y + 20) ^ 2 - 400
+  ifelse( (0.5 * (x - 10) ^ 2 - (y + 20) ^ 2 - 400) >= 0, 1, -1)
 }
 F4 <- function(x, y){
-  y - 20 * x ^ 2 - 5 * x + 3
+  ifelse( (y - 20 * x ^ 2 - 5 * x + 3) >= 0, 1, -1)
 }
 
 # Generate a vector of functions
@@ -290,9 +293,6 @@ MultiFun <- function(x, y) {
 
 # Apply the functions
 result <- mapply(MultiFun, x[,1], x[,2])
-
-# Label the results
-result <- ifelse(result >= 0, 1, -1)
 
 # Create a data frame to store the result
 data.functions <- data.frame(x  = x[,1],
@@ -317,18 +317,18 @@ particionamiento de los datos positivos y negativos.
 
 ## Ejercicio 8
 
-Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las
-etiquetas de un 10% aleatorio de muestras positivas y otro 10% aleatorio de
-negativas.
+*Considerar de nuevo la muestra etiquetada en el ejercicio 6. Modifique las
+etiquetas de un $10\%$ aleatorio de muestras positivas y otro $10\%$ aleatorio de
+negativas.*
 
-- Visualice los puntos con las nuevas etiquetas y la recta del ejercicio 6
-- En una gráfica a parte visualice de nuevo los mismos puntos pero junto con
-las funciones del ejercicio 7.
+- *Visualice los puntos con las nuevas etiquetas y la recta del ejercicio 6*
+- *En una gráfica a parte visualice de nuevo los mismos puntos pero junto con
+las funciones del ejercicio 7.*
 
-Observe las gráficas y diga qué consecuencias extrae del proceso de modificación
-de etiquetas en el proceso de aprendizaje.
+*Observe las gráficas y diga qué consecuencias extrae del proceso de modificación
+de etiquetas en el proceso de aprendizaje.*
 
-Para el primer apartado, cambiamos el 10% de las muestras positivas y negativas
+Para el primer apartado, cambiamos el $10\%$ de las muestras positivas y negativas
 y obtenemos:
 
 ```{r Exercise 8.a}
@@ -364,7 +364,8 @@ MyPlot(data.fsign.noisy[1:2],
 abline(line,m)
 ```
 
-La única observación que puede hacerse, es que ahora los datos ya no son separables y estamos introduciendo ruido a la muestra.
+La única observación que puede hacerse, es que ahora los datos ya no son 
+separables y estamos introduciendo ruido a la muestra.
 
 ```{r Exercise 8.b}
 # Initiate cluster
@@ -409,13 +410,13 @@ clases estás distribuidas uniformemente por todo el espacio.
 
 ## Ejercicio 1
 
-Implementar la función _sol <- ajusta\_PLA(datos, label, max_iter, vini)_ que
+*Implementar la función _sol <- ajusta\_PLA(datos, label, max_iter, vini)_ que
 calcula el hiperplano solución a un problema de clasificación binaria usando el
 algoritmo PLA. La entrada _datos_ es una matriz donde cada item con su etiqueta
 está representado por una fila de la matriz, _label_ el vector de etiquetas
 (cada etiqueta es un valor +1 o -1), _max\_iter_ es el número máximo de
 iteraciones permitidas y _vini_ el valor inicial del vector. La salida _sol_
-devuelve los coeficientes del hiperplano. 
+devuelve los coeficientes del hiperplano.*
 
 ```{r Exercise 2.1}
 AjustaPla <- function(data,
@@ -622,7 +623,7 @@ LabelData <- function(p, line = NULL){
   res = list(labels = ifelse(values > 0, 1, -1), 
              line = line)
   
-  return(res)
+  res
 }
 
 # Initialize N random points, and Y
@@ -632,39 +633,18 @@ y <- LabelData(x)
 
 # Run perceptron algorithm
 w <- AjustaPla(x, y$labels, visual = T)
-
-ShowPlaResult <- function(w, x, y){
-  iter <- w[4]
-  w <- as.double(w[-4])
-  
-  if (iter != -1) {
-    ## PLA converged
-    
-    # Plot the points according to its actual class
-    MyPlot(x, y, main = paste("Perceptron training against N <- ", n))
-    
-    # Plot the learned boundary
-    # DrawBoundary(w)
-    # legend('bottomright', c("Exact", "Learned"), lty=c(1,1), lwd=c(2.5,2.5),col=c("green","red"))
-  } else {
-    cat("PLA did not converge")
-  }
-}
-
-# ShowPlaResult(w, x, y)
 ```
 
 ## Ejercicio 2
 
-Ejecutar el algoritmo PLA con los valores simulados en el apartado 6,
+*Ejecutar el algoritmo PLA con los valores simulados en el apartado 6,
 inicializando el algoritmo con el vector cero y con vectores de números
-aleatorios en [0,1], (10 veces). 
+aleatorios en $[0,1]$, ($10$ veces).*
 
-Anotar el número medio de iteraciones necesarias en ambos para converger.
-Valorar el resultado.
+*Anotar el número medio de iteraciones necesarias en ambos para converger.
+Valorar el resultado.*
 
 ```{r Exercise 2.2}
-
 perceptron.data <- as.matrix(data.fsign[1:2])
 y <- LabelData(perceptron.data)$labels
 
@@ -684,15 +664,20 @@ perceptron.result.10times.weights.random <- replicate(100, {
   perceptron.result[4]
 })
 
+mean.w.zero <- mean(as.numeric(perceptron.result.10times.weights.zero))
+sd.w.zero <- sd(as.numeric(perceptron.result.10times.weights.zero))
+mean.w.random <- mean(as.numeric(perceptron.result.10times.weights.random))
+sd.w.random <- sd(as.numeric(perceptron.result.10times.weights.random))
+  
 cat("The mean iterations of execute PLA 100 times with a vini of 0 is",
-    as.character(mean(as.numeric(perceptron.result.10times.weights.zero))),
+    mean.w.zero,
     "\nIts sd is ", 
-    as.character(sd(as.numeric(perceptron.result.10times.weights.zero))))
+    sd.w.zero)
 
 cat("The mean iterations of execute PLA 100 times with a random vini",
-    as.character(mean(as.numeric(perceptron.result.10times.weights.random))),
+    mean.w.random,
     "\nIts sd is ", 
-    as.character(sd(as.numeric(perceptron.result.10times.weights.random))))
+    sd.w.random)
 ```
 
 Con 1000 iteraciones como máximo, y ejecutándolo 100 veces, no se puede decir 
@@ -703,10 +688,10 @@ a cero o de forma aleatoria.
 
 ## Ejercicio 3
 
-Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del
-ejercicio 4.2 usando valores de 10, 100 y 1000 para _max_iter_. Etiquetar los
+*Ejecutar el algoritmo PLA con los datos generados en el apartado 8 del
+ejercicio 4.2 usando valores de $10$, $100$ y $1000$ para _max_iter_. Etiquetar los
 datos de la muestra usando la función solución encontrada y contar el número de
-errores respecto de las etiquetas originales. Valorar el resultado.
+errores respecto de las etiquetas originales. Valorar el resultado.*
 
 ```{r Exercise 2.3}
 # Show the noisy data
@@ -733,36 +718,15 @@ ws <- mapply(AjustaPla,
                              show.last.iter = T))
 ws <- ws[-4,]
     
-w.10.iters <- ws[,1]
-w.100.iters <- ws[,2]
-w.1000.iters <- ws[,3]
+w.10.iters <- as.matrix(unlist(ws[,1]))
+w.100.iters <- as.matrix(unlist(ws[,2]))
+w.1000.iters <- as.matrix(unlist(ws[,3]))
+perceptron.data.noisy <- cbind(rep(1, nrow(perceptron.data.noisy)), perceptron.data.noisy)
 
-GetLabelsFromWeight <- function(w, data) {
-  # Get the labels asociated with the hyperplane passed in as parameter.
-  #
-  # Args:
-  #   data: A matrix with the data (xn, yn)
-  #   w: Weights from which decide if a point lies on one side or another
-  #
-  # Returns:
-  #   A vector with labels for the data
-  w <- as.numeric(w)
-  
-  b <- w[1]
-  w1 <- w[2]
-  w2 <- w[3]
-
-  slope <- -(w1 / w2)
-  intercept <- -(b / w2)
-  
-  ifelse(slope * data[,1] + intercept - data[,2] >= 0, 1, -1)
-}
-
-# this are where the points divided by the perceptron lies
-# TODO, replace with sign
-error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data.noisy) != data.fsign.noisy[3])
-error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data.noisy) != data.fsign.noisy[3])
-error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data.noisy) != data.fsign.noisy[3])
+# Compute how many points are miss classified
+error.10.iters <- sum(as.numeric(sign(t(w.10.iters) %*% t(perceptron.data.noisy))) != data.fsign.noisy[3])
+error.100.iters <- sum(as.numeric(sign(t(w.100.iters) %*% t(perceptron.data.noisy))) != data.fsign.noisy[3])
+error.1000.iters <- sum(as.numeric(sign(t(w.1000.iters) %*% t(perceptron.data.noisy))) != data.fsign.noisy[3])
 
 cat("Missclassified points with 10 iters: ", error.10.iters)
 cat("Missclassified points with 100 iters: ", error.100.iters)
@@ -782,7 +746,7 @@ iteraciones y muy alto para 1000 iteraciones, y en otras ocasiones al contrario.
 
 ## Ejercicio 4
 
-Repetir el análisis del punto anterior usando la primera función del ejercicio 7.
+*Repetir el análisis del punto anterior usando la primera función del ejercicio 7.*
 
 ```{r Exercise 2.4}
 MyPlot(data   = data.functions[1:2],
@@ -798,13 +762,14 @@ ws <- mapply(AjustaPla,
                              visual         = T,
                              show.last.iter = T))
 ws <- ws[-4,]
-w.10.iters <- ws[,1]
-w.100.iters <- ws[,2]
-w.1000.iters <- ws[,3]
+w.10.iters <- as.matrix(unlist(ws[,1]))
+w.100.iters <- as.matrix(unlist(ws[,2]))
+w.1000.iters <- as.matrix(unlist(ws[,3]))
+perceptron.data <- cbind(rep(1, nrow(perceptron.data)), perceptron.data)
 
-error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data) != data.functions$F1)
-error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data) != data.functions$F1)
-error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data) != data.functions$F1)
+error.10.iters <- sum(as.numeric(sign(t(w.10.iters) %*% t(perceptron.data))) != data.functions$F1)
+error.100.iters <- sum(as.numeric(sign(t(w.100.iters) %*% t(perceptron.data))) != data.functions$F1)
+error.1000.iters <- sum(as.numeric(sign(t(w.1000.iters) %*% t(perceptron.data))) != data.functions$F1)
 
 cat("Missclassified points with 10 iters: ", error.10.iters)
 cat("Missclassified points with 100 iters: ", error.100.iters)
@@ -819,9 +784,9 @@ del ejercicio anterior, el Perceptrón no será capaz de dividir los datos nunca
 
 ## Ejercicio 5
 
-Modique la función `AjustaPla` para que le permita visualizar los datos y
+*Modique la función `AjustaPla` para que le permita visualizar los datos y
 soluciones que va encontrando a lo largo de las iteraciones. Ejecute con la nueva
-versión el ejercicio 3.
+versión el ejercicio 3.*
 
 Este ejercicio se hizo sin querer al implementar el algoritmo en el ejercicio 1
 con motivo de tener una ayuda visual y de esta forma ver que se ejecutaba
@@ -849,7 +814,7 @@ Ejecutemos ahora el ejercicio 3 de forma visual:
 ```{r exercise 2.5b}
 mapply(AjustaPla, 
              max_iter = c(10, 100, 1000),
-             MoreArgs = list(data           = perceptron.data.noisy,
+             MoreArgs = list(data           = perceptron.data.noisy[,-1],
                              label          = data.fsign.noisy[3],
                              visual         = T,
                              show.last.iter = T))
@@ -865,10 +830,10 @@ mientras que en otras existan muchos datos mal clasificados.
 
 ## Ejercicio 6
 
-A la vista de la conducta de las soluciones observada en el apartado anterior, 
+*A la vista de la conducta de las soluciones observada en el apartado anterior, 
 proponga e implemente una modicación de la función original _sol = AjustaPLA\_MOD_
 que permita obtener soluciones razonables sobre datos no linealmente separables. Mostrar
-y valorar el resultado encontrado usando los datos del ejercicio 7.
+y valorar el resultado encontrado usando los datos del ejercicio 7.*
 
 Para mejorar el algoritmo se ha realizado una pequeña modificación sobre el
 anterior, ahora, se recuerda cual es el hiperplano que clasificaba incorrectamente
@@ -892,14 +857,14 @@ Veamos primero cómo mejora la solución, para ello, ejecutaremos el algoritmo
 con los mismos números aleatorios dos veces, una con esta mejora, y otra sin ella
 
 ```{r}
-MyPlot(perceptron.data, data.fsign[3])
-set.seed(1000000007)
-w.no.memory <- AjustaPla(data           = perceptron.data.noisy,
+MyPlot(perceptron.data[,-1], data.fsign[3])
+set.seed(1000000009)
+w.no.memory <- AjustaPla(data           = perceptron.data.noisy[,-1],
                          label          = data.fsign.noisy[3],
                          visual         = T,
                          show.last.iter = T)
-set.seed(1000000007)
-w.memory <- AjustaPla(data           = perceptron.data.noisy,
+set.seed(1000000009)
+w.memory <- AjustaPla(data           = perceptron.data.noisy[,-1],
                       label          = data.fsign.noisy[3],
                       visual         = T,
                       show.last.iter = T,
@@ -909,29 +874,36 @@ w.memory <- AjustaPla(data           = perceptron.data.noisy,
 Como vemos, la línea encontrada es distinta, así como el número de errores cometidos:
 
 ```{r}
-sum(GetLabelsFromWeight(w.memory[-4], perceptron.data.noisy) != data.fsign.noisy[3])
-sum(GetLabelsFromWeight(w.no.memory[-4], perceptron.data.noisy) != data.fsign.noisy[3])
+w.memory <- as.matrix(w.memory)
+w.no.memory <- as.matrix(w.no.memory)
+
+error.w.memory <- 
+  sum(as.numeric(sign(t(w.memory[-4]) %*% t(perceptron.data.noisy))) != data.fsign.noisy[3])
+error.w.no.memory <- 
+  sum(as.numeric(sign(t(w.no.memory[-4]) %*% t(perceptron.data.noisy))) != data.fsign.noisy[3])
 ```
+
+Cometiendo el algoritmo con memoria `r error.w.memory` fallos y sin memoria
+`r error.w.no.memory`. Una mejora bastante sustancial.
 
 Ahora veamos la mejora con respecto a los datos del ejercicio 7:
 
 ```{r exercise 2.6}
-perceptron.data <- as.matrix(data.functions[1:2])
 ws <- mapply(AjustaPla, 
              max_iter = c(10, 100, 1000),
-             MoreArgs = list(data           = perceptron.data,
+             MoreArgs = list(data           = as.matrix(data.functions[1:2]),
                              label          = data.functions$F1,
                              visual         = T,
                              show.last.iter = T,
                              memory         = T))
 ws <- ws[-4,]
-w.10.iters <- ws[,1]
-w.100.iters <- ws[,2]
-w.1000.iters <- ws[,3]
+w.10.iters <- as.matrix(unlist(ws[,1]))
+w.100.iters <- as.matrix(unlist(ws[,2]))
+w.1000.iters <- as.matrix(unlist(ws[,3]))
 
-error.10.iters <- sum(GetLabelsFromWeight(w.10.iters, perceptron.data) != data.functions$F1)
-error.100.iters <- sum(GetLabelsFromWeight(w.100.iters, perceptron.data) != data.functions$F1)
-error.1000.iters <- sum(GetLabelsFromWeight(w.1000.iters, perceptron.data) != data.functions$F1)
+error.10.iters <- sum(as.numeric(sign(t(w.10.iters) %*% t(perceptron.data))) != data.functions$F1)
+error.100.iters <- sum(as.numeric(sign(t(w.100.iters) %*% t(perceptron.data))) != data.functions$F1)
+error.1000.iters <- sum(as.numeric(sign(t(w.1000.iters) %*% t(perceptron.data))) != data.functions$F1)
 
 cat("Missclassified points with 10 iters: ", error.10.iters)
 cat("Missclassified points with 100 iters: ", error.100.iters)
@@ -945,7 +917,7 @@ comete el algoritmo perceptrón sin memoria, y esta última implementación. Al
 guardar la mejor solución encontrada hasta el momento, nos aseguramos obtener
 un mejor resultado cuando los datos no son separables.
 
-```{r reset env}
+```{r reset env, echo = FALSE}
 tmp <- ls()
 tmp <- tmp[tmp != "MyPlot" &
            tmp != "DrawBoundary" &
@@ -961,8 +933,8 @@ rm(list = tmp)
 
 ## Ejercicio 2
 
-Leer el fichero _ZipDigits.train_ y visualice las imágenes. Seleccione sólo las 
-instancias de los números 1 y 5. Guárdelas como matrices de tamaño 16x16.
+*Leer el fichero _ZipDigits.train_ y visualice las imágenes. Seleccione sólo las 
+instancias de los números 1 y 5. Guárdelas como matrices de tamaño 16x16.*
 
 ```{r ex 3.2}
 digits <- read.table("./DigitosZip/zip.train",
@@ -995,10 +967,10 @@ par(mfrow = c(1,1))
 
 ## Ejercicio 3
 
-Para cada matriz de números calcularemos su valor medio y su grado de simetría
+*Para cada matriz de números calcularemos su valor medio y su grado de simetría
 vertical. Para calcular la simetría calculamos la suma del valor absoluto de
 las diferencias en cada píxel entre la imagen original y la imagen que obtenemos
-invertiendo el orden de las columnas. Finalmente le cambiamos el signo.
+invertiendo el orden de las columnas. Finalmente le cambiamos el signo.*
 
 ```{r ex 3.3}
 ones.length <- length(ones)
@@ -1025,8 +997,8 @@ fives.vertical.symmetry <- sapply(1:fives.length,
 
 ## Ejercicio 4
 
-Representar en los ejes {X = Intensidad promedio, Y = Simetría} las instancias
-seleccionadas de 1 y 5.
+*Representar en los ejes {X = Intensidad promedio, Y = Simetría} las instancias
+seleccionadas de 1 y 5.*
 
 ```{r ex 3.4}
 symmetry.intensity <- data.frame(
@@ -1050,9 +1022,9 @@ legend("bottomright", legend = levels(symmetry.intensity$class),
 
 ## Ejercicio 5
 
-Implementar la función _RegressLin(data, label)_ que permita ajustar un modelo
+*Implementar la función _RegressLin(data, label)_ que permita ajustar un modelo
 de regesión lineal (Usar SVD). Los datos de entrada se interpretan igual que 
-en clasificación.
+en clasificación.*
 
 ```{r ex 3.5}
 RegressLin <- function(data, labels) {
@@ -1080,14 +1052,14 @@ RegressLin <- function(data, labels) {
   # Finally, get the weights
   w <- x.pseudo.inv %*% labels
   
-  return(w)
+  w
 }
 ```
 
 ## Ejercicio 6
 
-Ajustar un modelo de regresión lineal a los datos de (Intensidad promedio,
-simetría) y pintar la solución con los datos, valorar el resultado.
+*Ajustar un modelo de regresión lineal a los datos de (Intensidad promedio,
+simetría) y pintar la solución con los datos, valorar el resultado.*
 
 ```{r ex 3.6}
 ones.fives.train <- digits[digits$V1 == 1 | digits$V1 == 5,]
@@ -1121,19 +1093,19 @@ a los cincos que están muy cercanos a la frontera.
 
 ## Ejercicio 7
 
-En este ejercicio exploramos cómo funciona regresión lineal en problemas de
+*En este ejercicio exploramos cómo funciona regresión lineal en problemas de
 clasificación. Para ello generamos datos usando el mismo procedimiento que en
 ejercicios anteriores. Suponemos $\mathcal{X} = [-10, 10]\times [-10,10]$ y elegimos
 muestras aleatorias uniformes dentro de $\mathcal{X}$. La función f en cada
 caso será una recta aleatoria que corta a X y que asigna etiqueta a cada punto
 con el valor de su signo. En cada apartado generamos una muestra y le asignamos
 etiqueta con la función f generada. En cada ejecución generamos una nueva
-función f.
+función f.*
 
-- Fijar el tamaño de muestra $N = 100$. Usar regresión lineal para encontrar
+- *Fijar el tamaño de muestra $N = 100$. Usar regresión lineal para encontrar
 $g$ y evaluar $E_{in}$, (el porcentaje de puntos incorrectamente clasificados).
 Repetir el experimento 1000 veces y promediar los resultados ¿Qué valor obtiene
-para $E_{in}$?
+para $E_{in}$?*
 
 ```{r ex 3.7.1}
 NewDataSet <- function(n, range = c(-10, 10), line = NULL) {
@@ -1153,7 +1125,7 @@ NewDataSet <- function(n, range = c(-10, 10), line = NULL) {
   res <- list(x = x,
               y = labels.line$labels,
               line = labels.line$line)
-  return(res)
+  res
 }
 
 data <- NewDataSet(100)
@@ -1165,7 +1137,6 @@ DrawBoundary(w)
 h.label <- sign(t(w) %*% t(x))
 sum(h.label != y)/nrow(x)
 
-# TODO, do this for all code, sign
 e.in.1000.times <- replicate(1000, {
   data <- NewDataSet(100)
   x <- data$x
@@ -1177,16 +1148,16 @@ e.in.1000.times <- replicate(1000, {
 })
 
 cat("Ein mean over 1000 iterations:",
-    as.character(mean(e.in.1000.times)),
+    mean(e.in.1000.times),
     ". ~",
-    as.character(mean(e.in.1000.times) * 100), "%")
+    mean(e.in.1000.times) * 100, "%")
 ```
 
-- Fijar el tamaño de la muestra $N = 100$. Usar regresión lineal para encontrar
+- *Fijar el tamaño de la muestra $N = 100$. Usar regresión lineal para encontrar
 g y evaluar $E_{out}$. Para ello generar 1000 puntos nuevos y usarlos para
 estimar el error fuera de la muestra, $E_{out}$ (Porcentaje de puntos mal 
 clasificados). De nuevo, ejecutar el experimento 1000 veces y tomar el promedio.
-¿Qué valor obtiene de $E_{out}$? Valore los resultados.
+¿Qué valor obtiene de $E_{out}$? Valore los resultados.*
 
 ```{r ex 3.7.2}
 data <- NewDataSet(100)
@@ -1224,16 +1195,19 @@ e.out.1000.times <- replicate(1000, {
   
   res
 })
+
+ein.percentaje <- mean(unlist(e.out.1000.times["ein",])) * 100
+eout.percentaje <- mean(unlist(e.out.1000.times["eout",])) * 100
+
 cat("Ein mean:",
-    as.character(mean(unlist(e.out.1000.times["ein",]))),
+    mean(unlist(e.out.1000.times["ein",])),
     ". ~",
-    as.character(mean(unlist(e.out.1000.times["ein",])) * 100), "%")
+    ein.percentaje, "%")
 
 cat("Eout mean:",
-    as.character(mean(unlist(e.out.1000.times["eout",]))),
+    mean(unlist(e.out.1000.times["eout",])),
     ". ~",
-    as.character(mean(unlist(e.out.1000.times["eout",])) * 100), "%")
-
+    eout.percentaje, "%")
 ```
 
 Cuando se trata de aproximar la función original, hemos de encontar el
@@ -1243,8 +1217,8 @@ $E_{in} \approx 0$. Lo ideal es tener $E_{out}\approx E_{in}$ y que además
 estos valores sean cercanos a cero, pero esto no siempre es posible.
 
 En este caso, al estar jungando con tan pocos datos, $100$ para estimar $E_{in}$
-y $1000$ para $E_{out}$, tenemos unos valores para $E_{out}$ entorno al $2.5\%$, y para
-$E_{in}$ en torno al $1.9\%$. Para conseguir bajar estos valores, y que sigan
+y $1000$ para $E_{out}$, tenemos unos valores para $E_{out}$ entorno al $`r eout.percentaje`\%$, y para
+$E_{in}$ en torno al $`r ein.percentaje`\%$. Para conseguir bajar estos valores, y que sigan
 siendo cercanos el uno al otro, es necesario tener una cantidad de datos
 a estimar dentro de la muestra que representen lo mejor posible la función $f$, 
 la real pero desconocida. De este modo, conseguiremos ajustar bien los datos,
@@ -1262,13 +1236,13 @@ porcentajes de error están en torno a $E_{out} = 1.96\%$ y $E_{in} = 1.83\%$, c
 se aprecia, son mucho más similares entre sí, y más cercanos a cero. Si incrementamos
 $10$ veces el tamaño de los datos, obtenemos $E_{in} = 1.84465\%$ y $E_{out} = 1.85712\%$
 
-- Ahora fijamos $N = 10$, ajustamos regresión lineal y usamos el vector de pesos
+- *Ahora fijamos $N = 10$, ajustamos regresión lineal y usamos el vector de pesos
 encontrado como un vector inicial de pesos para PLA. Ejecutar PLA hasta que
 converja a un vector de pesos final que separe completamente la muestra de 
 entrenamiento. Anote el número de iteraciones y repita el experimento 1.000 veces
 ¿Cual es valor promedio de iteraciones que tarda PLA en converger? (En cada
 iteración de PLA elija un punto aleatorio del conjunto de mal clasificados). Valore
-los resultados
+los resultados*
 
 
 ```{r ex 3.7.3}
@@ -1303,13 +1277,13 @@ correcta.
 
 ## Ejercicio 8
 
-En este ejercicio exploramos el uso de transformaciones no lineales. Consideremos la
-función objetivo $f (x1 , x2 ) = sign(x1^2 + x2^2 − 25,0)$ Generar una muestra
+*En este ejercicio exploramos el uso de transformaciones no lineales. Consideremos la
+función objetivo $f (x1 , x2 ) = sign(x_1^2 + x_2^2 − 25,0)$ Generar una muestra
 de entrenamiento de $N = 1000$ puntos a partir de
 $\mathcal{X} = [-10, 10]\times[-10, 10]$ muestreando cada punto $x\in \mathcal{X}$
 uniformemente. Generar las salidas usando el signo de la función en los puntos
 muestreados. Generar ruido sobre las etiquetas cambiando el signo de las salidas
-a un $10\%$ de puntos del conjunto aleatorio generado.
+a un $10\%$ de puntos del conjunto aleatorio generado.*
 
 ```{r ex 3.8}
 F.sign8 <- function(x1, x2) sign(x1 ^ 2 + x2 ^ 2 - 25)
@@ -1324,12 +1298,12 @@ data <- cbind(rep(1, nrow(data)), data)
 noise <- sample(1:length(y), length(y) * .1)
 y[noise] <- -y[noise]
 
-MyPlot(data[,-1], labels = y, xlim = c(-100, 100), ylim = c(-100, 100))
+MyPlot(data[,-1], labels = y)
 ```
 
-- Ajustar regresion lineal, para estimar los pesos $w$. Ejecutar el experimento
+- *Ajustar regresion lineal, para estimar los pesos $w$. Ejecutar el experimento
 $1000$ veces y calcular el valor promedio del error de entrenamiento $E_{in}$.
-Valorar el resultado.
+Valorar el resultado.*
 
 ```{r Ex 3.8.1}
 non.separable.linear.regress <- replicate(1000, {
@@ -1363,9 +1337,9 @@ con el número de puntos rojos mal clasificados, que como hemos dicho son todos.
 Por lo mencionado en el párrafo anterior, el error medio en la muestra está en
 torno al $25\%$, que coincide con el porcentaje total de puntos rojos en la muestra.
 
-- Ahora consideremos $N = 1000$ datos de entrenamiento y el siguiente vector de
+- *Ahora consideremos $N = 1000$ datos de entrenamiento y el siguiente vector de
 variables: $(1, x_1, x_2, x_1 x_2, x_1^2, x_2^2)$. Ajustar de nuevo regresión
-lineal y calcular el nuevo vector de pesos $\hat{w}$. Mostrar el resultado
+lineal y calcular el nuevo vector de pesos $\hat{w}$. Mostrar el resultado*
 
 ```{r ex 3.8.2}
 range <- c(-10, 10)
@@ -1395,16 +1369,22 @@ zs2 <- outer(xs, ys, F.sign8)
 
 contour(xs, ys, zs, nlev = 0, add = T, col = "blue", lty = 2)
 contour(xs, ys, zs2, nlev = 0, add = T, col = "green", lty = 2)
+
+legend("bottomright", legend = c("Real boundary", "Learned boundary"),
+       col = c("green", "blue"), lty = 2)
+
 ```
 
 Como vemos, ahora sí que es posible separar los datos, aunque no con una función
 lineal. El $\hat{w}$ calculado mediante regresión es: 
+```{r}
+w
+```
 
-
-- Repetir el experimento anterior $1000$ veces calculando en cada ocasión el 
+- *Repetir el experimento anterior $1000$ veces calculando en cada ocasión el 
 error fuera de la muestra. Para ello generar en cada ejecución $1000$ puntos
 nuevos y valorar sobre ellos la función ajustada. Promediar los valores obtenidos.
-¿Qué valor obtiene? Valorar el resultado.
+¿Qué valor obtiene? Valorar el resultado.*
 
 ```{r ex 3.8.3}
 e.out.1000.times <- replicate(1000, {
@@ -1459,7 +1439,7 @@ w
 Ya que ha sido necesario hacer un cambio de espacio para poder separar los datos
 usando regresión lineal. Hasta ahora habíamos tenido porcentajes de errores bajos
 tanto dentro como fuera de la muestra, en esta ocasión han subido entorno al 
-`r ein * 100`$\%$ para $E_{in}$ y el `r eout * 100`$\%$ para $E_{out}$. Aunque 
+$`r ein * 100`\%$ para $E_{in}$ y el $`r eout * 100`\%$ para $E_{out}$. Aunque 
 es buena señal que sigan teniendo valores cercanos entre ellos, eso significa
 que el muestreo realizado representa con bastante exactitud la función $f$.
 
