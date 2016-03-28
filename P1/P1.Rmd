@@ -978,6 +978,7 @@ tmp <- lapply(1:4, function(i){
                nrow = 16),
         col = grey.colors(256))
 })
+user.input <- readline(p)
 tmp <- lapply(1:4, function(i){
   image(matrix(unlist(fives[[i]][, 16:1]),
                nrow = 16),
