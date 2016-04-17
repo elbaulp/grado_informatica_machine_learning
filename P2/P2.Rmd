@@ -1,0 +1,69 @@
+---
+title: "Aprendizaje Automático - Práctica 2"
+author: "Alejandro Alcalde"
+date: "17/04/2016"
+mainfont: Ubuntu Light
+monofont: "Ubuntu Mono"
+fontsize: 11pt
+output: 
+  # md_document:
+  #   variant: markdown_github
+  #   toc: true
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    highlight: zenburn
+    # keep_tex: yes
+---
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = ">>")
+set.seed(1000000007)
+```
+
+# Modelos Lineales
+ 
+## Ejercicio 1
+
+Gradiente Descendente. Implementar el algoritmo de gradiente descendiente.
+
+- Considerar la función no lineal de error $E(u,v) = (ue^v - 2ve^{-u})^2$. Usar
+graciente descendente y minimizar esta función de error, comenzando desde el punto
+$(u,v) = (1,1)$ y usando una tasa de aprendizaje $\eta=.1$
+
+1. Calcular analíticamente y mostrar la expresión del gradiente de la función 
+  de error. 
+$$\frac{\partial}{\partial u}(ue^v - 2ve^{-u})^2 = 2 e^{-2u}(ue^{u+v}-2v)(e^{u+v}+2v)$$
+$$\frac{\partial}{\partial v}(ue^v - 2ve^{-u})^2 = 2 e^{-2u}(ue^{u+v}-2)(ue^{u+v}-2 v)$$
+
+2. ¿Cuantas iteraciones tarda el algoritmo en obtener por primera vez un valor
+de  $E(u,v)$ inferior a $10^{-14}$?.
+
+```{r Ex 1.1 Gradient Descent}
+  learning.ratio <- 0.1
+  w <- as.double(c(1, 1))
+  
+  ErrorFunction <- function(u,v) 
+    (u * exp(v) - 2 * v * exp(-u)) ^ 2
+  dEdu <- function(u, v)
+    2 * exp(-2 * u) * (u * exp(u + v) - 2 * v) * (exp(u + v) + 2 * v)
+  dEdv <- function(u, v)
+    2 * exp(-2 * u) * (u * exp(u + v) - 2) * (u * exp(u + v) - 2 * v)
+
+  cost <- 10000
+  nIters <- 0
+  while (cost > 1e-14) {
+    u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
+    v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
+    w <- c(u,v)
+    cost <- ErrorFunction(w[1], w[2])
+    nIters <- nIters + 1
+  }
+cat("Number of iterations until cost is below 1e-14:", nIters)
+```
+
+3. ¿Qué valores de $(u,v)$ obtuvo en el apartado anterior cuando alcanzó el error
+de $10^{-14}$?
+
+El valor de $u=`r u`$ y el de $v=`r v`$
+
+
