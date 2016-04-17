@@ -18,6 +18,18 @@ output:
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">>")
 set.seed(1000000007)
+
+# Función para verificar si un paquete está instalado o no
+is.installed <- function(paquete) is.element(
+  paquete, installed.packages())
+
+if (!is.installed("ggplot2"))
+  install.packages("ggplot2", dependencies = T)
+if (!is.installed("gridExtra"))
+  install.packages("gridExtra", dependencies = T)
+
+library(ggplot2)
+library(gridExtra)  # for presenting plots side by side
 ```
 
 # Modelos Lineales
@@ -38,32 +50,155 @@ $$\frac{\partial}{\partial v}(ue^v - 2ve^{-u})^2 = 2 e^{-2u}(ue^{u+v}-2)(ue^{u+v
 2. ¿Cuantas iteraciones tarda el algoritmo en obtener por primera vez un valor
 de  $E(u,v)$ inferior a $10^{-14}$?.
 
-```{r Ex 1.1 Gradient Descent}
-  learning.ratio <- 0.1
-  w <- as.double(c(1, 1))
-  
-  ErrorFunction <- function(u,v) 
-    (u * exp(v) - 2 * v * exp(-u)) ^ 2
-  dEdu <- function(u, v)
-    2 * exp(-2 * u) * (u * exp(u + v) - 2 * v) * (exp(u + v) + 2 * v)
-  dEdv <- function(u, v)
-    2 * exp(-2 * u) * (u * exp(u + v) - 2) * (u * exp(u + v) - 2 * v)
+```{r Ex 1.1a Gradient Descent}
+learning.ratio <- 0.1
+w <- as.double(c(1, 1))
 
-  cost <- 10000
-  nIters <- 0
-  while (cost > 1e-14) {
-    u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
-    v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
-    w <- c(u,v)
-    cost <- ErrorFunction(w[1], w[2])
-    nIters <- nIters + 1
-  }
+ErrorFunction <- function(u,v) 
+  (u * exp(v) - 2 * v * exp(-u)) ^ 2
+dEdu <- function(u, v)
+  2 * exp(-2 * u) * (u * exp(u + v) - 2 * v) * (exp(u + v) + 2 * v)
+dEdv <- function(u, v)
+  2 * exp(-2 * u) * (u * exp(u + v) - 2) * (u * exp(u + v) - 2 * v)
+
+cost <- 10000
+nIters <- 0
+while (cost > 1e-14) {
+  u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
+  v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
+  w <- c(u,v)
+  cost <- ErrorFunction(w[1], w[2])
+  nIters <- nIters + 1
+}
 cat("Number of iterations until cost is below 1e-14:", nIters)
+
 ```
 
 3. ¿Qué valores de $(u,v)$ obtuvo en el apartado anterior cuando alcanzó el error
 de $10^{-14}$?
 
-El valor de $u=`r u`$ y el de $v=`r v`$
+*El valor de $u=`r u`$ y el de $v=`r v`$*
+
+- Considerar ahora la función $f(x,y) = x^2 + 2y^2 + 2\sin(2\pi x)\sin(2\pi y)$
+
+1. Usar como valores iniciales $x_0 = 1$, $y_0 = 1$, la tasa de aprendizaje $\eta = 0.01$
+y un máximo de $50$ iteraciones. Generar un gráfico de cómo desciende el valor de
+la función con las iteraciones. Repetir el experimento pero usando $\eta = 0.1$,
+comentar las diferencias.
+
+```{r ex 1.1b}
+GradientDescent <- function(initial.point = c(1,1), 
+                            ErrorFunction,
+                            dEdx,
+                            dEdy,
+                            learning.ratio = 0.1,
+                            maxIters = 100,
+                            best.points = F) {
+  # Compute gradient descent
+  #
+  # Args:
+  #   initial.point:  The point from where to start
+  #   ErrorFunction: Error function to minimize
+  #   dEdx: Partial derivative of x
+  #   dEdy: Partial derivative of y
+  #   learning.ratio: The ratio at which to learn
+  #   maxIters: How many iterations as maximun
+  #   best.points: If true, returned value includes best x,y and its error
+  #   
+  #  Returns:
+  #    A list with (cost, cost.history, x, y, nIters. [best])
+  current.cost <- Inf
+  best.cost <- Inf
+  nIters <- 0
+  w <- initial.point
+  cost.history <- ErrorFunction(initial.point[1], initial.point[2])
+  
+  while (nIters < maxIters) {
+    
+    x <-  w[1] - dEdx(w[1], w[2]) * learning.ratio
+    y <-  w[2] - dEdy(w[1], w[2]) * learning.ratio
+    w <- c(x,y)
+    
+    current.cost <- ErrorFunction(w[1], w[2])
+    cost.history <- c(cost.history, current.cost)
+    
+    if (best.points == T && current.cost < best.cost) {
+      best.x <- x
+      best.y <- y
+      best.cost <- current.cost
+    }
+    
+    nIters <- nIters + 1
+  }
+  r <- list(cost = current.cost, cost.history = cost.history[-1], iters = nIters)
+  
+  if (best.points == T) {
+    r$best = list(x = best.x, y = best.y, error = best.cost)
+  }
+  
+  r
+}
+
+ErrorFunc <- function(x, y) 
+  x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
+dEdx <- function(x, y)
+  2 * (2 * pi * cos(2 * pi * x) * sin(2 * pi * y) + x)
+dEdy <- function(x, y)
+  4 * (pi * sin(2 * pi * x) * cos(2 * pi * y) + y )
+
+result <- mapply(GradientDescent, 
+       learning.ratio = c(0.01, 0.1), 
+       MoreArgs = list(ErrorFunction = ErrorFunc,
+                                dEdx = dEdx,
+                                dEdy = dEdy,
+                            maxIters = 50))
+
+qplot(c(1:50), result[,1]$cost.history, 
+      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
+qplot(c(1:50), result[,2]$cost.history, 
+      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.1")
+```
+
+*Cuando $\eta = 0.01$ se avanza muy poco y por tanto el algoritmo es muy ineficiente
+cuando se está lejos del mínimo global, en este caso al movernos tan lentamente
+no hemos conseguido salir de un mínimo local. Por contra, cuando $\eta = 0.1$ se
+va saltando de un lado a otro, pudiendo incrementar el error. Esto en ocasiones
+puede ser beneficioso para salir de un mínimo local, pero corremos el riesgo 
+de salirnos del óptimo global.*
+
+- Obtener el valor mínimo y los valores de las variables que lo alcanzan cuando el
+punto de inicio se fija: $(0.1, 0.1), (1, 1),(−0.5, −0.5),(−1, −1)$. Generar una tabla
+con los valores obtenidos ¿Cuál sería su conclusión sobre la verdadera dificultad
+de encontrar el mínimo global de una función arbitraria?
+
+```{r}
+result <- mapply(GradientDescent, 
+       learning.ratio = c(rep(.01, 4), rep(.1, 4)), 
+       initial.point = list(c(.1, .1), c(1,1), c(-.5, -.5), c(-1,-1)),
+       MoreArgs = list(ErrorFunction = ErrorFunc,
+                                dEdx = dEdx,
+                                dEdy = dEdy,
+                            maxIters = 50,
+                            best.points = T))
+```
+```{r echo=F}
+data <- data.frame(L.Rate    = c(rep(.01, 4), rep(.1, 4)),
+           points = c("(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)",
+                      "(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)"),
+           x      = c(result[,1]$best$x, result[,2]$best$x, result[,3]$best$x, result[,4]$best$x,
+                          result[,5]$best$x, result[,6]$best$x, result[,7]$best$x, result[,8]$best$x),
+           y      = c(result[,1]$best$y, result[,2]$best$y, result[,3]$best$y, result[,4]$best$y,
+                          result[,5]$best$y, result[,6]$best$y, result[,7]$best$y, result[,8]$best$y),
+           error  = c(result[,1]$best$error, result[,2]$best$error, result[,3]$best$error, result[,4]$best$error,
+                          result[,5]$best$error, result[,6]$best$error, result[,7]$best$error, result[,8]$best$error)
+           
+        )
+knitr::kable(data, caption = "Comparison between learning rates and starting points")
+```
+
+Como conclusión sobre la dificultad de encontrar el mínimo global podemos decir que
+es un tema complicado. Necesitamos ir ajustando la tasa de aprendizaje dinámicamente
+para no correr el riesgo de quedarnos en un mínimo local, o salirnos de un mínimo
+con buen valor por tener una tasa alta.
 
 
