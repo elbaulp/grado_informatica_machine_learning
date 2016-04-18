@@ -12,7 +12,7 @@ output:
   pdf_document:
     latex_engine: xelatex
     toc: true
-    highlight: zenburn
+    highlight: pygments
     # keep_tex: yes
 ---
 ```{r setup, include = FALSE}
@@ -27,9 +27,15 @@ if (!is.installed("ggplot2"))
   install.packages("ggplot2", dependencies = T)
 if (!is.installed("gridExtra"))
   install.packages("gridExtra", dependencies = T)
+if (!is.installed("sos"))
+  install.packages("sos")
+if (!is.installed("pracma"))
+  install.packages("pracma")
 
 library(ggplot2)
 library(gridExtra)  # for presenting plots side by side
+library(sos)
+library(pracma)
 ```
 
 # Modelos Lineales
@@ -156,10 +162,10 @@ dEdy <- function(x, y)
   4 * (pi * sin(2 * pi * x) * cos(2 * pi * y) + y )
 
 result <- mapply(GradientDescent, 
-       learning.ratio = c(0.01, 0.1), 
-       MoreArgs = list(dEdx     = dEdx,
-                       dEdy     = dEdy,
-                       maxIters = 50))
+                 learning.ratio = c(0.01, 0.1), 
+                 MoreArgs       = list(dEdx     = dEdx,
+                                       dEdy     = dEdy,
+                                       maxIters = 50))
 
 qplot(c(1:50), result[,1]$history, 
       geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
@@ -210,4 +216,76 @@ es $\eta = 0.1$ mientras que $\eta = 0.01$ al ir más lento, y con tan pocas ite
 no consigue acercarse al mínimo local. Aún habiendo encontrado un valor cercano 
 a cero para $\eta = 0.1$, esto no quiere decir que estemos ante el mínimo global,
 podríamos haber caido en un local.*
+
+## Ejercicio 2
+
+**Coordenada descendente**. En este ejercicio comparamos la eficiencia de la
+técnica de optimización de “coordenada descendente” usando la misma función del ejercicio
+1.1a. En cada iteración, tenemos dos pasos a lo largo de dos coordenadas. En el Paso-1
+nos movemos a lo largo de la coordenada $u$ para reducir el error (suponer que se verifica
+una aproximación de primer orden como en gradiente descendente), y el Paso-2 es para
+reevaluar y movernos a lo largo de la coordenada $v$ para reducir el error ( hacer la misma
+hipótesis que en el paso-1). Usar una tasa de aprendizaje $\eta = 0.1$.
+
+
+## Ejercicio 3
+
+Método de Newton Implementar el algoritmo de minimización de Newton y aplicarlo
+a la función $f(x, y)$ dada en el ejercicio 1b. Desarrolle los mismos experimentos
+usando los mismos puntos de inicio.
+
+```{r Newton's method}
+dfdx2 <- function(x) 
+  2 - 8 * pi ^ 2 * sin(2 * pi * x[1]) * sin(2 * pi * x[2]) #dx
+dfdy2 <- function(x) 
+  4 - 8 * pi ^ 2 * sin(2 * pi * x[1]) * sin(2 * pi * x[2]) #dy
+
+Newton <- function(initial.point = c(1,1), 
+                   dEdx,
+                   dEdy,
+                   dfdx2,
+                   dfdy2,
+                   maxIters = 100) {
+  cost.current <- Inf
+  nIters <- 0
+  
+  old.values <- matrix(c(dEdx(initial.point[1], initial.point[2]),
+                         dEdy(initial.point[1], initial.point[2])))
+  
+  history <- c(sum(old.values))
+  threshold <- F
+  while (nIters < maxIters && !threshold) {
+    
+    H <- matrix(c(dfdx2(old.values),
+                  dfdx2(old.values) + dfdy2(old.values),
+                  dfdx2(old.values) + dfdy2(old.values),
+                  dfdy2(old.values)), 2, 2, byrow = T)
+    
+    duv <- svd(H)
+    H.inv <- duv$v %*% diag(1 / duv$d) %*% t(duv$u)
+    
+    new.values <- -H.inv %*% old.values
+    
+    cost.current <- abs(sum(new.values))
+    history <- c(history, cost.current)
+    
+    if (abs(sum(old.values) - sum(new.values)) < 1e-5)
+      threshold <- T
+    
+    old.values <- new.values
+    nIters <- nIters + 1
+  }
+  
+  r <- list(theta = c(new.values[1], new.values[2]), history = history[-1], iters = nIters)
+  r
+}
+
+result <- Newton(initial.point = c(0.1, 0.1), dEdx = dEdx, dEdy = dEdy, dfdx2 = dfdx2, dfdy2 = dfdy2, maxIters = 50)
+
+qplot(c(1:result$iters), result$history, 
+      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
+# qplot(c(1:50), result[,2]$history, 
+#       geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.1")
+
+```
 
