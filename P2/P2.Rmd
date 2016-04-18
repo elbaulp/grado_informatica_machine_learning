@@ -67,7 +67,7 @@ while (cost > 1e-14) {
   u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
   v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
   w <- c(u,v)
-  cost <- ErrorFunction(w[1], w[2])
+  cost <- u + v
   nIters <- nIters + 1
 }
 cat("Number of iterations until cost is below 1e-14:", nIters)
@@ -87,60 +87,69 @@ la función con las iteraciones. Repetir el experimento pero usando $\eta = 0.1$
 comentar las diferencias.
 
 ```{r ex 1.1b}
+# TODO: Reescribir documentación
 GradientDescent <- function(initial.point = c(1,1), 
-                            ErrorFunction,
                             dEdx,
                             dEdy,
                             learning.ratio = 0.1,
                             maxIters = 100,
-                            best.points = F) {
+                            best.values = F) {
   # Compute gradient descent
   #
   # Args:
   #   initial.point:  The point from where to start
-  #   ErrorFunction: Error function to minimize
-  #   dEdx: Partial derivative of x
-  #   dEdy: Partial derivative of y
+  #   dEdx: Partial derivative of function
+  #   dEdy: Partial derivative of function
   #   learning.ratio: The ratio at which to learn
   #   maxIters: How many iterations as maximun
-  #   best.points: If true, returned value includes best x,y and its error
+  #   best.values: If true, returned value includes best x,y and its error
   #   
   #  Returns:
   #    A list with (cost, cost.history, x, y, nIters. [best])
-  current.cost <- Inf
-  best.cost <- Inf
+  cost.current <- Inf
   nIters <- 0
-  w <- initial.point
-  cost.history <- ErrorFunction(initial.point[1], initial.point[2])
+  
+  old.x <- dEdx(initial.point[1], initial.point[2])
+  old.y <- dEdy(initial.point[1], initial.point[2])
+  
+  history <- c(old.x + old.y)
+  
+  if (best.values == T) {
+    cost.best <- Inf
+  }
   
   while (nIters < maxIters) {
     
-    x <-  w[1] - dEdx(w[1], w[2]) * learning.ratio
-    y <-  w[2] - dEdy(w[1], w[2]) * learning.ratio
-    w <- c(x,y)
+    new.x <-  old.x - dEdx(old.x, old.y) * learning.ratio
+    new.y <-  old.y - dEdy(old.x, old.y) * learning.ratio
+        
+    cost.current <- abs(new.x + new.y)
+    history <- c(history, cost.current)
     
-    current.cost <- ErrorFunction(w[1], w[2])
-    cost.history <- c(cost.history, current.cost)
-    
-    if (best.points == T && current.cost < best.cost) {
-      best.x <- x
-      best.y <- y
-      best.cost <- current.cost
+    if (best.values == T && cost.current < cost.best) {
+      best.x <- new.x
+      best.y <- new.y
+      cost.best <- cost.current
     }
+    
+    old.x <- new.x
+    old.y <- new.y
     
     nIters <- nIters + 1
   }
-  r <- list(cost = current.cost, cost.history = cost.history[-1], iters = nIters)
   
-  if (best.points == T) {
-    r$best = list(x = best.x, y = best.y, error = best.cost)
+  r <- list(theta = c(new.x, new.y), history = history[-1], iters = nIters)
+
+  if (best.values == T) {
+    r$best = list(x = best.x, y = best.y, cost = cost.best)
   }
   
   r
 }
 
-ErrorFunc <- function(x, y) 
+ErrorFunc <- function(x, y)
   x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
+
 dEdx <- function(x, y)
   2 * (2 * pi * cos(2 * pi * x) * sin(2 * pi * y) + x)
 dEdy <- function(x, y)
@@ -148,23 +157,24 @@ dEdy <- function(x, y)
 
 result <- mapply(GradientDescent, 
        learning.ratio = c(0.01, 0.1), 
-       MoreArgs = list(ErrorFunction = ErrorFunc,
-                                dEdx = dEdx,
-                                dEdy = dEdy,
-                            maxIters = 50))
+       MoreArgs = list(dEdx     = dEdx,
+                       dEdy     = dEdy,
+                       maxIters = 50))
 
-qplot(c(1:50), result[,1]$cost.history, 
+qplot(c(1:50), result[,1]$history, 
       geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
-qplot(c(1:50), result[,2]$cost.history, 
+qplot(c(1:50), result[,2]$history, 
       geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.1")
 ```
 
-*Cuando $\eta = 0.01$ se avanza muy poco y por tanto el algoritmo es muy ineficiente
-cuando se está lejos del mínimo global, en este caso al movernos tan lentamente
-no hemos conseguido salir de un mínimo local. Por contra, cuando $\eta = 0.1$ se
-va saltando de un lado a otro, pudiendo incrementar el error. Esto en ocasiones
-puede ser beneficioso para salir de un mínimo local, pero corremos el riesgo 
-de salirnos del óptimo global.*
+*Cuando $\eta = 0.01$, se avanza muy lentamente hacia el mínimo, esto tiene sus
+pros y sus contras. Como pro nos aseguramos que no daremos un salto grande y nos
+saldremos del mínimo hacia otro sitio. Como contra, si estamos en un mínimo local,
+por la misma razón anterior, no saldremos de él y por tanto no encontraremos una 
+buena solución.*
+
+*En el caso de $\eta = 0.1$ nos encontramos en el caso de ir saltando de un lado
+a otro, y por tanto el error fluctua mucho.*
 
 - Obtener el valor mínimo y los valores de las variables que lo alcanzan cuando el
 punto de inicio se fija: $(0.1, 0.1), (1, 1),(−0.5, −0.5),(−1, −1)$. Generar una tabla
@@ -172,33 +182,32 @@ con los valores obtenidos ¿Cuál sería su conclusión sobre la verdadera dific
 de encontrar el mínimo global de una función arbitraria?
 
 ```{r}
-result <- mapply(GradientDescent, 
-       learning.ratio = c(rep(.01, 4), rep(.1, 4)), 
+result <- mapply(GradientDescent,
+       learning.ratio = c(rep(.01, 4), rep(.1, 4)),
        initial.point = list(c(.1, .1), c(1,1), c(-.5, -.5), c(-1,-1)),
-       MoreArgs = list(ErrorFunction = ErrorFunc,
-                                dEdx = dEdx,
-                                dEdy = dEdy,
-                            maxIters = 50,
-                            best.points = T))
+       MoreArgs = list(dEdx        = dEdx,
+                       dEdy        = dEdy,
+                       maxIters    = 50,
+                       best.values = T))
 ```
 ```{r echo=F}
-data <- data.frame(L.Rate    = c(rep(.01, 4), rep(.1, 4)),
-           points = c("(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)",
-                      "(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)"),
-           x      = c(result[,1]$best$x, result[,2]$best$x, result[,3]$best$x, result[,4]$best$x,
-                          result[,5]$best$x, result[,6]$best$x, result[,7]$best$x, result[,8]$best$x),
-           y      = c(result[,1]$best$y, result[,2]$best$y, result[,3]$best$y, result[,4]$best$y,
-                          result[,5]$best$y, result[,6]$best$y, result[,7]$best$y, result[,8]$best$y),
-           error  = c(result[,1]$best$error, result[,2]$best$error, result[,3]$best$error, result[,4]$best$error,
-                          result[,5]$best$error, result[,6]$best$error, result[,7]$best$error, result[,8]$best$error)
-           
+data <- data.frame(L.Rate = c(rep(.01, 4), rep(.1, 4)),
+                   points = c("(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)",
+                              "(.1,.1)","(1,1)","(-.5,-.5)","(-1,-1)"),
+                   x      = c(result[,1]$best$x, result[,2]$best$x, result[,3]$best$x, result[,4]$best$x,
+                              result[,5]$best$x, result[,6]$best$x, result[,7]$best$x, result[,8]$best$x),
+                   y      = c(result[,1]$best$y, result[,2]$best$y, result[,3]$best$y, result[,4]$best$y,
+                              result[,5]$best$y, result[,6]$best$y, result[,7]$best$y, result[,8]$best$y),
+                   error  = c(result[,1]$best$cost, result[,2]$best$cost, result[,3]$best$cost, result[,4]$best$cost,
+                              result[,5]$best$cost, result[,6]$best$cost, result[,7]$best$cost, result[,8]$best$cost)
+
         )
 knitr::kable(data, caption = "Comparison between learning rates and starting points")
 ```
 
-Como conclusión sobre la dificultad de encontrar el mínimo global podemos decir que
-es un tema complicado. Necesitamos ir ajustando la tasa de aprendizaje dinámicamente
-para no correr el riesgo de quedarnos en un mínimo local, o salirnos de un mínimo
-con buen valor por tener una tasa alta.
-
+*Como se aprecia en la tabla, la tasa de aprendizaje que se acerga más a un mínimo
+es $\eta = 0.1$ mientras que $\eta = 0.01$ al ir más lento, y con tan pocas iteraciones
+no consigue acercarse al mínimo local. Aún habiendo encontrado un valor cercano 
+a cero para $\eta = 0.1$, esto no quiere decir que estemos ante el mínimo global,
+podríamos haber caido en un local.*
 
