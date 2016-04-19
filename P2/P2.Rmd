@@ -60,7 +60,7 @@ de  $E(u,v)$ inferior a $10^{-14}$?.
 learning.ratio <- 0.1
 w <- as.double(c(1, 1))
 
-ErrorFunction <- function(u,v) 
+ErrorFunction <- function(u, v)
   (u * exp(v) - 2 * v * exp(-u)) ^ 2
 dEdu <- function(u, v)
   2 * exp(-2 * u) * (u * exp(u + v) - 2 * v) * (exp(u + v) + 2 * v)
@@ -72,12 +72,11 @@ nIters <- 0
 while (cost > 1e-14) {
   u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
   v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
-  w <- c(u,v)
-  cost <- u + v
+  w <- c(u, v)
+  cost <- ErrorFunction(w[1], w[2])
   nIters <- nIters + 1
 }
 cat("Number of iterations until cost is below 1e-14:", nIters)
-
 ```
 
 3. ¿Qué valores de $(u,v)$ obtuvo en el apartado anterior cuando alcanzó el error
@@ -94,7 +93,7 @@ comentar las diferencias.
 
 ```{r ex 1.1b}
 # TODO: Reescribir documentación
-GradientDescent <- function(initial.point = c(1,1), 
+GradientDescent <- function(initial.point = c(1, 1),
                             dEdx,
                             dEdy,
                             learning.ratio = 0.1,
@@ -109,7 +108,7 @@ GradientDescent <- function(initial.point = c(1,1),
   #   learning.ratio: The ratio at which to learn
   #   maxIters: How many iterations as maximun
   #   best.values: If true, returned value includes best x,y and its error
-  #   
+  #
   #  Returns:
   #    A list with (cost, cost.history, x, y, nIters. [best])
   cost.current <- Inf
@@ -118,17 +117,16 @@ GradientDescent <- function(initial.point = c(1,1),
   old.x <- dEdx(initial.point[1], initial.point[2])
   old.y <- dEdy(initial.point[1], initial.point[2])
   
-  history <- c(old.x + old.y)
+  history <- c(abs(old.x + old.y))
   
   if (best.values == T) {
     cost.best <- Inf
   }
   
   while (nIters < maxIters) {
-    
     new.x <-  old.x - dEdx(old.x, old.y) * learning.ratio
     new.y <-  old.y - dEdy(old.x, old.y) * learning.ratio
-        
+    
     cost.current <- abs(new.x + new.y)
     history <- c(history, cost.current)
     
@@ -144,8 +142,11 @@ GradientDescent <- function(initial.point = c(1,1),
     nIters <- nIters + 1
   }
   
-  r <- list(theta = c(new.x, new.y), history = history[-1], iters = nIters)
-
+  r <-
+    list(theta = c(new.x, new.y),
+         history = history[-1],
+         iters = nIters)
+  
   if (best.values == T) {
     r$best = list(x = best.x, y = best.y, cost = cost.best)
   }
@@ -153,24 +154,41 @@ GradientDescent <- function(initial.point = c(1,1),
   r
 }
 
-ErrorFunc <- function(x, y)
-  x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
+# ErrorFunc <- function(x, y)
+#   x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
 
 dEdx <- function(x, y)
   2 * (2 * pi * cos(2 * pi * x) * sin(2 * pi * y) + x)
 dEdy <- function(x, y)
-  4 * (pi * sin(2 * pi * x) * cos(2 * pi * y) + y )
+  4 * (pi * sin(2 * pi * x) * cos(2 * pi * y) + y)
 
-result <- mapply(GradientDescent, 
-                 learning.ratio = c(0.01, 0.1), 
-                 MoreArgs       = list(dEdx     = dEdx,
-                                       dEdy     = dEdy,
-                                       maxIters = 50))
-
-qplot(c(1:50), result[,1]$history, 
-      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
-qplot(c(1:50), result[,2]$history, 
-      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.1")
+result <- mapply(
+  GradientDescent,
+  learning.ratio = c(0.01, 0.1),
+  MoreArgs       = list(
+    dEdx     = dEdx,
+    dEdy     = dEdy,
+    maxIters = 50
+  )
+)
+```
+```{r echo=F}
+qplot(
+  c(1:result[, 1]$iters),
+  result[, 1]$history,
+  geom = "line",
+  xlab = "Iterations",
+  ylab = "Error",
+  main = "Learning rate = 0.01"
+)
+qplot(
+  c(1:result[, 2]$iters),
+  result[, 2]$history,
+  geom = "line",
+  xlab = "Iterations",
+  ylab = "Error",
+  main = "Learning rate = 0.1"
+)
 ```
 
 *Cuando $\eta = 0.01$, se avanza muy lentamente hacia el mínimo, esto tiene sus
@@ -227,6 +245,31 @@ una aproximación de primer orden como en gradiente descendente), y el Paso-2 es
 reevaluar y movernos a lo largo de la coordenada $v$ para reducir el error ( hacer la misma
 hipótesis que en el paso-1). Usar una tasa de aprendizaje $\eta = 0.1$.
 
+```{r Coordinate Descent}
+nIters <- 0
+w <- c(1,1)
+learning.ratio <- 0.1
+cost <- 0
+while (nIters < 15) {
+  u <-  w[1] - dEdu(w[1], w[2]) * learning.ratio
+  w[1] <- u
+  v <-  w[2] - dEdv(w[1], w[2]) * learning.ratio
+  w[2] <- v
+  cost <- ErrorFunction(w[1], w[2])
+  nIters <- nIters + 1
+}
+```
+
+*En este caso se obtiene un valor mucho peor para $E(u,v)$, en concreto $`r cost`$.
+Mientras que con Gradiente Descendente, en 10 iteraciones ya obtenemos un valor 
+en torno a los $10^{-15}$, valor que dista mucho del que se obtiene con Coordenada
+descendente, el cual se queda muy lejos del óptimo.*
+
+*Este método tiene problemas cuando las funciones no son suaves, ya que se queda
+estancado en puntos no estacionarios cuando la curva de la función no es suave.
+Sin embargo, cuando se tienen funciones no derivables o difíciles de derivar, 
+gradiente descendente no se puede aplicar, por lo que es recomendable usar este otro método.*
+
 
 ## Ejercicio 3
 
@@ -234,7 +277,7 @@ Método de Newton Implementar el algoritmo de minimización de Newton y aplicarl
 a la función $f(x, y)$ dada en el ejercicio 1b. Desarrolle los mismos experimentos
 usando los mismos puntos de inicio.
 
-```{r Newton's method}
+```{r Newton\'s method}
 dfdx2 <- function(x) 
   2 - 8 * pi ^ 2 * sin(2 * pi * x[1]) * sin(2 * pi * x[2]) #dx
 dfdy2 <- function(x) 
@@ -246,7 +289,16 @@ Newton <- function(initial.point = c(1,1),
                    dfdx2,
                    dfdy2,
                    maxIters = 100) {
-  cost.current <- Inf
+  # Newton's Method implementation
+  #
+  # Args:
+  #   initial.point:  The point from where to start
+  #   dEdx,dEdy:  Partial derivative of function
+  #   dfdx2,dfdx2:  Second derivative of function
+  #   maxIters: How many iterations as maximun
+  #   
+  #  Returns:
+  #    A list with (theta, cost.history, nIters)
   nIters <- 0
   
   old.values <- matrix(c(dEdx(initial.point[1], initial.point[2]),
@@ -254,11 +306,14 @@ Newton <- function(initial.point = c(1,1),
   
   history <- c(sum(old.values))
   threshold <- F
+  
   while (nIters < maxIters && !threshold) {
     
+    inv.diag <- dfdx2(old.values) + dfdy2(old.values)
+    
     H <- matrix(c(dfdx2(old.values),
-                  dfdx2(old.values) + dfdy2(old.values),
-                  dfdx2(old.values) + dfdy2(old.values),
+                  inv.diag,
+                  inv.diag,
                   dfdy2(old.values)), 2, 2, byrow = T)
     
     duv <- svd(H)
@@ -280,12 +335,98 @@ Newton <- function(initial.point = c(1,1),
   r
 }
 
-result <- Newton(initial.point = c(0.1, 0.1), dEdx = dEdx, dEdy = dEdy, dfdx2 = dfdx2, dfdy2 = dfdy2, maxIters = 50)
+result <- mapply(Newton,
+                 initial.point = list(c(.1, .1), c(1,1), c(-.5, -.5), c(-1,-1)),
+                 MoreArgs =  list(dEdx = dEdx, dEdy = dEdy, dfdx2 = dfdx2, dfdy2 = dfdy2, maxIters = 50))
 
-qplot(c(1:result$iters), result$history, 
-      geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.01")
-# qplot(c(1:50), result[,2]$history, 
-#       geom = "line", xlab = "Iterations", ylab = "Error", main = "Learning rate = 0.1")
+```
 
+
+```{r echo=F}
+p1 <- qplot(c(1:result[,1]$iters), result[,1]$history, 
+            geom = "line", xlab = "Iterations", ylab = "Error", main = "Initial Point: (.1, .1)")
+p2 <- qplot(c(1:result[,2]$iters), result[,2]$history, 
+            geom = "line", xlab = "Iterations", ylab = "Error", main = "Initial Point: (1, 1)")
+p3 <- qplot(c(1:result[,3]$iters), result[,3]$history, 
+            geom = "line", xlab = "Iterations", ylab = "Error", main = "Initial Point: (-.5, -.5)")
+p4 <- qplot(c(1:result[,4]$iters), result[,4]$history, 
+            geom = "line", xlab = "Iterations", ylab = "Error", main = "Initial Point: (-1, -1)")
+
+grid.arrange(p1,p2,p3,p4, nrow = 2, ncol = 2, top = "Results of Newton's Method", bottom = "It computes a direct solution")
+```
+
+*Como observamos en las gráicas, el método de Newton calcula de forma directa el
+mínimo de la función. En este caso se ha cortado la ejecución cuando la diferencia
+entre la mejora estaba en torno a $10^{-5}$, ya que salvo en el primer caso, se 
+obtiene el mínimo en la segunda iteración.*
+
+## Ejercicio 4
+
+Regresión Logística: En este ejercicio crearemos nuestra propia función
+objetivo $f$ (probabilidad en este caso) y nuestro conjunto de datos $\mathcal{D}$
+para ver cómo funciona regresión logística. Supondremos por simplicidad que $f$
+es una probabilidad con valores $0/1$ y por tanto que y es una función determinista
+de $\mathbf{x}$.
+
+```{r echo = F}
+GetLine <- function(interval = c(-1, 1)){
+  # Computes the slope and intercept values of two points in the given interval
+  #
+  # Args:
+  #   interval: Interval from which to pick to random points
+  #
+  # Returns:
+  #   A vector [m, l, p1, p2] where:
+  #     - m is the slope 
+  #     - l is the intercept
+  #     - p1, p2, are the points randomly selected
+  thePoints  <- matrix(runif(4, min = interval[1], max = interval[2]), 2)
+  
+  # Compute the slope
+  m <- (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
+  
+  # Compute y − y1 <- m(x − x1)
+  line <- m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
+  
+  res <- list(slope  = m,
+              line   = line,
+              points = thePoints)
+  
+  res
+}
+
+LabelData <- function(p, line){
+  # Returns the corresponding label to the data, giving +1/-1 depending on
+  # which side of the line the point lies
+  #
+  # Args:
+  #   p: The points to label
+  #   line: If we want to give a line instead of generate one randomly
+  #
+  # Returns:
+  #   A list with the labels (+1/-1) and the line
+  
+  # Given two points, determine if a point from the data set lies on the -1
+  # side or the 1 side.
+  # The points are A, B, the query points (X,Y)
+  # The equation is (Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax)
+  values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
+    (line[2,2] - line[1,2]) * (p[,1] - line[1,1])
+  
+  ifelse(values > 0, 1, -1)
+}
+```
+
+
+```{r Logistic regression}
+# Get a line to separate data
+line <- GetLine()
+
+N <- 100
+x <- matrix(runif(N*2, -1,1), N, 2)
+y <- LabelData(x, line$points)
+
+# RL with SGD
+# 
 ```
 
