@@ -469,15 +469,18 @@ SGD <- function(data,
   #
   #  Returns:
   #    Final weights and how many epochs took to converge, if specified
-  w <<- matrix(rep(0,3))
+  
+  # Create a new enviroment to place w so that update function throught apply can modify it
+  w.env <- new.env()
+  w.env$w <- matrix(rep(0,3))
   above.tolerance <- T
   
   update <- function(x) {
     ## In order to use apply, we need x containing also the label (in the last column)
     y <- as.vector(x[4])
     x <- as.vector(x[-4])
-    gradient <- dh(y %*% t(x), y * (t(w) %*% x))
-    w <<- w - learning.rate * gradient
+    gradient <- dh(y %*% t(x), y * (t(w.env$w) %*% x))
+    w.env$w <- w.env$w - learning.rate * gradient
   }
   
   if (how.many.epochs == T) {
@@ -485,7 +488,7 @@ SGD <- function(data,
   }
   while (above.tolerance) {
     
-    w.old <- w
+    w.old <- w.env$w
     # We only need the last element of w, as it is the last update
     apply(data, 1, update)
     
@@ -496,14 +499,15 @@ SGD <- function(data,
       nEpochs <- nEpochs + 1
     }
     
-    if (norm(w.old - w, type = "F") < tolerance) {
+    if (norm(w.old - w.env$w, type = "F") < tolerance) {
       above.tolerance <- F
     }
   }
+  
   if (how.many.epochs) {
-    list(w = w, epochs = nEpochs)
+    list(w = w.env$w, epochs = nEpochs)
   } else 
-    w
+    w.env$w
 }
 # Generate the DataSet
 line <- GetLine()
