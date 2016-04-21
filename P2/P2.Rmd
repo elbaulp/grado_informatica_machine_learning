@@ -36,6 +36,79 @@ library(ggplot2)
 library(gridExtra)  # for presenting plots side by side
 library(sos)
 library(pracma)
+
+# Utils
+GetLine <- function(interval = c(-1, 1)){
+  # Computes the slope and intercept values of two points in the given interval
+  #
+  # Args:
+  #   interval: Interval from which to pick to random points
+  #
+  # Returns:
+  #   A vector [m, l, p1, p2] where:
+  #     - m is the slope 
+  #     - l is the intercept
+  #     - p1, p2, are the points randomly selected
+  thePoints  <- matrix(runif(4, min = interval[1], max = interval[2]), 2)
+  
+  # Compute the slope
+  m <- (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
+  
+  # Compute y − y1 <- m(x − x1)
+  line <- m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
+  
+  res <- list(slope  = m,
+              line   = line,
+              points = thePoints)
+  
+  res
+}
+
+LabelData <- function(p, line = NULL){
+  # Returns the corresponding label to the data, giving +1/-1 depending on
+  # which side of the line the point lies
+  #
+  # Args:
+  #   p: The points to label
+  #   line: If we want to give a line instead of generate one randomly
+  #
+  # Returns:
+  #   A list with the labels (+1/-1) and the line
+  
+  if (is.null(line)) {
+    # Initialize a random plane to separate the -1, +1
+    line <- matrix(runif(4, -1, 1), 2, 2)
+  }
+  
+  # Given two points, determine if a point from the data set lies on the -1
+  # side or the 1 side.
+  # The points are A, B, the query points (X,Y)
+  # The equation is (Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax)
+  values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
+    (line[2,2] - line[1,2]) * (p[,1] - line[1,1])
+  
+  res = list(labels = ifelse(values > 0, 1, -1), 
+             line = line)
+  
+  res
+}
+
+NewDataSet <- function(n, range = c(-1, 1), line = NULL) {
+  # Generate a new data set from uniform random data in the given range
+  # 
+  # Args:
+  #   n: The size of the data set
+  #   range: In which range get the data
+  #   line: If we want to give a line instead of generate one randomly 
+  # 
+  # Returns:
+  #   A matrix with the data labeled by a random plane
+  xx <- matrix(runif(n*2, range[1],range[2]), n, 2)
+  yy <- as.vector(LabelData(xx, line))
+  xx <- cbind(rep(1, n), xx)
+
+  list(x = xx, y = yy$labels)  
+}
 ```
 
 # Modelos Lineales
@@ -368,56 +441,6 @@ para ver cómo funciona regresión logística. Supondremos por simplicidad que $
 es una probabilidad con valores $0/1$ y por tanto que y es una función determinista
 de $\mathbf{x}$.
 
-```{r echo = F}
-GetLine <- function(interval = c(-1, 1)){
-  # Computes the slope and intercept values of two points in the given interval
-  #
-  # Args:
-  #   interval: Interval from which to pick to random points
-  #
-  # Returns:
-  #   A vector [m, l, p1, p2] where:
-  #     - m is the slope 
-  #     - l is the intercept
-  #     - p1, p2, are the points randomly selected
-  thePoints  <- matrix(runif(4, min = interval[1], max = interval[2]), 2)
-  
-  # Compute the slope
-  m <- (thePoints[1,1] - thePoints[2,2]) / (thePoints[1,1] - thePoints[2,1])
-  
-  # Compute y − y1 <- m(x − x1)
-  line <- m * (thePoints[1,1] - thePoints[2,1]) + thePoints[2,2]
-  
-  res <- list(slope  = m,
-              line   = line,
-              points = thePoints)
-  
-  res
-}
-
-LabelData <- function(p, line){
-  # Returns the corresponding label to the data, giving +1/-1 depending on
-  # which side of the line the point lies
-  #
-  # Args:
-  #   p: The points to label
-  #   line: If we want to give a line instead of generate one randomly
-  #
-  # Returns:
-  #   A list with the labels (+1/-1) and the line
-  
-  # Given two points, determine if a point from the data set lies on the -1
-  # side or the 1 side.
-  # The points are A, B, the query points (X,Y)
-  # The equation is (Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax)
-  values <- (line[2,1] - line[1,1]) * (p[,2] - line[1,2]) -
-    (line[2,2] - line[1,2]) * (p[,1] - line[1,1])
-  
-  ifelse(values > 0, 1, -1)
-}
-```
-
-
 ```{r Logistic regression}
 SGD <- function(data, labels, h, dh, tolerance = 0.01, learning.rate = 0.01) {
   # Stochastic gradient descent
@@ -457,24 +480,51 @@ SGD <- function(data, labels, h, dh, tolerance = 0.01, learning.rate = 0.01) {
   w
 }
 
-# Get a line to separate data
+# Generate the DataSet
 line <- GetLine()
-
-N <- 100
-x <- matrix(runif(N*2, -1,1), N, 2)
-y <- as.vector(LabelData(x, line$points))
-x <- cbind(rep(1, N), x)
-
+data <- NewDataSet(100, line = line$points)
+```
+```{r echo=F}
+label <- factor(as.integer(data$y))
+ggplot(data = as.data.frame(data$x[,-1]), aes(V1, V2)) + geom_point(aes(colour = label)) + theme_bw()
+```
+```{r}
 # Error function
 h <- function(x) log(1 + exp(as.double(-x)))
 # Gradient if error function
 dh <- function(yx, ywx) t(-yx/(1 + exp(as.double(ywx))))
 
-SGD(x, y, h, dh)
+w <- SGD(data$x, data$y, h, dh)
 ```
 
-```{r echo=F}
-label <- factor(as.integer(y))
-ggplot(data = as.data.frame(x[,-1]), aes(V1, V2)) + geom_point(aes(colour = label)) + theme_bw()
+*La hipótesis que obtenemos con el algoritmo (El vector de pesos) es el siguiente:*
+
+$$w = 
+\begin{bmatrix}
+`r w[1]` \\ 
+`r w[2]` \\
+`r w[3]`
+\end{bmatrix}
+$$
+
+```{r}
+# Compute the cross entropy error, with new data for our hypothesis
+data <- NewDataSet(10000, line = line$points)
+cross.entropy.error <- sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x)
 ```
+
+*Para estimar $E_{out}$ usamos el error de entropía cruzada, el cual es el siguiente
+(Para una muestra nueva de $10000$ puntos):*
+
+$$E_{out} = `r cross.entropy.error`$$
+
+```{r Replicate 100 times}
+replicate(100, {
+  data <- NewDataSet(100)
+  
+  sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x)
+})
+```
+
+
 
