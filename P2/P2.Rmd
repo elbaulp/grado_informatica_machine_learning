@@ -419,14 +419,62 @@ LabelData <- function(p, line){
 
 
 ```{r Logistic regression}
+SGD <- function(data, labels, h, dh, tolerance = 0.01, learning.rate = 0.01) {
+  # Stochastic gradient descent
+  #
+  # Args:
+  #   data: The data
+  #   labels: The labels for the data
+  #   h: Error function to minimize
+  #   dh: Gradient of the error function
+  #   tolerance: When SGD should stop searching for the minimun
+  #   learning.rate: Learning rate when updating the weights
+  #
+  #  Returns:
+  #    Final weights
+  w <- matrix(rep(0,3))
+  above.tolerance <- T
+  
+  while (above.tolerance) {
+    
+    w.old <- w
+    for (i in nrow(data)) {
+      xi <- as.vector(data[i,])
+      yi <- as.vector(labels[i])
+      gradient <- dh(yi %*% t(xi), yi * (t(w) %*% xi))
+      w <- w - learning.rate * gradient
+    }
+    
+    # Apply a permutation to the data in each epoch
+    shuffle <- sample(nrow(data))
+    data <- data[shuffle,]
+    labels <- labels[shuffle]
+
+    if (norm(w.old - w, type = "F") < tolerance) {
+      above.tolerance <- F
+    }
+  }
+  w
+}
+
 # Get a line to separate data
 line <- GetLine()
 
 N <- 100
 x <- matrix(runif(N*2, -1,1), N, 2)
-y <- LabelData(x, line$points)
+y <- as.vector(LabelData(x, line$points))
+x <- cbind(rep(1, N), x)
 
-# RL with SGD
-# 
+# Error function
+h <- function(x) log(1 + exp(as.double(-x)))
+# Gradient if error function
+dh <- function(yx, ywx) t(-yx/(1 + exp(as.double(ywx))))
+
+SGD(x, y, h, dh)
+```
+
+```{r echo=F}
+label <- factor(as.integer(y))
+ggplot(data = as.data.frame(x[,-1]), aes(V1, V2)) + geom_point(aes(colour = label)) + theme_bw()
 ```
 
