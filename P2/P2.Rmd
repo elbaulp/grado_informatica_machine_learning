@@ -546,23 +546,29 @@ cross.entropy.error <- sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x
 ```
 
 *Para estimar $E_{out}$ usamos el error de entropía cruzada, el cual es el siguiente
-(Para una muestra nueva de $10000$ puntos):*
+(Para una muestra nueva de $1000$ puntos):*
 
 $$E_{out} = `r cross.entropy.error`$$
 
 ```{r Replicate 100 times}
-data <- NewDataSet(1000)
+data <- NewDataSet(100)
+sgd.data <- cbind(data$x, as.vector(data$y))
 cross.entropy.error <- replicate(100, {
-  w <- SGD(data$x, data$y, h, dh, how.many.epochs = T)
-  sum(parSapply(cl, data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
+  w <- SGD(sgd.data, h, dh, how.many.epochs = T)
+  error <- sum(parSapply(cl, data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
+  
+  c(epochs = w$epochs, error = error)
 })
-
+rm(sgd.data)
 stopCluster(cl)
 ```
 
 *Si replicamos el experimento 100 veces usando funciones de frontera distintas 
 cada vez, para un conjunto de 100 datos, el valor de $E_{out}$ medios es:*
 
-$$E_{out} = `r sum(cross.entropy.error)/nrow(data$x)`$$
+$$E_{out} = `r mean(cross.entropy.error["error",])`$$
+
+*En cuanto a la media de épocas necesarias para converger, el valor es 
+$`r mean(cross.entropy.error["epochs",])`$*
 
 
