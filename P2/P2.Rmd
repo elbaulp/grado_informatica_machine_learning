@@ -31,11 +31,20 @@ if (!is.installed("sos"))
   install.packages("sos")
 if (!is.installed("pracma"))
   install.packages("pracma")
+if (!is.installed("parallel"))
+  install.packages("parallel")
 
 library(ggplot2)
 library(gridExtra)  # for presenting plots side by side
 library(sos)
 library(pracma)
+library(parallel)
+
+# Calculate the number of cores
+cores.number <- detectCores()
+cl <- makeCluster(cores.number, type = "FORK")
+# Initialize seed
+clusterSetRNGStream(cl, iseed = 1000000007)
 
 # Utils
 GetLine <- function(interval = c(-1, 1)){
@@ -442,44 +451,60 @@ es una probabilidad con valores $0/1$ y por tanto que y es una función determin
 de $\mathbf{x}$.
 
 ```{r Logistic regression}
-SGD <- function(data, labels, h, dh, tolerance = 0.01, learning.rate = 0.01) {
+SGD <- function(data,
+                h,
+                dh,
+                tolerance = 0.01,
+                learning.rate = 0.01,
+                how.many.epochs = F) {
   # Stochastic gradient descent
   #
   # Args:
-  #   data: The data
-  #   labels: The labels for the data
+  #   data: The data, the last columns contains the labels
   #   h: Error function to minimize
   #   dh: Gradient of the error function
   #   tolerance: When SGD should stop searching for the minimun
   #   learning.rate: Learning rate when updating the weights
+  #   how.many.epochs: If true returns also how many epochs took to converge
   #
   #  Returns:
-  #    Final weights
-  w <- matrix(rep(0,3))
+  #    Final weights and how many epochs took to converge, if specified
+  w <<- matrix(rep(0,3))
   above.tolerance <- T
   
+  update <- function(x) {
+    ## In order to use apply, we need x containing also the label (in the last column)
+    y <- as.vector(x[4])
+    x <- as.vector(x[-4])
+    gradient <- dh(y %*% t(x), y * (t(w) %*% x))
+    w <<- w - learning.rate * gradient
+  }
+  
+  if (how.many.epochs == T) {
+    nEpochs <- 0
+  }
   while (above.tolerance) {
     
     w.old <- w
-    for (i in nrow(data)) {
-      xi <- as.vector(data[i,])
-      yi <- as.vector(labels[i])
-      gradient <- dh(yi %*% t(xi), yi * (t(w) %*% xi))
-      w <- w - learning.rate * gradient
-    }
+    # We only need the last element of w, as it is the last update
+    apply(data, 1, update)
     
     # Apply a permutation to the data in each epoch
-    shuffle <- sample(nrow(data))
-    data <- data[shuffle,]
-    labels <- labels[shuffle]
+    data <- data[sample(nrow(data)),]
 
+    if (how.many.epochs == T) {
+      nEpochs <- nEpochs + 1
+    }
+    
     if (norm(w.old - w, type = "F") < tolerance) {
       above.tolerance <- F
     }
   }
-  w
+  if (how.many.epochs) {
+    list(w = w, epochs = nEpochs)
+  } else 
+    w
 }
-
 # Generate the DataSet
 line <- GetLine()
 data <- NewDataSet(100, line = line$points)
@@ -494,7 +519,10 @@ h <- function(x) log(1 + exp(as.double(-x)))
 # Gradient if error function
 dh <- function(yx, ywx) t(-yx/(1 + exp(as.double(ywx))))
 
-w <- SGD(data$x, data$y, h, dh)
+# Prepare the data for SGD
+sgd.data <- cbind(data$x, as.vector(data$y))
+w <- SGD(sgd.data, h, dh)
+rm(sgd.data)
 ```
 
 *La hipótesis que obtenemos con el algoritmo (El vector de pesos) es el siguiente:*
@@ -519,12 +547,18 @@ cross.entropy.error <- sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x
 $$E_{out} = `r cross.entropy.error`$$
 
 ```{r Replicate 100 times}
-replicate(100, {
-  data <- NewDataSet(100)
-  
-  sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x)
+data <- NewDataSet(1000)
+cross.entropy.error <- replicate(100, {
+  w <- SGD(data$x, data$y, h, dh, how.many.epochs = T)
+  sum(parSapply(cl, data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
 })
+
+stopCluster(cl)
 ```
 
+*Si replicamos el experimento 100 veces usando funciones de frontera distintas 
+cada vez, para un conjunto de 100 datos, el valor de $E_{out}$ medios es:*
+
+$$E_{out} = `r sum(cross.entropy.error)/nrow(data$x)`$$
 
 
