@@ -16,7 +16,7 @@ output:
     # keep_tex: yes
 ---
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = ">>")
+knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
 set.seed(1000000007)
 
 # Función para verificar si un paquete está instalado o no
@@ -117,6 +117,204 @@ NewDataSet <- function(n, range = c(-1, 1), line = NULL) {
   xx <- cbind(rep(1, n), xx)
 
   list(x = xx, y = yy$labels)  
+}
+
+GetInterceptAndSlope <- function(w) {
+  # Get the intercept and slope from weights
+  #
+  # Args:
+  #   w: Vector weights
+  #
+  #  Returns:
+  #    A list with intercept and slope
+  w <- as.vector(w)
+  
+  b <- w[1]
+  w1 <- w[2]
+  w2 <- w[3]
+  
+  intercept <- -(w1 / w2)
+  slope <- -(b / w2)
+
+  list(intercept = intercept, slope = slope)
+}
+
+AjustaPla <- function(data,
+                      label,
+                      max_iter       = 1000,
+                      vini           = matrix(0, 1, 3),
+                      visual         = F,
+                      show.last.iter = F,
+                      memory         = F) {
+  # Get the weight to learn from the data passed as parameter
+  # using the 2D Perceptron algorithm
+  #
+  # Args:
+  #   data: A matrix with the data (xn, yn)
+  #   label: The labels for the data passed in
+  #   max_iter: How much iter to find a solution
+  #   vini: Initial weights
+  #   visual: Draw each hyperplane found
+  #   show.last.iter: Draw the last hyperplane found, even when the algorithm
+  #     does not converge
+  #   memory: Tells the algorithm if it has to store the best result in each
+  #     iteration in the case of not converging
+  #
+  # Returns:
+  #   The weights learned to adjust the data set and how many iterations it 
+  #   did in a data frame.
+  #   If the PLA did not converged in within max_iter, the currents weights
+  #   are returned and the iterations are set to -1
+  
+  GetSign <- function(values){
+    # Return the sign for the values
+    #
+    # Args:
+    #   values: The values to get the sign of.
+    #
+    # Returns:
+    #   The sign of the values
+    return(ifelse(values >= 0, 1, -1))
+  }
+  
+  PLADrawBoundary <- function(w, color = '#525F7F', ...) {
+    # Draw the line defined by the weight vector w.
+    #
+    # Thanks to http://stackoverflow.com/a/19069020/1612432 for the explanation:
+    # As your decision function is simply sgn(w1*x+w2*y+w3) then the decision
+    # boundary equation is a line with canonical form w1*x + w2*y + w3 <- 0.
+    # 
+    # |w3|/||w|| is the distance from the origin, w3 itself does not have a good
+    # geometrical interpretation (as long as w is not unit-length).
+    # 
+    # In order to plot line with such equation you can simply draw a line through
+    # (0,-w3/w2) and (-w3/w1,0) (assuming that both w1 and w2 are non-zero)
+    # 
+    # Args:
+    #   w: The weight vector
+    #   color: The color of the line to draw
+    w <- as.numeric(w)
+    
+    if (w[3] != 0) {
+      b <- w[1]
+      w1 <- w[2]
+      w2 <- w[3]
+      
+      slope <- -(w1 / w2)
+      intercept <- -(b / w2)
+      
+      abline(a   = intercept,
+             b   = slope,
+             col = color,
+             ...)
+    }
+  }
+  
+  converged <- F
+  alpha <- 50
+  data <- as.matrix(data)
+  
+  if (visual == T) {
+    max.item = max(data)
+    x.lim = max.item + max.item * .15
+    MyPlot(data, label, xlim = c(-x.lim, x.lim), ylim = c(-x.lim, x.lim))
+    # Fix for rmd pdf generation, this put every plot below each other, no overflows
+    cat('\r\n\r\n')
+  }
+  
+  # Add x0
+  data <- cbind(rep(1, nrow(data)), data)
+  
+  # Convert weights as matrix
+  as.matrix(vini)
+  
+  # Begin the perceptron
+  nIters <- 0
+  
+  vini.best <- vini
+  e.in.best <- nrow(data)
+  
+  while (!converged && nIters <= max_iter) {
+    # while there are mis-classifications
+    
+    nIters <- nIters + 1
+    # Calculate h(x) with the weight vector vini and the data input data
+    h.function <- GetSign(vini %*% t(data))
+    
+    # Calculate the misclassified mask
+    misclassified.subseting <- h.function != label
+
+    if (all(misclassified.subseting == F)) {
+      converged <- T
+    } else {
+      # Update the weight vector for a point randomly selected
+      
+      # Get the misclassified points out
+      misclassified.points <- data[misclassified.subseting, , drop = F]
+      misclassified.points.labels <- label[misclassified.subseting]
+      
+      # Get one of them
+      misclassified.point.index <- sample(dim(misclassified.points)[1], 1)
+      misclassified.point <- misclassified.points[misclassified.point.index,
+                                                  , drop = F]
+      misclassified.point.label <-
+        misclassified.points.labels[misclassified.point.index]
+      
+      # Always store the best of all results
+      if (memory == T && !all(vini == 0)) {
+        e.in.current <- sum(misclassified.subseting)
+        if (e.in.current < e.in.best) {
+          e.in.best <- e.in.current
+          vini.best <- vini
+        }
+      }
+      
+      # update the weights
+      vini <- vini + misclassified.point.label %*% misclassified.point
+      
+      
+      if (visual == T) {
+        if (alpha >= 128) {
+          alpha <- 10
+        }
+        PLADrawBoundary(vini, rgb(82/255,95/255,127/255, alpha/255))
+        alpha <- alpha + 1
+      }
+      
+    }
+  }
+
+  if (!converged) {
+    nIters <- -1
+    
+    # Return the best solution found in all iterations, not just the last one
+    if (memory == T && !all(vini == 0)) {
+      vini <- vini.best
+    }
+    
+    if (show.last.iter == T && visual == T) {
+      PLADrawBoundary(vini, "#D2372B", lwd = 3)
+      legend('bottomright',
+           c("Last Iter", "PLA History"),
+           lty = c(1,1),
+           lwd = c(2.5,2.5),
+           col = c("#D2372B","#525F7F"))
+    }
+    
+  } else if (visual == T) {
+    PLADrawBoundary(vini, "#F9CE0C", lwd = 3)
+    legend('bottomright',
+           c("Final", "PLA History"),
+           lty = c(1,1),
+           lwd = c(2.5,2.5),
+           col = c("#F9CE0C","#525F7F"))
+  }
+  
+  # return as a unit vector
+  vini <- vini / sqrt(sum(vini * vini))
+  
+  data.frame(vini = vini,
+             iter = nIters)
 }
 ```
 
@@ -540,13 +738,14 @@ $$w =
 $$
 
 ```{r}
+cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
 # Compute the cross entropy error, with new data for our hypothesis
-data <- NewDataSet(10000, line = line$points)
-cross.entropy.error <- sum(sapply(data$y * (t(w) %*% t(data$x)), h))/nrow(data$x)
+data <- NewDataSet(1000000, line = line$points)
+cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
 ```
 
 *Para estimar $E_{out}$ usamos el error de entropía cruzada, el cual es el siguiente
-(Para una muestra nueva de $1000$ puntos):*
+(Para una muestra nueva de $1000000$ puntos):*
 
 $$E_{out} = `r cross.entropy.error`$$
 
@@ -572,3 +771,111 @@ $$E_{out} = `r mean(cross.entropy.error["error",])`$$
 $`r mean(cross.entropy.error["epochs",])`$*
 
 
+## Ejercicio 5
+
+Clasificación de Dígitos. Considerar el conjunto de datos de los dígitos
+manuscritos y seleccionar las muestras de los dígitos 1 y 5. Usar los ficheros de entrenamiento
+(training) y test que se proporcionan. Extraer las características de intensidad promedio
+y simetría en la manera que se indicó en el ejercicio 3 del trabajo 1.
+
+Plantear un problema de clasificación binaria que considere el conjunto de entrenamiento
+como datos de entrada para aprender la función g. Usando el modelo de Regresión Lineal para
+clasificación seguido por PLA-Pocket como mejora. Responder a las siguientes cuestiones.
+
+```{r Digit Classification}
+ReadDigits <- function(dataset){
+  # Reads and prepare the digits dataset
+  digits <- read.table(dataset,
+                       quote = "",
+                       comment.char = "",
+                       stringsAsFactors = F)
+  
+  digits <- digits[digits$V1 == 1 | digits$V1 == 5, ]
+  labels <- digits[,1]
+  digits <- digits[,-1]
+  digits <- lapply(1:nrow(digits), function(i){matrix(digits[i, ], nrow = 16)})
+  
+  # Compute mean and symmetry
+  digits.mean <- sapply(1:length(digits), function(i) mean(as.double(digits[[i]])))
+  
+  # Compute vertical simmetry
+  digits.inverted <- lapply(1:length(digits),
+                          function(i) digits[[i]][, 16:1])
+  digits.vertical.symmetry <- sapply(1:length(digits),
+                                   function(i) -sum(abs(as.numeric(digits[[i]])
+                                               - as.numeric(digits.inverted[[i]]))))
+  
+  # Preparing data to apply Linear Regression
+  digits <- data.frame(intensity = digits.mean, symmetry = digits.vertical.symmetry)
+  
+  list(digits = digits, labels = labels)
+}
+
+ds <- ReadDigits("./datos/DigitosZip/zip.train")
+labels <- ds$labels
+digits <- ds$digits
+rm(ds)
+
+g <- lm(formula = labels ~ ., digits)
+
+line.g <- GetInterceptAndSlope(g$coefficients)
+
+# Prerare data for Pocket
+labelscopy <- labels 
+labelscopy[labelscopy == 1] <- 1
+labelscopy[labelscopy == 5] <- -1
+
+# Run pocket with starting point from Linear Regression
+g2 <- AjustaPla(digits, label = labelscopy, vini = g$coefficients, memory = T)
+line.g2 <- unlist(GetInterceptAndSlope(g2[,-4]))
+```
+
+*En este ejercicio hemos ejecutado una regresión lineal sobre los datos para 
+obtener un vector de pesos inicial, en este caso se ha calculado el siguiente:*
+
+$$w_{lm} = 
+\begin{bmatrix}
+`r g$coefficients[1]` \\ 
+`r g$coefficients[2]` \\
+`r g$coefficients[3]`
+\end{bmatrix}
+$$
+
+*Hecho esto, le pasamos este vector de pesos al algoritmo pocket, implementado 
+en la práctica 1. Y nos calculó el siguiente vector de pesos*:
+
+$$w_{pocket} = 
+\begin{bmatrix}
+`r g2[1]` \\ 
+`r g2[2]` \\
+`r g2[3]`
+\end{bmatrix}
+$$
+
+*A contunuación se muestran dos gráficas con la función __g__ calculada para los
+datos de training y test:*
+
+```{r echo=F, Visualización de datos}
+plot2 <- ggplot(digits, aes(intensity, symmetry)) + ggtitle("Train") +
+  geom_point(aes(colour = factor(as.integer(labels))), shape = 19) + theme_bw() +
+  geom_abline(mapping = aes(slope = line.g$slope, intercept = line.g$intercept, colour = "Regression")) +
+  geom_abline(mapping = aes(intercept = -line.g2[1], slope = -line.g2[2], colour = "Pocket")) +
+  scale_colour_manual(name = "Legend", values = c(1,2,3,4), guide = guide_legend(override.aes = list(linetype = c(rep("blank", 2), "solid", "solid"), shape = c(rep(19, 2), NA, NA))))
+plot2
+
+ds <- ReadDigits("./datos/DigitosZip/zip.test")
+digits <- ds$digits
+labels <- ds$labels
+
+plot2 <- ggplot(digits, aes(intensity, symmetry)) + ggtitle("Train") +
+  geom_point(aes(colour = factor(as.integer(labels))), shape = 19) + theme_bw() +
+  geom_abline(mapping = aes(slope = line.g$slope, intercept = line.g$intercept, colour = "Regression")) +
+  geom_abline(mapping = aes(intercept = -line.g2[1], slope = -line.g2[2], colour = "Pocket")) +
+  scale_colour_manual(name = "Legend", values = c(1,2,3,4), guide = guide_legend(override.aes = list(linetype = c(rep("blank", 2), "solid", "solid"), shape = c(rep(19, 2), NA, NA))))
+plot2
+```
+
+
+
+
+# Cuando toque interpretar el sobre ajuste, los gráficos del tema 4

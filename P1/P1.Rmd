@@ -511,6 +511,7 @@ AjustaPla <- function(data,
   
   converged <- F
   alpha <- 50
+  data <- as.matrix(data)
   
   if (visual == T) {
     max.item = max(data)
@@ -536,7 +537,6 @@ AjustaPla <- function(data,
     # while there are mis-classifications
     
     nIters <- nIters + 1
-    
     # Calculate h(x) with the weight vector vini and the data input data
     h.function <- GetSign(vini %*% t(data))
     
