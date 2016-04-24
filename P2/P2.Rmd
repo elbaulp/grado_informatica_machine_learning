@@ -785,48 +785,48 @@ clasificación seguido por PLA-Pocket como mejora. Responder a las siguientes cu
 ```{r Digit Classification}
 ReadDigits <- function(dataset){
   # Reads and prepare the digits dataset
-  digits <- read.table(dataset,
+  digits.traninig <- read.table(dataset,
                        quote = "",
                        comment.char = "",
                        stringsAsFactors = F)
   
-  digits <- digits[digits$V1 == 1 | digits$V1 == 5, ]
-  labels <- digits[,1]
-  digits <- digits[,-1]
-  digits <- lapply(1:nrow(digits), function(i){matrix(digits[i, ], nrow = 16)})
+  digits.traninig <- digits.traninig[digits.traninig$V1 == 1 | digits.traninig$V1 == 5, ]
+  labels.training <- digits.traninig[,1]
+  digits.traninig <- digits.traninig[,-1]
+  digits.traninig <- lapply(1:nrow(digits.traninig), function(i){matrix(digits.traninig[i, ], nrow = 16)})
   
   # Compute mean and symmetry
-  digits.mean <- sapply(1:length(digits), function(i) mean(as.double(digits[[i]])))
+  digits.mean <- sapply(1:length(digits.traninig), function(i) mean(as.double(digits.traninig[[i]])))
   
   # Compute vertical simmetry
-  digits.inverted <- lapply(1:length(digits),
-                          function(i) digits[[i]][, 16:1])
-  digits.vertical.symmetry <- sapply(1:length(digits),
-                                   function(i) -sum(abs(as.numeric(digits[[i]])
+  digits.inverted <- lapply(1:length(digits.traninig),
+                          function(i) digits.traninig[[i]][, 16:1])
+  digits.vertical.symmetry <- sapply(1:length(digits.traninig),
+                                   function(i) -sum(abs(as.numeric(digits.traninig[[i]])
                                                - as.numeric(digits.inverted[[i]]))))
   
   # Preparing data to apply Linear Regression
-  digits <- data.frame(intensity = digits.mean, symmetry = digits.vertical.symmetry)
+  digits.traninig <- data.frame(intensity = digits.mean, symmetry = digits.vertical.symmetry)
   
-  list(digits = digits, labels = labels)
+  list(digits = digits.traninig, labels = labels.training)
 }
 
 ds <- ReadDigits("./datos/DigitosZip/zip.train")
-labels <- ds$labels
-digits <- ds$digits
+labels.training <- ds$labels
+digits.traninig <- ds$digits
 rm(ds)
 
-g <- lm(formula = labels ~ ., digits)
+g <- lm(formula = labels.training ~ ., digits.traninig)
 
 line.g <- GetInterceptAndSlope(g$coefficients)
 
 # Prerare data for Pocket
-labelscopy <- labels 
+labelscopy <- labels.training
 labelscopy[labelscopy == 1] <- 1
 labelscopy[labelscopy == 5] <- -1
 
 # Run pocket with starting point from Linear Regression
-g2 <- AjustaPla(digits, label = labelscopy, vini = g$coefficients, memory = T)
+g2 <- AjustaPla(digits.traninig, label = labelscopy, vini = g$coefficients, memory = T)
 line.g2 <- unlist(GetInterceptAndSlope(g2[,-4]))
 ```
 
@@ -855,27 +855,79 @@ $$
 *A contunuación se muestran dos gráficas con la función __g__ calculada para los
 datos de training y test:*
 
-```{r echo=F, Visualización de datos}
-plot2 <- ggplot(digits, aes(intensity, symmetry)) + ggtitle("Train") +
-  geom_point(aes(colour = factor(as.integer(labels))), shape = 19) + theme_bw() +
+```{r Visualización de datos, echo=F}
+plot2 <- ggplot(digits.traninig, aes(intensity, symmetry)) + ggtitle("Train") +
+  geom_point(aes(colour = factor(as.integer(labels.training))), shape = 19) + theme_bw() +
   geom_abline(mapping = aes(slope = line.g$slope, intercept = line.g$intercept, colour = "Regression")) +
   geom_abline(mapping = aes(intercept = -line.g2[1], slope = -line.g2[2], colour = "Pocket")) +
   scale_colour_manual(name = "Legend", values = c(1,2,3,4), guide = guide_legend(override.aes = list(linetype = c(rep("blank", 2), "solid", "solid"), shape = c(rep(19, 2), NA, NA))))
 plot2
 
 ds <- ReadDigits("./datos/DigitosZip/zip.test")
-digits <- ds$digits
-labels <- ds$labels
+digits.test <- ds$digits
+labels.test <- ds$labels
+labelscopy.test <- labels.test
+labelscopy.test[labelscopy.test == 1] <- 1
+labelscopy.test[labelscopy.test == 5] <- -1
+rm(ds)
 
-plot2 <- ggplot(digits, aes(intensity, symmetry)) + ggtitle("Train") +
-  geom_point(aes(colour = factor(as.integer(labels))), shape = 19) + theme_bw() +
+plot2 <- ggplot(digits.test, aes(intensity, symmetry)) + ggtitle("Train") +
+  geom_point(aes(colour = factor(as.integer(labels.test))), shape = 19) + theme_bw() +
   geom_abline(mapping = aes(slope = line.g$slope, intercept = line.g$intercept, colour = "Regression")) +
   geom_abline(mapping = aes(intercept = -line.g2[1], slope = -line.g2[2], colour = "Pocket")) +
   scale_colour_manual(name = "Legend", values = c(1,2,3,4), guide = guide_legend(override.aes = list(linetype = c(rep("blank", 2), "solid", "solid"), shape = c(rep(19, 2), NA, NA))))
 plot2
 ```
 
+*Pasamos ahora a calcular los errores en los datos de entrenamiento y test ($E_{in}$ y 
+$E_{test}$, respectivame)*
+
+```{r "E_in E_out"}
+w.pocket <- as.matrix(g2[-4])
+x.training <- cbind(rep(1, nrow(digits.traninig)), digits.traninig)
+# Compute in sample error
+e.in <- sum(sign(w.pocket %*% t(x.training)) != labelscopy)
+
+x.test <- cbind(rep(1, nrow(digits.test)), digits.test)
+# Compute the out of sample error
+e.test <- sum(sign(w.pocket %*% t(as.matrix(x.test))) != labelscopy.test)
+```
+
+*Como se puede apreciar en ambas gráficas, el error tanto dentro como fuera de la 
+muestra es de $`r e.in`$ dígitos mal clasificados para $E_{in}$ y $`r e.test`$ para $E_{test}$*
+
+*Calcularemos ahora las cotas sobre el verdadero valor de $E_{out}, una basada
+en $E_{in}$ y otra en $E_{test}$, con una tolerancia $\delta = 0.05$, la fórmula es:*.
 
 
+$$E_{out}(g)  \leq E_{in}(g) + \sqrt{\frac{8}{N}\ln\left(\frac{4(2N)^{d_{vc}}+ 1}{\delta}\right )}$$
+
+*En el caso del perceptrón, la dimensión $VC$ es 3.*
+
+```{r Ex5.c real eout}
+N <- nrow(x.training)
+vc.generalization.bound.for.e.in <- sqrt(8/N * log((4 * (2*N) ^ 3 + 1) / 0.05))
+N <- nrow(x.test)
+vc.generalization.bound.for.e.test <- sqrt(8/N * log((4 * (2*N) ^ 3 + 1) / 0.05))
+```
+
+*Dado el valor de $\delta$, con una confianza de más del $95\%$ tenemos que*
+
+$$E_{out}(g)  \leq E_{in}(g) + `r vc.generalization.bound.for.e.in`$$
+
+lo cual quiere decir que incluso haciendo $E_{in}$ lo más cercana a cero posible, 
+$E_{out}$ estará acotada por $`r vc.generalization.bound.for.e.in`$, lo cual no es
+un buen valor (aproximádamente un $60\%$). 
+
+Sin embargo en el caso de $E_{test}$ es aún peor, ya que tenemos
+
+$$E_{out}(g)  \leq E_{in}(g) + `r vc.generalization.bound.for.e.test`$$
+
+lo cual no nos aporta ninguna información. Es posible que este resultado tan malo
+se deba a los pocos datos que tenemos para test junto con que el error tanto para 
+$E_{in}, E_{test}$ es el mismo ($`r e.in`$ y $`r e.test`$ puntos mal clasificados). 
+Sin embargo si tenemos en cuenta la cantidad de datos, para test es mucho más alto
+el error relativo ($`r (e.test * 100)/nrow(x.test)`\%$) mientras que para entrenamiento
+es del $`r (e.in * 100)/nrow(x.training)`\%$
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
