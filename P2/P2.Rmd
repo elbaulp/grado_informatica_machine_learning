@@ -568,7 +568,7 @@ Método de Newton Implementar el algoritmo de minimización de Newton y aplicarl
 a la función $f(x, y)$ dada en el ejercicio 1b. Desarrolle los mismos experimentos
 usando los mismos puntos de inicio.
 
-```{r Newton\'s method}
+```{r Newtons method}
 dfdx2 <- function(x) 
   2 - 8 * pi ^ 2 * sin(2 * pi * x[1]) * sin(2 * pi * x[2]) #dx
 dfdy2 <- function(x) 
@@ -617,8 +617,8 @@ Newton <- function(initial.point = c(1,1),
     
     # norm(old.values - new.values, type = "F")
     # falta ponerle el abs(fyold - fynew)
-    if (norm(derivada en el punto actual, type = "F") < 1e-5)
-      threshold <- T
+    # if (norm(derivada en el punto actual, type = "F") < 1e-5)
+      # threshold <- T
     
     old.values <- new.values
     nIters <- nIters + 1
@@ -1037,8 +1037,34 @@ Cross.Validation <- function(data) {
 N <- sapply(seq(d + 15, 125, 10), function(x)
   seq(1:x))
 
-sapply(N, Cross.Validation)
-
+cross.validation.errors <- sapply(N, Cross.Validation)
+# Compute $E_{cv}$
+e.cv <- sapply(cross.validation.errors, mean)
 ```
+
+*Tras calcular el error de validación cruzada, calculamos la media de cada uno 
+de ellos para obtener $E_{cv}$*
+
+$$E_{cv} = 
+\begin{bmatrix}
+`r e.cv[1]` \\
+`r e.cv[2]` \\
+`r e.cv[3]` \\
+`r e.cv[4]` \\
+`r e.cv[5]` \\
+`r e.cv[6]` \\
+`r e.cv[7]` \\
+`r e.cv[8]` \\
+`r e.cv[9]` \\
+`r e.cv[10]` \\
+`r e.cv[11]`
+\end{bmatrix}
+$$
+
+*Esto corresponde al $E_{cv}$ correspondiente a cada uno de los subconjunto que 
+se habían generado, ${d + 15, \dots , d + 115}$, la media de todos estos errores
+es:*
+
+$$E_{cv} = `r mean(e.cv)`$$
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
