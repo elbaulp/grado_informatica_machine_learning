@@ -445,8 +445,8 @@ GradientDescent <- function(initial.point = c(1, 1),
   r
 }
 
-# ErrorFunc <- function(x, y)
-#   x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
+ErrorFunc <- function(x, y)
+  x ^ 2 + 2 * y ^ 2 + 2 * sin(2 * pi * x) * (2 * pi * y)
 
 dEdx <- function(x, y)
   2 * (2 * pi * cos(2 * pi * x) * sin(2 * pi * y) + x)
@@ -568,7 +568,7 @@ Método de Newton Implementar el algoritmo de minimización de Newton y aplicarl
 a la función $f(x, y)$ dada en el ejercicio 1b. Desarrolle los mismos experimentos
 usando los mismos puntos de inicio.
 
-```{r Newtons method}
+```{r Newton\'s method}
 dfdx2 <- function(x) 
   2 - 8 * pi ^ 2 * sin(2 * pi * x[1]) * sin(2 * pi * x[2]) #dx
 dfdy2 <- function(x) 
@@ -607,19 +607,18 @@ Newton <- function(initial.point = c(1,1),
                   inv.diag,
                   dfdy2(old.values)), 2, 2, byrow = T)
     
-    duv <- svd(H)
-    H.inv <- duv$v %*% diag(1 / duv$d) %*% t(duv$u)
+    # duv <- svd(H)
+    # H.inv <- duv$v %*% diag(1 / duv$d) %*% t(duv$u)
+    H.inv <- solve(H)
     
     new.values <- -H.inv %*% old.values
     
     cost.current <- abs(sum(new.values))
     history <- c(history, cost.current)
     
-    # norm(old.values - new.values, type = "F")
-    # falta ponerle el abs(fyold - fynew)
-    # if (norm(derivada en el punto actual, type = "F") < 1e-5)
-      # threshold <- T
-    
+    if (norm(abs(old.values - new.values), type = "F") < 1e-5)
+      threshold <- T
+  
     old.values <- new.values
     nIters <- nIters + 1
   }
@@ -1066,5 +1065,39 @@ se habían generado, ${d + 15, \dots , d + 115}$, la media de todos estos errore
 es:*
 
 $$E_{cv} = `r mean(e.cv)`$$
+
+```{r 1.b}
+# Replicate the above experiment 10^3 times
+result <- replicate(1000, {
+  
+  cross.validation.errors <- sapply(N, Cross.Validation)
+  
+  e1 <- unlist(cross.validation.errors[1])
+  e2 <- unlist(cross.validation.errors[2])
+  
+  # Compute $E_{cv}$
+  e.cv <- sapply(cross.validation.errors, mean)
+  
+  list(e1 = mean(e1),
+       e2 = mean(e2),
+       e.cv = mean(e.cv),
+       e1.var = var(e1),
+       e2.var = var(e2),
+       e.cv.var = var(e.cv)
+  )
+})
+
+result <-  apply(matrix(unlist(result), ncol = 1000), 1, mean)
+```
+
+*Repitiendo el anterior experimento $10^3$ veces obtenemos los siguientes valores
+para la media y varianza de $e_1, e_2, E_{cv}$:*
+
+|      | $e_1$         | $e_2$         | $E_{cv}$      |
+|------|---------------|---------------|---------------|
+| mean | `r result[1]` | `r result[2]` | `r result[3]` |
+| var  | `r result[4]` | `r result[5]` | `r result[6]` |
+
+
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
