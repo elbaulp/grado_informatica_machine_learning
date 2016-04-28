@@ -15,7 +15,7 @@ output:
     highlight: pygments
     # keep_tex: yes
 ---
-```{r setup, include = FALSE}
+```{r Load Libraries, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
 set.seed(1000000007)
 
@@ -33,13 +33,24 @@ if (!is.installed("pracma"))
   install.packages("pracma")
 if (!is.installed("parallel"))
   install.packages("parallel")
+if (!is.installed("orthopolynom"))
+  install.packages("orthopolynom")
+if (!is.installed("MASS"))
+  install.packages("MASS")
+if (!is.installed("glmnet"))
+  install.packages("glmnet")
 
 library(ggplot2)
 library(gridExtra)  # for presenting plots side by side
 library(sos)
 library(pracma)
 library(parallel)
+library(orthopolynom)
+library(MASS)
+library (glmnet)
+```
 
+```{r Load aux functions}
 # Calculate the number of cores
 cores.number <- detectCores()
 cl <- makeCluster(cores.number, type = "FORK")
@@ -604,7 +615,9 @@ Newton <- function(initial.point = c(1,1),
     cost.current <- abs(sum(new.values))
     history <- c(history, cost.current)
     
-    if (abs(sum(old.values) - sum(new.values)) < 1e-5)
+    # norm(old.values - new.values, type = "F")
+    # falta ponerle el abs(fyold - fynew)
+    if (norm(derivada en el punto actual, type = "F") < 1e-5)
       threshold <- T
     
     old.values <- new.values
@@ -929,5 +942,103 @@ $E_{in}, E_{test}$ es el mismo ($`r e.in`$ y $`r e.test`$ puntos mal clasificado
 Sin embargo si tenemos en cuenta la cantidad de datos, para test es mucho más alto
 el error relativo ($`r (e.test * 100)/nrow(x.test)`\%$) mientras que para entrenamiento
 es del $`r (e.in * 100)/nrow(x.training)`\%$
+
+# SobreAjuste
+
+## Ejercicio 1
+
+```{r}
+# Generate Data
+N <- 50
+x <- matrix(runif(N, -1, 1))
+sigma2 <- 1
+Qf <- 10
+
+# Legendre Polynomials
+normalized.p.list <- legendre.polynomials(10, normalized = T)
+# L. Polynomials with coefficients
+lY =  sapply (x, function(x) polynomial.values( normalized.p.list,x))
+fn = matrix(unlist(lY), nrow = N, byrow = T)
+yn <- fn + sqrt(sigma2)*rnorm(N)
+```
+
+
+
+# Regularización
+
+## Ejercicio 1
+
+```{r Weight Decay}
+N <- 50
+d <- 3
+x <- matrix(rnorm(d * N), ncol = d)
+x <- cbind(rep(1, N), x)
+w.f <- matrix(rnorm(d + 1))
+sigma <- .5
+# y <- wf %*% x + sigma * epsilon
+y <- t(w.f) %*% t(x) +  sqrt(sigma) * rnorm(N)
+ds <- as.data.frame(cbind(x[, -1], y = as.vector(y)))
+lambda <- .05 / N
+
+lm.ridge.fit <- lm.ridge(y ~ ., ds, lambda = lambda)
+
+# Predicted values
+y.fit <- t(as.matrix(lm.ridge.fit$coef)) %*% t(as.matrix(x[, -1]))
+
+# glm.fit <- glmnet(x, y, alpha = 0, lambda = lambda)
+# w.reg <- coef(glm.fit)
+
+error.function <- function(yn, y.fit) {
+  # Error function
+  #
+  # Args:
+  #   yn: Real y value
+  #   y.fit: Predicted y value
+  #
+  #  Returns:
+  #   Error
+  abs(yn - y.fit)
+}
+
+Cross.Validation <- function(data) {
+  # Cross Validation
+  #
+  # Args:
+  #   data: Data
+  #  Returns:
+  #    The cross validation error
+  N <- length(data)
+  d <- 3
+  x <- matrix(rnorm(d * N), ncol = d)
+  x <- cbind(rep(1, N), x)
+  w.f <- matrix(rnorm(d + 1))
+  sigma <- .5
+  # y <- wf %*% x + sigma * epsilon
+  y <- t(w.f) %*% t(x) +  sqrt(sigma) * rnorm(N)
+  ds <- as.data.frame(cbind(x[, -1], y = as.vector(y)))
+  lambda <- .05 / N
+
+  x <- x[,-1]
+
+  cv.error <- sapply(seq_along(1:length(data)), function(i) {
+    # Compute cross validation with leave one out
+    # Adjust the model
+    lm.ridge.fit <- lm.ridge(y ~ ., ds[-i,], lambda = lambda)
+    # Predicted values with the validation point
+    y.fit <-
+      t(as.matrix(lm.ridge.fit$coef)) %*% x[i,]
+    error.function(y[,i], y.fit)
+  })
+
+  cv.error
+}
+
+# Generate a list of vectors each one with the lengt of each data set we want.
+N <- sapply(seq(d + 15, 125, 10), function(x)
+  seq(1:x))
+
+sapply(N, Cross.Validation)
+
+```
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
