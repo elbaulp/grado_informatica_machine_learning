@@ -5,15 +5,15 @@ date: "17/04/2016"
 mainfont: Ubuntu Light
 monofont: "Ubuntu Mono"
 fontsize: 11pt
-output: 
+output: html_document
   # md_document:
   #   variant: markdown_github
   #   toc: true
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
-    highlight: pygments
-    # keep_tex: yes
+  # pdf_document:
+  #   latex_engine: xelatex
+  #   toc: true
+  #   highlight: pygments
+  #   # keep_tex: yes
 ---
 ```{r Load Libraries, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
@@ -47,7 +47,7 @@ library(pracma)
 library(parallel)
 library(orthopolynom)
 library(MASS)
-library (glmnet)
+library(glmnet)
 ```
 
 ```{r Load aux functions}
@@ -911,7 +911,6 @@ muestra es de $`r e.in`$ dígitos mal clasificados para $E_{in}$ y $`r e.test`$ 
 *Calcularemos ahora las cotas sobre el verdadero valor de $E_{out}, una basada
 en $E_{in}$ y otra en $E_{test}$, con una tolerancia $\delta = 0.05$, la fórmula es:*.
 
-
 $$E_{out}(g)  \leq E_{in}(g) + \sqrt{\frac{8}{N}\ln\left(\frac{4(2N)^{d_{vc}}+ 1}{\delta}\right )}$$
 
 *En el caso del perceptrón, la dimensión $VC$ es 3.*
@@ -947,21 +946,81 @@ es del $`r (e.in * 100)/nrow(x.training)`\%$
 ## Ejercicio 1
 
 ```{r}
-# Generate Data
-N <- 50
-x <- matrix(runif(N, -1, 1))
-sigma2 <- 1
-Qf <- 10
+GenerateLegendreDataset <- function(Qf, N, sigma) {
+  # Generate a data set from Legendre polynomials of degree Qf and size N
+  #
+  # Args:
+  #   Qf: Degree of the polynomial that creates the datase
+  #   N: Size of the DataSet
+  #   sigma: Used to generate noise
+  #
+  #  Returns:
+  #    The Data Set
 
-# Legendre Polynomials
-normalized.p.list <- legendre.polynomials(10, normalized = T)
-# L. Polynomials with coefficients
-lY =  sapply (x, function(x) polynomial.values( normalized.p.list,x))
-fn = matrix(unlist(lY), nrow = N, byrow = T)
-yn <- fn + sqrt(sigma2)*rnorm(N)
+  # Generate Data
+  x <- matrix(runif(N, -1, 1))
+  # Legendre Polynomials
+  normalized.p.list <- legendre.polynomials(Qf, normalized = T)
+
+  # L. Polynomials with coefficients
+  lY =  sapply(x, function(x)
+    polynomial.values(normalized.p.list, x))
+  fn = matrix(unlist(lY), nrow = N, byrow = T)
+
+  # Generate the coefficients
+  aux_nor <- 0:Qf
+  aux_nor <- sqrt(sum(1 / (2 * aux_nor + 1)))
+  coeff_a <- rnorm(Qf + 1, sigma)
+  coeff_a <- coeff_a / aux_nor   # coeficientes normalizados
+
+  cost.function <- function(L, coeff) {
+    if (!is.matrix(L))
+      L <- as.matrix(L)
+    if (!is.vector(coeff))
+      coeff <- as.vector(coeff)
+    L %*% coeff
+  }
+
+  fn <- cost.function(fn, coeff_a)
+  # Add Noise to data
+  yn <- fn + sqrt(sigma) * rnorm(N)
+
+  data.frame(x = x, y = yn)
+}
+
+# Generate two datasets, one from Legendre(10) and other Legendre(2)
+X.10.degree <- GenerateLegendreDataset(10, 1000, 1)
+# X.2.degree <- GenerateLegendreDataset(2, 1000, 1)
+
+model.g2 <- lm(y ~ poly(x, degree = 2), data = X.10.degree)
+model.g10 <- lm(y ~ poly(x, degree = 10), data = X.10.degree)
+
+X.10.degree <- cbind(X.10.degree, predicted.from.g2 = predict(model.g2))
+X.10.degree <- cbind(X.10.degree, predicted.from.g10 = predict(model.g10))
 ```
 
+*Hemos generado un DataSet a partir de los polinomios de Legendre de grado 10, a
+partir de estos datos intentaremos predecir con dos modelos, uno basado en polinomios
+de grado 2 y otro de grado 10. A estas hipótesis las llamaremos $g_2$ y $g_{10$.
+El resultado de ajustar los modelos es el siguiente:*
 
+```{r models }
+summary(model.g2)
+summary(model.g10)
+```
+
+*Veamos el resultado de estas hipótesis:*
+
+```{r echo=F}
+p <- (ggplot(X.10.degree, aes(x = x, y = y)) 
+    + ggtitle("Data from a 10 Degree Legendre Polynomial")      
+    + geom_point()
+    + theme_bw())
+
+(p + geom_line(aes(y = X.10.degree$predicted.from.g2, colour = "2nd Order Fit"), size = 1)
+   + geom_line(aes(y = X.10.degree$predicted.from.g10, colour = "10th Order Fit"), size = 1)
+   + scale_color_discrete(name = "Polynomial fits") )
+```
 
 # Regularización
 
@@ -1013,7 +1072,7 @@ Cross.Validation <- function(data) {
   w.f <- matrix(rnorm(d + 1))
   sigma <- .5
   # y <- wf %*% x + sigma * epsilon
-  y <- t(w.f) %*% t(x) +  sqrt(sigma) * rnorm(N)
+  y <- t(w.f) %*% t(x) + sqrt(sigma) * rnorm(N)
   ds <- as.data.frame(cbind(x[, -1], y = as.vector(y)))
   lambda <- .05 / N
 
@@ -1068,7 +1127,8 @@ $$E_{cv} = `r mean(e.cv)`$$
 
 ```{r 1.b}
 # Replicate the above experiment 10^3 times
-result <- replicate(1000, {
+run.x.times <- 10
+result <- replicate(run.x.times, {
   
   cross.validation.errors <- sapply(N, Cross.Validation)
   
@@ -1087,7 +1147,7 @@ result <- replicate(1000, {
   )
 })
 
-result <-  apply(matrix(unlist(result), ncol = 1000), 1, mean)
+result <- apply(matrix(unlist(result), ncol = run.x.times), 1, mean)
 ```
 
 *Repitiendo el anterior experimento $10^3$ veces obtenemos los siguientes valores
@@ -1108,6 +1168,23 @@ vamos acercando al valor real de estimación fuera de la muestra. Lo mismo ocurr
 
 *Como resultado de todo esto, tenemos que el error de validación cruzada tiene a 
 ser cercano al de fueda de la muestra, es decir $E_{out}\approx E_{cv}$*
+
+*Con respecto a qué contribuye a la varianza de los valores de $e_1$ podríamos
+atribuirlo al ruido. Es posible que la estimación del punto de validación quede 
+muy alejada con respecto a su valor real, y por ello se obtiene una varianza alta.
+Además, los outliers nos van a causar que la varianza aumente. Cuando coincida
+que el punto que dejamos para validación sea un outlier, obtendremos una varianza
+mayor.*
+
+*Si los errores de validación cruzada fueran independientes, *
+
+*Calculemos ahora el número efectivo de muestras nuevas usadas en el cálculo de $E_{cv}$ como $\frac{var(e_1)}{var(E_{cv})}$*
+
+```{r 1.f}
+neff <- result[4]/result[6]
+
+sapply(cross.validation.errors, var)/var(e.cv)
+```
 
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
