@@ -990,18 +990,22 @@ GenerateLegendreDataset <- function(Qf, N, sigma) {
 
 # Generate two datasets, one from Legendre(10) and other Legendre(2)
 X.10.degree <- GenerateLegendreDataset(10, 1000, 1)
-# X.2.degree <- GenerateLegendreDataset(2, 1000, 1)
+X.2.degree <- GenerateLegendreDataset(2, 1000, 1)
 
 model.g2 <- lm(y ~ poly(x, degree = 2), data = X.10.degree)
 model.g10 <- lm(y ~ poly(x, degree = 10), data = X.10.degree)
+model.g2.from.degree2 <- lm(y ~ poly(x, degree = 2), data = X.2.degree)
+model.g10.from.degree2 <- lm(y ~ poly(x, degree = 10), data = X.2.degree)
 
 X.10.degree <- cbind(X.10.degree, predicted.from.g2 = predict(model.g2))
 X.10.degree <- cbind(X.10.degree, predicted.from.g10 = predict(model.g10))
+X.2.degree <- cbind(X.2.degree, predicted.from.g2 = predict(model.g2.from.degree2))
+X.2.degree <- cbind(X.2.degree, predicted.from.g10 = predict(model.g10.from.degree2))
 ```
 
 *Hemos generado un DataSet a partir de los polinomios de Legendre de grado 10, a
 partir de estos datos intentaremos predecir con dos modelos, uno basado en polinomios
-de grado 2 y otro de grado 10. A estas hipótesis las llamaremos $g_2$ y $g_{10$.
+de grado 2 y otro de grado 10. A estas hipótesis las llamaremos $g_2$ y $g_{10}$.
 El resultado de ajustar los modelos es el siguiente:*
 
 ```{r models }
@@ -1009,7 +1013,8 @@ summary(model.g2)
 summary(model.g10)
 ```
 
-*Veamos el resultado de estas hipótesis:*
+*Veamos el resultado de estas hipótesis cuando los datos se crearon originalmente
+con un polinomio de Legendre de grado 10:*
 
 ```{r echo=F}
 p <- (ggplot(X.10.degree, aes(x = x, y = y)) 
@@ -1021,6 +1026,21 @@ p <- (ggplot(X.10.degree, aes(x = x, y = y))
    + geom_line(aes(y = X.10.degree$predicted.from.g10, colour = "10th Order Fit"), size = 1)
    + scale_color_discrete(name = "Polynomial fits") )
 ```
+
+*Y cuando lo hacemos con datos generados originalmente con un polinomio de Legendre
+de grado 2:*
+
+```{r echo=F}
+p <- (ggplot(X.2.degree, aes(x = x, y = y)) 
+    + ggtitle("Data from a 2 Degree Legendre Polynomial")      
+    + geom_point()
+    + theme_bw())
+
+(p + geom_line(aes(y = X.2.degree$predicted.from.g2, colour = "2nd Order Fit"), size = 1)
+   + geom_line(aes(y = X.2.degree$predicted.from.g10, colour = "10th Order Fit"), size = 1)
+   + scale_color_discrete(name = "Polynomial fits"))
+```
+
 
 # Regularización
 
