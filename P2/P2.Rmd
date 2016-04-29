@@ -1099,5 +1099,15 @@ para la media y varianza de $e_1, e_2, E_{cv}$:*
 | var  | `r result[4]` | `r result[5]` | `r result[6]` |
 
 
+*La relación entre los promedios de $e_1$ y el de los valores de $E_{cv}$ es que
+deben ser próximos. Inicialmente uno podría pensar que al dejar sólamente una muestra
+para validación debería de dar una estimación pobre sobre $E_{cv}$, sin embargo 
+al repetir la validación cruzada (_Leave one out_) $N$ veces, y estimando el modelo
+en cada iteración (Y por tanto obteniendo una nueva hipótesis cada vez), nos
+vamos acercando al valor real de estimación fuera de la muestra. Lo mismo ocurre para $e_2$.*
+
+*Como resultado de todo esto, tenemos que el error de validación cruzada tiene a 
+ser cercano al de fueda de la muestra, es decir $E_{out}\approx E_{cv}$*
+
 
 # Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
