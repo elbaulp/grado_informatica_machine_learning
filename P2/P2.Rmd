@@ -1155,6 +1155,24 @@ de esta operación es muy positiva ($>>0$), quiere decir que el error fuera de l
 muestra para $H_{10}$ es muy alto, y por tanto hemos estado sobre ajustando dentro
 de la muestra.*
 
+*Si se realiza el experimento para más valores de $Q_f, N y \sigma$ se obtiene
+una perspectiva de cómo se comporta el sobreajuste en función del tamaño de la
+muestra, del ruido y del grado de la función.*
+
+*Si analizamos el sobre ajuste en función del tamaño de la muestra y el ruido, 
+podemos concluir que el sobreajuste tiende a ser menor cuando el ruido es menor, o 
+cuando el tamaño de la muestra crece. Por lo general hay una relación lineal
+entre ruido y tamaño de la muestra en cuanto sobre ajuste. Esta “linealidad”
+también se debe a que se han normalizado los datos.*
+
+*Si miramos desde el punto de vista de la complejidad de la función $f$, vemos como
+esta complejidad está relacionada con el sobreajuste también, aunque no de forma
+lineal. Como conclusión podríamos decir:*
+
+- *Si el número de muestras aumenta, reducimos el sobreajuste.*
+- *Si el ruido estocástico (Variando $\sigma$) aumenta, el sobreajuste aumenta.*
+- *Si el ruido determinísta aumenta (Incrementamos la complejidad de la hipótesis $\mathcal{H_{10}}, \mathcal{H_{20}}, \dots$), el sobreajuste aumenta.*
+
 # Regularización
 
 ## Ejercicio 1
