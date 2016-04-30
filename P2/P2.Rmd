@@ -989,8 +989,8 @@ GenerateLegendreDataset <- function(Qf, N, sigma) {
 }
 
 # Generate two datasets, one from Legendre(10) and other Legendre(2)
-X.10.degree <- GenerateLegendreDataset(10, 1000, 1)
-X.2.degree <- GenerateLegendreDataset(2, 1000, 1)
+X.10.degree <- GenerateLegendreDataset(50, 100, 1)
+X.2.degree <- GenerateLegendreDataset(2, 100, 1)
 
 model.g2 <- lm(y ~ poly(x, degree = 2), data = X.10.degree)
 model.g10 <- lm(y ~ poly(x, degree = 10), data = X.10.degree)
@@ -1018,7 +1018,7 @@ con un polinomio de Legendre de grado 10:*
 
 ```{r echo=F}
 p <- (ggplot(X.10.degree, aes(x = x, y = y)) 
-    + ggtitle("Data from a 10 Degree Legendre Polynomial")      
+    + ggtitle("Data from a 50 Degree Legendre Polynomial")      
     + geom_point()
     + theme_bw())
 
@@ -1041,6 +1041,119 @@ p <- (ggplot(X.2.degree, aes(x = x, y = y))
    + scale_color_discrete(name = "Polynomial fits"))
 ```
 
+*A partir de ahora el análisis realizado será sobre los datos generados a partir 
+del polinomio de Legendre de grado 10, cuyos coeficientes para cada una de las 
+estimaciones son:*
+
+$$w_{g_2} = 
+\begin{bmatrix}
+`r model.g2$coefficients[1]` \\ 
+`r model.g2$coefficients[2]` \\
+`r model.g2$coefficients[3]`
+\end{bmatrix}
+$$
+
+$$w_{g_{10}} = 
+\begin{bmatrix}
+`r model.g10$coefficients[1]` \\ 
+`r model.g10$coefficients[2]` \\
+`r model.g10$coefficients[3]` \\
+`r model.g10$coefficients[4]` \\
+`r model.g10$coefficients[5]` \\
+`r model.g10$coefficients[6]` \\
+`r model.g10$coefficients[7]` \\
+`r model.g10$coefficients[8]` \\
+`r model.g10$coefficients[9]` \\
+`r model.g10$coefficients[10]` \\
+`r model.g10$coefficients[11]`
+\end{bmatrix}
+$$
+
+*El hecho de normalizar los datos es necesario para que el ruido ($\sigma^2$) tenga
+sentido. Es decir, para obtener un ratio significativo entre el valor de la función
+y el ruido.*
+
+
+*Veamos ahora que pasa si fijamos $Q_f = 20, N = 50, \sigma = 1$ y ejecutamos 100
+veces*
+
+```{r 2.2}
+Qf <- 20
+N <- 50
+sigma2 <- 1
+
+# Generate two datasets, one from Legendre(10) and other Legendre(2)
+X.Qf.degree <- GenerateLegendreDataset(Qf, N, sigma2)
+
+model.g2 <- lm(y ~ poly(x, degree = 2), data = X.Qf.degree)
+model.g10 <- lm(y ~ poly(x, degree = 10), data = X.Qf.degree)
+
+result <- replicate(100, {
+
+  ds <- GenerateLegendreDataset(Qf = Qf, N = N, sigma = sigma2)
+  
+  # Compute by hand E_out as $\frac{1}{N}\sum_1^N(w^t Z_n - y_n)^2$
+  w.10 <- as.vector(model.g10$coefficients)
+  w.2 <- as.vector(model.g2$coefficients)
+  
+  z2 <- data.frame(rep(1, N), ds$x, ds$x^2)
+  z2 <- as.matrix(z2)
+  z10 <- data.frame(rep(1, N), ds$x, ds$x^2, ds$x^3, ds$x^4, ds$x^5, ds$x^6, ds$x^7, ds$x^8, ds$x^9, ds$x^10)
+  z10 <- as.matrix(z10)
+  
+  eout.w10 <- mean((w.10 %*% t(z10) - ds$y)^2)
+  eout.w2 <- mean((w.2 %*% t(z2) - ds$y)^2)
+  
+  # Compute the error of our models
+  predicted2 <- predict(model.g2, newdata = ds, se.fit = T)
+  predicted10 <- predict(model.g10, newdata = ds, se.fit = T)
+  
+  eout.residuals2 <- mean(predicted2$se.fit)
+  eout.residuals10 <- mean(predicted10$se.fit)
+  
+  list(eout.w10 = eout.w10,
+       eout.w2 = eout.w2,
+       eout.residuals2 = eout.residuals2,
+       eout.residuals10 = eout.residuals10)
+})
+eout.H10 <- mean(unlist(result[1,]))
+eout.H2 <- mean(unlist(result[2,]))
+eout.H2.residuals <- mean(unlist(result[3,]))
+eout.H10.residuals <- mean(unlist(result[4,]))
+```
+
+*Tras probar con estos datos, obtenemos un $E_{out}(\mathcal{H_2}) = `r eout.H2`$
+y un $E_{out}(\mathcal{H_{10}}) = `r eout.H10`$. Es de esperar un valor mucho peor
+para la hipótesis de $\mathcal{H_{10}}$, ya que estamos forzando mucho más el sobre
+ajuste. Aunque el error dentro de la muestra sea mucho menor con respecto a $\mathcal{H_2}$,
+cuando probamos muestras nuevas se obtienen resultados mucho peores al haber puntos
+bastante mal clasificados que hacen que suba el error, como se puede apreciar en
+la gráfica:*
+
+```{r echo=F}
+ds <- GenerateLegendreDataset(Qf = Qf, N = N, sigma = sigma2)
+p <- (ggplot(ds, aes(x = x, y = y)) 
+    + ggtitle("Data from a Qf = 20 Degree Legendre Polynomial")      
+    + geom_point()
+    + theme_bw())
+
+ds <- cbind(ds, g2 = predict(model.g2), g10 = predict(model.g10))
+
+(p + geom_line(aes(y = ds$g2, colour = "2nd Order Fit"), size = 1)
+   + geom_line(aes(y = ds$g10, colour = "10th Order Fit"), size = 1)
+   + scale_color_discrete(name = "Polynomial fits"))
+```
+
+*Como vemos, los picos del polinomio de grado $10$ perjudican mucho al error.*
+
+*Definamos una medida de sobreajuste *
+
+$$E_{out}(\mathcal{H_10}) - E_{out}(\mathcal{H_2})$$
+
+*Con los datos actuales, esta medida es $`r eout.H10 - eout.H2`$. Si la diferencia
+de esta operación es muy positiva ($>>0$), quiere decir que el error fuera de la
+muestra para $H_{10}$ es muy alto, y por tanto hemos estado sobre ajustando dentro
+de la muestra.*
 
 # Regularización
 
@@ -1147,7 +1260,7 @@ $$E_{cv} = `r mean(e.cv)`$$
 
 ```{r 1.b}
 # Replicate the above experiment 10^3 times
-run.x.times <- 10
+run.x.times <- 1000
 result <- replicate(run.x.times, {
   
   cross.validation.errors <- sapply(N, Cross.Validation)
