@@ -5,15 +5,15 @@ date: "17/04/2016"
 mainfont: Ubuntu Light
 monofont: "Ubuntu Mono"
 fontsize: 11pt
-output: html_document
+output:
   # md_document:
   #   variant: markdown_github
   #   toc: true
-  # pdf_document:
-  #   latex_engine: xelatex
-  #   toc: true
-  #   highlight: pygments
-  #   # keep_tex: yes
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    highlight: pygments
+    # keep_tex: yes
 ---
 ```{r Load Libraries, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
@@ -37,8 +37,6 @@ if (!is.installed("orthopolynom"))
   install.packages("orthopolynom")
 if (!is.installed("MASS"))
   install.packages("MASS")
-if (!is.installed("glmnet"))
-  install.packages("glmnet")
 
 library(ggplot2)
 library(gridExtra)  # for presenting plots side by side
@@ -47,7 +45,6 @@ library(pracma)
 library(parallel)
 library(orthopolynom)
 library(MASS)
-library(glmnet)
 ```
 
 ```{r Load aux functions}
@@ -383,7 +380,6 @@ la función con las iteraciones. Repetir el experimento pero usando $\eta = 0.1$
 comentar las diferencias.
 
 ```{r ex 1.1b}
-# TODO: Reescribir documentación
 GradientDescent <- function(initial.point = c(1, 1),
                             dEdx,
                             dEdy,
@@ -551,10 +547,14 @@ while (nIters < 15) {
 }
 ```
 
+- ¿Qué valor de la función $E(u,v)$ se obtiene después de 15 iteraciones completas (i.e. 30 pasos)?
+
 *En este caso se obtiene un valor mucho peor para $E(u,v)$, en concreto $`r cost`$.
 Mientras que con Gradiente Descendente, en 10 iteraciones ya obtenemos un valor 
 en torno a los $10^{-15}$, valor que dista mucho del que se obtiene con Coordenada
 descendente, el cual se queda muy lejos del óptimo.*
+
+- Establezca una comparación entre esta técnica y la técnica de gradiente descendente.
 
 *Este método tiene problemas cuando las funciones no son suaves, ya que se queda
 estancado en puntos no estacionarios cuando la curva de la función no es suave.
@@ -564,7 +564,7 @@ gradiente descendente no se puede aplicar, por lo que es recomendable usar este 
 
 ## Ejercicio 3
 
-Método de Newton Implementar el algoritmo de minimización de Newton y aplicarlo
+__Método de Newton__ Implementar el algoritmo de minimización de Newton y aplicarlo
 a la función $f(x, y)$ dada en el ejercicio 1b. Desarrolle los mismos experimentos
 usando los mismos puntos de inicio.
 
@@ -633,6 +633,7 @@ result <- mapply(Newton,
 
 ```
 
+- Generar un gráfico de como desciende el valor de la función con las iteraciones.
 
 ```{r echo=F}
 p1 <- qplot(c(1:result[,1]$iters), result[,1]$history, 
@@ -647,6 +648,8 @@ p4 <- qplot(c(1:result[,4]$iters), result[,4]$history,
 grid.arrange(p1,p2,p3,p4, nrow = 2, ncol = 2, top = "Results of Newton's Method", bottom = "It computes a direct solution")
 ```
 
+- Extraer conclusiones sobre las conductas de los algoritmos comparando la curva de decrecimiento de la función calculada en el apartado anterior y la correspondiente obtenida con gradiente descendente.
+
 *Como observamos en las gráicas, el método de Newton calcula de forma directa el
 mínimo de la función. En este caso se ha cortado la ejecución cuando la diferencia
 entre la mejora estaba en torno a $10^{-5}$, ya que salvo en el primer caso, se 
@@ -654,11 +657,25 @@ obtiene el mínimo en la segunda iteración.*
 
 ## Ejercicio 4
 
-Regresión Logística: En este ejercicio crearemos nuestra propia función
+__Regresión Logística__: En este ejercicio crearemos nuestra propia función
 objetivo $f$ (probabilidad en este caso) y nuestro conjunto de datos $\mathcal{D}$
 para ver cómo funciona regresión logística. Supondremos por simplicidad que $f$
 es una probabilidad con valores $0/1$ y por tanto que y es una función determinista
 de $\mathbf{x}$.
+
+Consideremos $d=2$ para que los datos sean visualizables, y sea 
+$\mathrm{\mathcal{X}=[-1,1]\times[-1,1]}$ con probabilidad uniforme de elegir cada
+$\mathrm{\textbf{x}\in \mathcal{X}}$.  Elegir una línea en el plano como la frontera entre
+$f(\textbf{x})=1$ (donde $y$ toma valores $+1$) y $f(\textbf{x})=0$ (donde $y$ toma valores
+$-1$), para ello seleccionar dos puntos aleatorios del plano y calcular la línea
+que pasa por ambos. Seleccionar $N=100$ puntos aleatorios $\{\textbf{x}_n\}$ de $\mathcal{X}$
+y evaluar las respuestas de todos ellos $\{y_n\}$ respecto de la frontera elegida.
+
+- Implementar Regresión Logística(RL) con Gradiente Descendente Estocástico (SGD) bajo las siguientes condiciones:
+  - Inicializar el vector de pesos con valores 0.
+  - Parar el algoritmo cuando $\mathrm{||\textbf{w}^{(t-1)}-\textbf{w}^{(t)}||<0.01}$, donde $\textbf{w}^{(t)}$ denota el vector de pesos al final de la época $t$. Una época es un pase completo a través de los $N$ datos.
+  - Aplicar una permutación aleatoria de $1,2,\dots,N$ a los datos antes de usarlos en cada época  del algoritmo.
+  - Usar una tasa de aprendizaje de $\eta=0.01$
 
 ```{r Logistic regression}
 SGD <- function(data,
@@ -727,6 +744,8 @@ data <- NewDataSet(100, line = line$points)
 label <- factor(as.integer(data$y))
 ggplot(data = as.data.frame(data$x[,-1]), aes(V1, V2)) + geom_point(aes(colour = label)) + theme_bw()
 ```
+
+
 ```{r}
 # Error function
 h <- function(x) log(1 + exp(as.double(-x)))
@@ -749,6 +768,8 @@ $$w =
 \end{bmatrix}
 $$
 
+- Usar la muestra de datos etiquetada para encontrar $g$ y estimar $E_{out}$  usando para ello un número suficientemente grande de nuevas muestras.
+
 ```{r}
 cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
 # Compute the cross entropy error, with new data for our hypothesis
@@ -760,6 +781,8 @@ cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
 (Para una muestra nueva de $1000000$ puntos):*
 
 $$E_{out} = `r cross.entropy.error`$$
+
+- ({\em Opcional 0.2}) Repetir el experimento 100 veces con diferentes funciones frontera y calcule el promedio.
 
 ```{r Replicate 100 times}
 data <- NewDataSet(100)
@@ -774,10 +797,14 @@ rm(sgd.data)
 stopCluster(cl)
 ```
 
+- ¿Cuál es el valor de $E_{out}$ para $N=100$?
+
 *Si replicamos el experimento 100 veces usando funciones de frontera distintas 
 cada vez, para un conjunto de 100 datos, el valor de $E_{out}$ medios es:*
 
 $$E_{out} = `r mean(cross.entropy.error["error",])`$$
+
+- ¿Cuántas épocas tarda en promedio RL en converger para $N=100$, usando todas las condiciones anteriormente especificadas?
 
 *En cuanto a la media de épocas necesarias para converger, el valor es 
 $`r mean(cross.entropy.error["epochs",])`$*
@@ -864,6 +891,8 @@ $$w_{pocket} =
 \end{bmatrix}
 $$
 
+- Generar gráficos separados (en color) de los datos de entrenamiento y test junto con la función estimada.
+
 *A contunuación se muestran dos gráficas con la función __g__ calculada para los
 datos de training y test:*
 
@@ -883,13 +912,15 @@ labelscopy.test[labelscopy.test == 1] <- 1
 labelscopy.test[labelscopy.test == 5] <- -1
 rm(ds)
 
-plot2 <- ggplot(digits.test, aes(intensity, symmetry)) + ggtitle("Train") +
+plot2 <- ggplot(digits.test, aes(intensity, symmetry)) + ggtitle("Test") +
   geom_point(aes(colour = factor(as.integer(labels.test))), shape = 19) + theme_bw() +
   geom_abline(mapping = aes(slope = line.g$slope, intercept = line.g$intercept, colour = "Regression")) +
   geom_abline(mapping = aes(intercept = -line.g2[1], slope = -line.g2[2], colour = "Pocket")) +
   scale_colour_manual(name = "Legend", values = c(1,2,3,4), guide = guide_legend(override.aes = list(linetype = c(rep("blank", 2), "solid", "solid"), shape = c(rep(19, 2), NA, NA))))
 plot2
 ```
+
+- Calcular $E_{in}$ y $E_{test}$ (error sobre los datos de test).
 
 *Pasamos ahora a calcular los errores en los datos de entrenamiento y test ($E_{in}$ y 
 $E_{test}$, respectivame)*
@@ -907,6 +938,8 @@ e.test <- sum(sign(w.pocket %*% t(as.matrix(x.test))) != labelscopy.test)
 
 *Como se puede apreciar en ambas gráficas, el error tanto dentro como fuera de la 
 muestra es de $`r e.in`$ dígitos mal clasificados para $E_{in}$ y $`r e.test`$ para $E_{test}$*
+
+- Obtener cotas sobre el verdadero valor de $E_{out}$. Pueden calcularse dos cotas una basada en $E_{in}$ y otra basada en $E_{test}$. Usar una tolerancia $\delta=0.05$. ¿Qué cota es mejor?
 
 *Calcularemos ahora las cotas sobre el verdadero valor de $E_{out}, una basada
 en $E_{in}$ y otra en $E_{test}$, con una tolerancia $\delta = 0.05$, la fórmula es:*.
@@ -941,7 +974,21 @@ Sin embargo si tenemos en cuenta la cantidad de datos, para test es mucho más a
 el error relativo ($`r (e.test * 100)/nrow(x.test)`\%$) mientras que para entrenamiento
 es del $`r (e.in * 100)/nrow(x.training)`\%$
 
+- ({\em Opcional 0.1}) Repetir los puntos anteriores pero usando una transformación polinómica de tercer orden( $\Phi_3(\textbf{x})$ en las transparencias de teoría).
+- ({\em Opcional 0.1}) Si tuviera que usar los resultados para dárselos a un potencial cliente ¿usaría la transformación polinómica? Explicar la decisión.
+
 # SobreAjuste
+
+\textbf{Sobreajuste.} Vamos a construir un entorno que nos permita experimentar
+con los problemas de sobreajuste. Consideremos el espacio de entrada $\mathcal{X}=[-1,1]$
+con una densidad de probabilidad uniforme, $\mathbb{P}(x)=\frac{1}{2}$. Consideramos
+dos modelos $\mathcal{H}_2$ y $\mathcal{H}_{10}$ representando el conjunto de todos
+los polinomios de grado 2 y grado 10 respectivamente. La función objetivo es un
+polinomio de grado $Q_f$ que escribimos como $f(x)=\sum_{q=0}^{Q_f} a_q L_q(x)$,
+donde $L_q(x)$ son los polinomios de Legendre (ver la relación de ejercicios.2).
+El conjunto de datos es $\mathcal{D}=\{ (x_1,y_1),\dots,(x_N,y_N)\}$ donde 
+$y_n=f(x_n)+\sigma\epsilon_n$ y las $\{\epsilon_n\}$ son variables aleatorias i.i.d.
+${\mathcal{N}}(0,1)$ y $\sigma^2$ la varianza del ruido.
 
 ## Ejercicio 1
 
@@ -1002,6 +1049,12 @@ X.10.degree <- cbind(X.10.degree, predicted.from.g10 = predict(model.g10))
 X.2.degree <- cbind(X.2.degree, predicted.from.g2 = predict(model.g2.from.degree2))
 X.2.degree <- cbind(X.2.degree, predicted.from.g10 = predict(model.g10.from.degree2))
 ```
+
+Sean $g_2$ y $g_{10}$ los mejores ajustes a los datos usando $\mathcal{H}_2$ y
+$\mathcal{H}_{10}$ respectivamente, y sean $E_{out}(g_2)$ y $E_{out}(g_{10})$ sus
+respectivos errores fuera de la muestra.
+
+-  Calcular $g_2$ y $g_{10}$
 
 *Hemos generado un DataSet a partir de los polinomios de Legendre de grado 10, a
 partir de estos datos intentaremos predecir con dos modelos, uno basado en polinomios
@@ -1069,10 +1122,18 @@ $$w_{g_{10}} =
 \end{bmatrix}
 $$
 
+- ¿Por qué normalizamos $f$? (Ayuda: interpretar el significado de $\sigma$)
+
 *El hecho de normalizar los datos es necesario para que el ruido ($\sigma^2$) tenga
 sentido. Es decir, para obtener un ratio significativo entre el valor de la función
 y el ruido.*
 
+- ({\em Opcional 0.1})  ¿Cómo podemos obtener $E_{out}$ analíticamente para una $g_{10}$ dada ?
+
+Siguiendo con el punto anterior, usando la combinación de parámetros
+$Q_f=20,N=50,\sigma=1$  ejecutar un número  de experimentos (> 100) calculando 
+en cada caso $E_{out}(g_2)$ y $E_{out}(g_{10})$. Promediar todos los valores de
+error obtenidos para cada conjunto de hipótesis
 
 *Veamos ahora que pasa si fijamos $Q_f = 20, N = 50, \sigma = 1$ y ejecutamos 100
 veces*
@@ -1122,10 +1183,10 @@ eout.H2.residuals <- mean(unlist(result[3,]))
 eout.H10.residuals <- mean(unlist(result[4,]))
 ```
 
-*Tras probar con estos datos, obtenemos un $E_{out}(\mathcal{H_2}) = `r eout.H2`$
-y un $E_{out}(\mathcal{H_{10}}) = `r eout.H10`$. Es de esperar un valor mucho peor
-para la hipótesis de $\mathcal{H_{10}}$, ya que estamos forzando mucho más el sobre
-ajuste. Aunque el error dentro de la muestra sea mucho menor con respecto a $\mathcal{H_2}$,
+*Tras probar con estos datos, obtenemos un $E_{out}(\mathcal{H}_2) = `r eout.H2`$
+y un $E_{out}(\mathcal{H}_{10}) = `r eout.H10`$. Es de esperar un valor mucho peor
+para la hipótesis de $\mathcal{H}_{10}$, ya que estamos forzando mucho más el sobre
+ajuste. Aunque el error dentro de la muestra sea mucho menor con respecto a $\mathcal{H}_2$,
 cuando probamos muestras nuevas se obtienen resultados mucho peores al haber puntos
 bastante mal clasificados que hacen que suba el error, como se puede apreciar en
 la gráfica:*
@@ -1146,16 +1207,23 @@ ds <- cbind(ds, g2 = predict(model.g2), g10 = predict(model.g10))
 
 *Como vemos, los picos del polinomio de grado $10$ perjudican mucho al error.*
 
-*Definamos una medida de sobreajuste *
+Definimos una medida de sobreajuste como
 
-$$E_{out}(\mathcal{H_10}) - E_{out}(\mathcal{H_2})$$
+$$E_{out}(\mathcal{H}_{10}) - E_{out}(\mathcal{H}_2)$$
+
+- Argumentar por qué la medida dada puede medir el sobreajuste.
 
 *Con los datos actuales, esta medida es $`r eout.H10 - eout.H2`$. Si la diferencia
 de esta operación es muy positiva ($>>0$), quiere decir que el error fuera de la
 muestra para $H_{10}$ es muy alto, y por tanto hemos estado sobre ajustando dentro
 de la muestra.*
 
-*Si se realiza el experimento para más valores de $Q_f, N y \sigma$ se obtiene
+- ({\em Opcional 0.1}) Usando la combinación de valores de los valores $Q_f\in\{1,2,\dots,100\}$,
+$N\in\{20,25,\dots,100\}$, $\sigma\in\{0;0.05;0.1;\dots;2\}$, se obtiene una gráfica
+como la que aparece en la figura 4.3 del libro "Learning from data", capítulo 4.
+Interpreta la gráfica respecto a las condiciones en las que se da el sobreajuste.
+
+*Si se realiza el experimento para más valores de $Q_f, N ~ y ~ \sigma$ se obtiene
 una perspectiva de cómo se comporta el sobreajuste en función del tamaño de la
 muestra, del ruido y del grado de la función.*
 
@@ -1171,7 +1239,7 @@ lineal. Como conclusión podríamos decir:*
 
 - *Si el número de muestras aumenta, reducimos el sobreajuste.*
 - *Si el ruido estocástico (Variando $\sigma$) aumenta, el sobreajuste aumenta.*
-- *Si el ruido determinísta aumenta (Incrementamos la complejidad de la hipótesis $\mathcal{H_{10}}, \mathcal{H_{20}}, \dots$), el sobreajuste aumenta.*
+- *Si el ruido determinísta aumenta (Incrementamos la complejidad de la hipótesis $\mathcal{H}_{10}, \mathcal{H}_{20}, \dots$), el sobreajuste aumenta.*
 
 # Regularización
 
@@ -1317,7 +1385,7 @@ al repetir la validación cruzada (_Leave one out_) $N$ veces, y estimando el mo
 en cada iteración (Y por tanto obteniendo una nueva hipótesis cada vez), nos
 vamos acercando al valor real de estimación fuera de la muestra. Lo mismo ocurre para $e_2$.*
 
-*Como resultado de todo esto, tenemos que el error de validación cruzada tiene a 
+*Como resultado de todo esto, tenemos que el error de validación cruzada tiende a 
 ser cercano al de fueda de la muestra, es decir $E_{out}\approx E_{cv}$*
 
 *Con respecto a qué contribuye a la varianza de los valores de $e_1$ podríamos
