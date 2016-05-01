@@ -16,7 +16,7 @@ output: html_document
   #   # keep_tex: yes
 ---
 ```{r Load Libraries, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = F)
+knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
 set.seed(1000000007)
 
 # Función para verificar si un paquete está instalado o no
@@ -47,7 +47,7 @@ library(orthopolynom)
 library(MASS)
 ```
 
-```{r Load aux functions}
+```{r Load aux functions, echo = F}
 GetParCluster <- function(seed = 1000000007) {
   # Calculate the number of cores
   cores.number <- detectCores()
@@ -382,6 +382,11 @@ y un máximo de $50$ iteraciones. Generar un gráfico de cómo desciende el valo
 la función con las iteraciones. Repetir el experimento pero usando $\eta = 0.1$,
 comentar las diferencias.
 
+```{r echo = F}
+rm(u,v,w,nIters)
+```
+
+
 ```{r ex 1.1b}
 GradientDescent <- function(initial.point = c(1, 1),
                             dEdx,
@@ -479,6 +484,7 @@ qplot(
   ylab = "Error",
   main = "Learning rate = 0.1"
 )
+rm(cost, learning.ratio)
 ```
 
 *Cuando $\eta = 0.01$, se avanza muy lentamente hacia el mínimo, esto tiene sus
@@ -517,6 +523,7 @@ data <- data.frame(L.Rate = c(rep(.01, 4), rep(.1, 4)),
 
         )
 knitr::kable(data, caption = "Comparison between learning rates and starting points")
+rm(data)
 ```
 
 *Como se aprecia en la tabla, la tasa de aprendizaje que se acerga más a un mínimo
@@ -563,6 +570,10 @@ descendente, el cual se queda muy lejos del óptimo.*
 estancado en puntos no estacionarios cuando la curva de la función no es suave.
 Sin embargo, cuando se tienen funciones no derivables o difíciles de derivar, 
 gradiente descendente no se puede aplicar, por lo que es recomendable usar este otro método.*
+
+```{r echo = F}
+rm(cost, learning.ratio, nIters, u, v, w)
+```
 
 
 ## Ejercicio 3
@@ -759,7 +770,6 @@ dh <- function(yx, ywx) t(-yx/(1 + exp(as.double(ywx))))
 # Prepare the data for SGD
 sgd.data <- cbind(data$x, as.vector(data$y))
 w <- SGD(sgd.data, h, dh)
-rm(sgd.data)
 ```
 
 *La hipótesis que obtenemos con el algoritmo (El vector de pesos) es el siguiente:*
@@ -774,11 +784,17 @@ $$
 
 - Usar la muestra de datos etiquetada para encontrar $g$ y estimar $E_{out}$  usando para ello un número suficientemente grande de nuevas muestras.
 
+```{r echo = F}
+rm(sgd.data, label)
+```
+
 ```{r}
 cl <- GetParCluster()
 cross.entropy.error <- mean(parSapply(cl, data$y * (t(w) %*% t(data$x)), h))
+stopCluster(cl)
 # Compute the cross entropy error, with new data for our hypothesis
 data <- NewDataSet(1000000, line = line$points)
+cl <- GetParCluster()
 cross.entropy.error <- mean(parSapply(cl, data$y * (t(w) %*% t(data$x)), h))
 stopCluster(cl)
 ```
@@ -822,6 +838,9 @@ $$E_{out} = `r mean(cross.entropy.error["error",])`$$
 *En cuanto a la media de épocas necesarias para converger, el valor es 
 $`r mean(cross.entropy.error["epochs",])`$*
 
+```{r echo = F}
+rm(w, cross.entropy.error, data, line)
+```
 
 ## Ejercicio 5
 
@@ -990,6 +1009,12 @@ es del $`r (e.in * 100)/nrow(x.training)`\%$
 - (\em{Opcional 0.1}) Repetir los puntos anteriores pero usando una transformación polinómica de tercer orden( $\Phi_3(\textbf{x})$ en las transparencias de teoría).
 
 - (\em{Opcional 0.1}) Si tuviera que usar los resultados para dárselos a un potencial cliente ¿usaría la transformación polinómica? Explicar la decisión.
+
+```{r echo = F}
+rm(digits.test, digits.traninig, g2, w.pocket, x.test, x.training,
+    e.in, e.test, g, labels.test, labelscopy.test, labelscopy, labels.training,
+    line.g, line.g2, N, plot2, vc.generalization.bound.for.e.test, vc.generalization.bound.for.e.in)
+```
 
 # SobreAjuste
 
@@ -1259,9 +1284,27 @@ lineal. Como conclusión podríamos decir:*
 - *Si el ruido estocástico (Variando $\sigma$) aumenta, el sobreajuste aumenta.*
 - *Si el ruido determinísta aumenta (Incrementamos la complejidad de la hipótesis $\mathcal{H}_{10}, \mathcal{H}_{20}, \dots$), el sobreajuste aumenta.*
 
+```{r echo = F}
+rm(ds, X.Qf.degree, X.2.degree, X.10.degree, eout.H10.residuals, eout.H2.residuals,
+   eout.H2, eout.H10, model.g10, model.g2, model.g10.from.degree2, model.g2.from.degree2,
+   N, p, Qf, sigma2)
+```
+
+
 # Regularización
 
 ## Ejercicio 1
+
+Para $d=3$ (dimensión) generar un conjunto de $N$ datos aleatorios $\{\textbf{x_n},y_n\}$
+de la siguiente forma. Para cada punto $\textbf{x_n}$ generamos sus coordenadas
+muestreando de forma independiente una ${\mathcal{N}}(0,1)$. De forma similar 
+generamos un vector de pesos de (d+1) dimensiones $\textbf{w_f}$, y el conjunto
+de valores $y_n=\textbf{w_f}^T\textbf{x_n}+\sigma\epsilon_n$, donde $\epsilon_n$
+es un ruido que sigue también una ${\mathcal{N}(0,1)$ y $\sigma^2$ es la varianza del ruido; 
+fijar $\sigma=0.5$.
+
+Usar regresión lineal con regularización ``weight decay'' para estimar $\textbf{w_f}$
+con $\textbf{w_{reg}}$. Fijar el parámetro de regularización a $0.05/N$.
 
 ```{r Weight Decay}
 N <- 50
