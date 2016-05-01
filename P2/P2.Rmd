@@ -5,15 +5,15 @@ date: "17/04/2016"
 mainfont: Ubuntu Light
 monofont: "Ubuntu Mono"
 fontsize: 11pt
-output: html_document
-  # # md_document:
-  # #   variant: markdown_github
-  # #   toc: true
-  # pdf_document:
-  #   latex_engine: xelatex
+output:
+  # md_document:
+  #   variant: markdown_github
   #   toc: true
-  #   highlight: pygments
-  #   # keep_tex: yes
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    highlight: pygments
+    # keep_tex: yes
 ---
 ```{r Load Libraries, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
@@ -526,7 +526,7 @@ knitr::kable(data, caption = "Comparison between learning rates and starting poi
 rm(data)
 ```
 
-*Como se aprecia en la tabla, la tasa de aprendizaje que se acerga más a un mínimo
+*Como se aprecia en la tabla, la tasa de aprendizaje que se acerca más a un mínimo
 es $\eta = 0.1$ mientras que $\eta = 0.01$ al ir más lento, y con tan pocas iteraciones
 no consigue acercarse al mínimo local. Aún habiendo encontrado un valor cercano 
 a cero para $\eta = 0.1$, esto no quiere decir que estemos ante el mínimo global,
@@ -789,9 +789,6 @@ rm(sgd.data, label)
 ```
 
 ```{r}
-cl <- GetParCluster()
-cross.entropy.error <- mean(parSapply(cl, data$y * (t(w) %*% t(data$x)), h))
-stopCluster(cl)
 # Compute the cross entropy error, with new data for our hypothesis
 data <- NewDataSet(1000000, line = line$points)
 cl <- GetParCluster()
@@ -807,8 +804,6 @@ $$E_{out} = `r cross.entropy.error`$$
 - ({\em Opcional 0.2}) Repetir el experimento 100 veces con diferentes funciones frontera y calcule el promedio.
 
 ```{r Replicate 100 times}
-data <- NewDataSet(100)
-sgd.data <- cbind(data$x, as.vector(data$y))
 
 # Export data needed for parallel processing
 # clusterExport(cl, c("sgd.data"))
@@ -816,6 +811,8 @@ sgd.data <- cbind(data$x, as.vector(data$y))
 cl <- GetParCluster()
 # clusterSetRNGStream(cl, iseed = 1000000007)
 cross.entropy.error <- parSapply(cl, 1:100, function(x) {
+  data <- NewDataSet(100)
+  sgd.data <- cbind(data$x, as.vector(data$y))
   w <- SGD(sgd.data, h, dh, how.many.epochs = T)
   error <- sum(sapply(data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
   
@@ -1095,7 +1092,7 @@ respectivos errores fuera de la muestra.
 
 -  Calcular $g_2$ y $g_{10}$
 
-*Hemos generado un DataSet a partir de los polinomios de Legendre de grado 10, a
+*Hemos generado un DataSet a partir de los polinomios de Legendre de grado 50, a
 partir de estos datos intentaremos predecir con dos modelos, uno basado en polinomios
 de grado 2 y otro de grado 10. A estas hipótesis las llamaremos $g_2$ y $g_{10}$.
 El resultado de ajustar los modelos es el siguiente:*
@@ -1106,7 +1103,7 @@ summary(model.g10)
 ```
 
 *Veamos el resultado de estas hipótesis cuando los datos se crearon originalmente
-con un polinomio de Legendre de grado 10:*
+con un polinomio de Legendre de grado 50:*
 
 ```{r echo=F}
 p <- (ggplot(X.10.degree, aes(x = x, y = y)) 
@@ -1134,7 +1131,7 @@ p <- (ggplot(X.2.degree, aes(x = x, y = y))
 ```
 
 *A partir de ahora el análisis realizado será sobre los datos generados a partir 
-del polinomio de Legendre de grado 10, cuyos coeficientes para cada una de las 
+del polinomio de Legendre de grado 50, cuyos coeficientes para cada una de las 
 estimaciones son:*
 
 $$w_{g_2} = 
@@ -1295,16 +1292,16 @@ rm(ds, X.Qf.degree, X.2.degree, X.10.degree, eout.H10.residuals, eout.H2.residua
 
 ## Ejercicio 1
 
-Para $d=3$ (dimensión) generar un conjunto de $N$ datos aleatorios $\{\textbf{x_n},y_n\}$
-de la siguiente forma. Para cada punto $\textbf{x_n}$ generamos sus coordenadas
+Para $d=3$ (dimensión) generar un conjunto de $N$ datos aleatorios $\{\textbf{x}_n,y_n\}$
+de la siguiente forma. Para cada punto $\textbf{x}_n$ generamos sus coordenadas
 muestreando de forma independiente una ${\mathcal{N}}(0,1)$. De forma similar 
-generamos un vector de pesos de (d+1) dimensiones $\textbf{w_f}$, y el conjunto
-de valores $y_n=\textbf{w_f}^T\textbf{x_n}+\sigma\epsilon_n$, donde $\epsilon_n$
-es un ruido que sigue también una ${\mathcal{N}(0,1)$ y $\sigma^2$ es la varianza del ruido; 
+generamos un vector de pesos de (d+1) dimensiones $\textbf{w}_f$, y el conjunto
+de valores $y_n=\textbf{w}_f^T\textbf{x}_n+\sigma\epsilon_n$, donde $\epsilon_n$
+es un ruido que sigue también una $\mathcal{N}(0,1)$ y $\sigma^2$ es la varianza del ruido; 
 fijar $\sigma=0.5$.
 
-Usar regresión lineal con regularización ``weight decay'' para estimar $\textbf{w_f}$
-con $\textbf{w_{reg}}$. Fijar el parámetro de regularización a $0.05/N$.
+Usar regresión lineal con regularización ``weight decay'' para estimar $\textbf{w}_f$
+con $\textbf{w}_{reg}$. Fijar el parámetro de regularización a $0.05/N$.
 
 ```{r Weight Decay}
 N <- 50
