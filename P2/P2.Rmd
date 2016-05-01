@@ -5,18 +5,18 @@ date: "17/04/2016"
 mainfont: Ubuntu Light
 monofont: "Ubuntu Mono"
 fontsize: 11pt
-output:
-  # md_document:
-  #   variant: markdown_github
+output: html_document
+  # # md_document:
+  # #   variant: markdown_github
+  # #   toc: true
+  # pdf_document:
+  #   latex_engine: xelatex
   #   toc: true
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
-    highlight: pygments
-    # keep_tex: yes
+  #   highlight: pygments
+  #   # keep_tex: yes
 ---
 ```{r Load Libraries, include = FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = T)
+knitr::opts_chunk$set(echo = TRUE, comment = ">>", cache = F)
 set.seed(1000000007)
 
 # Función para verificar si un paquete está instalado o no
@@ -48,12 +48,15 @@ library(MASS)
 ```
 
 ```{r Load aux functions}
-# Calculate the number of cores
-cores.number <- detectCores()
-cl <- makeCluster(cores.number, type = "FORK")
-# Initialize seed
-clusterSetRNGStream(cl, iseed = 1000000007)
-
+GetParCluster <- function(seed = 1000000007) {
+  # Calculate the number of cores
+  cores.number <- detectCores()
+  cl <- makeCluster(cores.number, type = "FORK")
+  # Initialize seed
+  clusterSetRNGStream(cl, iseed = seed)
+  
+  cl
+}
 # Utils
 GetLine <- function(interval = c(-1, 1)){
   # Computes the slope and intercept values of two points in the given interval
@@ -646,6 +649,7 @@ p4 <- qplot(c(1:result[,4]$iters), result[,4]$history,
             geom = "line", xlab = "Iterations", ylab = "Error", main = "Initial Point: (-1, -1)")
 
 grid.arrange(p1,p2,p3,p4, nrow = 2, ncol = 2, top = "Results of Newton's Method", bottom = "It computes a direct solution")
+rm(p1,p2,p3,p4)
 ```
 
 - Extraer conclusiones sobre las conductas de los algoritmos comparando la curva de decrecimiento de la función calculada en el apartado anterior y la correspondiente obtenida con gradiente descendente.
@@ -771,10 +775,12 @@ $$
 - Usar la muestra de datos etiquetada para encontrar $g$ y estimar $E_{out}$  usando para ello un número suficientemente grande de nuevas muestras.
 
 ```{r}
-cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
+cl <- GetParCluster()
+cross.entropy.error <- mean(parSapply(cl, data$y * (t(w) %*% t(data$x)), h))
 # Compute the cross entropy error, with new data for our hypothesis
 data <- NewDataSet(1000000, line = line$points)
-cross.entropy.error <- mean(sapply(data$y * (t(w) %*% t(data$x)), h))
+cross.entropy.error <- mean(parSapply(cl, data$y * (t(w) %*% t(data$x)), h))
+stopCluster(cl)
 ```
 
 *Para estimar $E_{out}$ usamos el error de entropía cruzada, el cual es el siguiente
@@ -787,12 +793,19 @@ $$E_{out} = `r cross.entropy.error`$$
 ```{r Replicate 100 times}
 data <- NewDataSet(100)
 sgd.data <- cbind(data$x, as.vector(data$y))
-cross.entropy.error <- replicate(100, {
+
+# Export data needed for parallel processing
+# clusterExport(cl, c("sgd.data"))
+
+cl <- GetParCluster()
+# clusterSetRNGStream(cl, iseed = 1000000007)
+cross.entropy.error <- parSapply(cl, 1:100, function(x) {
   w <- SGD(sgd.data, h, dh, how.many.epochs = T)
-  error <- sum(parSapply(cl, data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
+  error <- sum(sapply(data$y * (t(w$w) %*% t(data$x)), h))/nrow(data$x)
   
   c(epochs = w$epochs, error = error)
 })
+
 rm(sgd.data)
 stopCluster(cl)
 ```
@@ -941,7 +954,7 @@ muestra es de $`r e.in`$ dígitos mal clasificados para $E_{in}$ y $`r e.test`$ 
 
 - Obtener cotas sobre el verdadero valor de $E_{out}$. Pueden calcularse dos cotas una basada en $E_{in}$ y otra basada en $E_{test}$. Usar una tolerancia $\delta=0.05$. ¿Qué cota es mejor?
 
-*Calcularemos ahora las cotas sobre el verdadero valor de $E_{out}, una basada
+*Calcularemos ahora las cotas sobre el verdadero valor de $E_{out}$, una basada
 en $E_{in}$ y otra en $E_{test}$, con una tolerancia $\delta = 0.05$, la fórmula es:*.
 
 $$E_{out}(g)  \leq E_{in}(g) + \sqrt{\frac{8}{N}\ln\left(\frac{4(2N)^{d_{vc}}+ 1}{\delta}\right )}$$
@@ -974,8 +987,9 @@ Sin embargo si tenemos en cuenta la cantidad de datos, para test es mucho más a
 el error relativo ($`r (e.test * 100)/nrow(x.test)`\%$) mientras que para entrenamiento
 es del $`r (e.in * 100)/nrow(x.training)`\%$
 
-- ({\em Opcional 0.1}) Repetir los puntos anteriores pero usando una transformación polinómica de tercer orden( $\Phi_3(\textbf{x})$ en las transparencias de teoría).
-- ({\em Opcional 0.1}) Si tuviera que usar los resultados para dárselos a un potencial cliente ¿usaría la transformación polinómica? Explicar la decisión.
+- (\em{Opcional 0.1}) Repetir los puntos anteriores pero usando una transformación polinómica de tercer orden( $\Phi_3(\textbf{x})$ en las transparencias de teoría).
+
+- (\em{Opcional 0.1}) Si tuviera que usar los resultados para dárselos a un potencial cliente ¿usaría la transformación polinómica? Explicar la decisión.
 
 # SobreAjuste
 
@@ -1075,8 +1089,8 @@ p <- (ggplot(X.10.degree, aes(x = x, y = y))
     + geom_point()
     + theme_bw())
 
-(p + geom_line(aes(y = X.10.degree$predicted.from.g2, colour = "2nd Order Fit"), size = 1)
-   + geom_line(aes(y = X.10.degree$predicted.from.g10, colour = "10th Order Fit"), size = 1)
+(p + geom_line(aes(y = X.10.degree$predicted.from.g2, colour = "2nd Order Fit"))
+   + geom_line(aes(y = X.10.degree$predicted.from.g10, colour = "10th Order Fit"))
    + scale_color_discrete(name = "Polynomial fits") )
 ```
 
@@ -1089,8 +1103,8 @@ p <- (ggplot(X.2.degree, aes(x = x, y = y))
     + geom_point()
     + theme_bw())
 
-(p + geom_line(aes(y = X.2.degree$predicted.from.g2, colour = "2nd Order Fit"), size = 1)
-   + geom_line(aes(y = X.2.degree$predicted.from.g10, colour = "10th Order Fit"), size = 1)
+(p + geom_line(aes(y = X.2.degree$predicted.from.g2, colour = "2nd Order Fit"))
+   + geom_line(aes(y = X.2.degree$predicted.from.g10, colour = "10th Order Fit"))
    + scale_color_discrete(name = "Polynomial fits"))
 ```
 
@@ -1149,7 +1163,9 @@ X.Qf.degree <- GenerateLegendreDataset(Qf, N, sigma2)
 model.g2 <- lm(y ~ poly(x, degree = 2), data = X.Qf.degree)
 model.g10 <- lm(y ~ poly(x, degree = 10), data = X.Qf.degree)
 
-result <- replicate(100, {
+cl <- GetParCluster(123456789)
+
+result <- parSapply(cl, 1:100, function(x){
 
   ds <- GenerateLegendreDataset(Qf = Qf, N = N, sigma = sigma2)
   
@@ -1177,6 +1193,8 @@ result <- replicate(100, {
        eout.residuals2 = eout.residuals2,
        eout.residuals10 = eout.residuals10)
 })
+stopCluster(cl)
+
 eout.H10 <- mean(unlist(result[1,]))
 eout.H2 <- mean(unlist(result[2,]))
 eout.H2.residuals <- mean(unlist(result[3,]))
@@ -1200,8 +1218,8 @@ p <- (ggplot(ds, aes(x = x, y = y))
 
 ds <- cbind(ds, g2 = predict(model.g2), g10 = predict(model.g10))
 
-(p + geom_line(aes(y = ds$g2, colour = "2nd Order Fit"), size = 1)
-   + geom_line(aes(y = ds$g10, colour = "10th Order Fit"), size = 1)
+(p + geom_line(aes(y = ds$g2, colour = "2nd Order Fit"))
+   + geom_line(aes(y = ds$g10, colour = "10th Order Fit"))
    + scale_color_discrete(name = "Polynomial fits"))
 ```
 
@@ -1296,7 +1314,7 @@ Cross.Validation <- function(data) {
   lambda <- .05 / N
 
   x <- x[,-1]
-
+  
   cv.error <- sapply(seq_along(1:length(data)), function(i) {
     # Compute cross validation with leave one out
     # Adjust the model
@@ -1314,7 +1332,9 @@ Cross.Validation <- function(data) {
 N <- sapply(seq(d + 15, 125, 10), function(x)
   seq(1:x))
 
-cross.validation.errors <- sapply(N, Cross.Validation)
+cl <- GetParCluster()
+cross.validation.errors <- parSapply(cl, N, Cross.Validation)
+stopCluster(cl)
 # Compute $E_{cv}$
 e.cv <- sapply(cross.validation.errors, mean)
 ```
@@ -1347,7 +1367,8 @@ $$E_{cv} = `r mean(e.cv)`$$
 ```{r 1.b}
 # Replicate the above experiment 10^3 times
 run.x.times <- 1000
-result <- replicate(run.x.times, {
+cl <- GetParCluster()
+result <- parSapply(cl, 1:run.x.times, function(x) {
   
   cross.validation.errors <- sapply(N, Cross.Validation)
   
@@ -1365,7 +1386,7 @@ result <- replicate(run.x.times, {
        e.cv.var = var(e.cv)
   )
 })
-
+stopCluster(cl)
 result <- apply(matrix(unlist(result), ncol = run.x.times), 1, mean)
 ```
 
@@ -1404,6 +1425,3 @@ neff <- result[4]/result[6]
 
 sapply(cross.validation.errors, var)/var(e.cv)
 ```
-
-
-# Cuando toque interpretar el sobre ajuste, los gráficos del tema 4
