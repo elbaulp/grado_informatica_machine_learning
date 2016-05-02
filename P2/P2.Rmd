@@ -1336,7 +1336,7 @@ error.function <- function(yn, y.fit) {
   abs(yn - y.fit)
 }
 
-Cross.Validation <- function(data) {
+Cross.Validation <- function(data, lambda = .05) {
   # Cross Validation
   #
   # Args:
@@ -1352,7 +1352,7 @@ Cross.Validation <- function(data) {
   # y <- wf %*% x + sigma * epsilon
   y <- t(w.f) %*% t(x) + sqrt(sigma) * rnorm(N)
   ds <- as.data.frame(cbind(x[, -1], y = as.vector(y)))
-  lambda <- .05 / N
+  lambda <- lambda / N
 
   x <- x[,-1]
   
