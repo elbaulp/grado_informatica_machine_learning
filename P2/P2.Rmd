@@ -1061,6 +1061,7 @@ GenerateLegendreDataset <- function(Qf, N, sigma) {
       L <- as.matrix(L)
     if (!is.vector(coeff))
       coeff <- as.vector(coeff)
+    
     L %*% coeff
   }
 
@@ -1367,7 +1368,11 @@ Cross.Validation <- function(data) {
 
   cv.error
 }
+```
 
+- Para $N\in\{d+15,d+25,\dots,d+115\}$ calcular los errores $\textbf{e}_1,\dots,\textbf{e}_N$ de validación cruzada y $E_{cv}$.
+
+```{r 1.a}
 # Generate a list of vectors each one with the lengt of each data set we want.
 N <- sapply(seq(d + 15, 125, 10), function(x)
   seq(1:x))
@@ -1404,6 +1409,8 @@ es:*
 
 $$E_{cv} = `r mean(e.cv)`$$
 
+- Repetir el experimento $10^3$ veces, anotando el promedio y la varianza de $\textbf{e}_{1}$, $\textbf{e}_{2}$ y $E_{cv}$ en todos los experimentos.
+
 ```{r 1.b}
 # Replicate the above experiment 10^3 times
 run.x.times <- 1000
@@ -1439,6 +1446,8 @@ para la media y varianza de $e_1, e_2, E_{cv}$:*
 | var  | `r result[4]` | `r result[5]` | `r result[6]` |
 
 
+- ¿Cuál debería de ser la relación entre el promedio de los valores de $\textbf{e}_{1}$ y el de los valores de $E_{cv}$ ? ¿y el de los valores de $\textbf{e}_{2}$? Argumentar la respuesta en base a los resultados de los experimentos.
+
 *La relación entre los promedios de $e_1$ y el de los valores de $E_{cv}$ es que
 deben ser próximos. Inicialmente uno podría pensar que al dejar sólamente una muestra
 para validación debería de dar una estimación pobre sobre $E_{cv}$, sin embargo 
@@ -1449,6 +1458,8 @@ vamos acercando al valor real de estimación fuera de la muestra. Lo mismo ocurr
 *Como resultado de todo esto, tenemos que el error de validación cruzada tiende a 
 ser cercano al de fueda de la muestra, es decir $E_{out}\approx E_{cv}$*
 
+- ¿Qué es lo que contribuye a la varianza de los valores de $\textbf{e}_{1}$ ?
+
 *Con respecto a qué contribuye a la varianza de los valores de $e_1$ podríamos
 atribuirlo al ruido. Es posible que la estimación del punto de validación quede 
 muy alejada con respecto a su valor real, y por ello se obtiene una varianza alta.
@@ -1456,7 +1467,16 @@ Además, los outliers nos van a causar que la varianza aumente. Cuando coincida
 que el punto que dejamos para validación sea un outlier, obtendremos una varianza
 mayor.*
 
-*Si los errores de validación cruzada fueran independientes, *
+- Si los errores de validación-cruzada fueran verdaderamente independientes, ¿cual sería la relación entre la varianza de los valores de $\textbf{e}_{1}$ y la varianza de los de $E_{cv}$?
+
+*Si los errores de validación cruzada fueran independientes, una alta varianza
+en estos no tendría por qué darnos una alta varianza en $E_{cv}$. El problema 
+de usar para validación datos que vamos a usar para entrenamiento nos influirá en 
+estos resultados, a pesar de esto, obtenemos una buena estimación porque entrenamos
+$N-1$ modelos y validamos cada uno de ellos, luego estadísticamente tendremos una
+buena aproximación de cómo se comporta el modelo fuera de la muestra.*
+
+- Una medida del número efectivo de muestras nuevas usadas en el cálculo de $E_{cv}$ es el cociente entre la varianza de $\textbf{e}_{1}$ y la varianza de $E_{cv}$. Explicar por qué, y dibujar, respecto de $N$, el número efectivo de nuevos ejemplos($N_{eff}$) como un porcentaje de $N$. NOTA: Debería de encontrarse que $N_{eff}$ está cercano a $N$.
 
 *Calculemos ahora el número efectivo de muestras nuevas usadas en el cálculo de $E_{cv}$ como $\frac{var(e_1)}{var(E_{cv})}$*
 
@@ -1465,3 +1485,10 @@ neff <- result[4]/result[6]
 
 sapply(cross.validation.errors, var)/var(e.cv)
 ```
+
+- Si se incrementa la cantidad de regularización, ¿debería $N_{eff}$ subir o bajar?. Argumentar la respuesta. Ejecutar el mismo experimento con $\lambda=2.5/N$ y comparar los resultados del punto anterior para verificar la conjetura.
+
+*Al aumentar la regularización, estamos reduciendo la varianza del error, ya que
+hacemos que el modelo sea “más suave”, por ejemplo, al aumentar regularización
+en un polinomio de grado $10$ podremos llegar a conseguir que parezca una curva de 
+un polinomio de grado $2$.*
