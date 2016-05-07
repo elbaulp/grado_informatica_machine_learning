@@ -4,3 +4,5 @@ ggplot2
 GGally
 ISLR
 gridExtra
+lattice
+caret
