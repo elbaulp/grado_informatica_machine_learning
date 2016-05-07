@@ -1,0 +1,114 @@
+---
+title: "Aprendizaje Automático - Práctica 3"
+author: "Alejandro Alcalde"
+date: "05/05/2016"
+# mainfont: Ubuntu Light
+mathfont: "Source Code Pro Light"
+monofont: "Source Code Pro Light"
+fontsize: 10pt
+output:
+  # md_document:
+  #   variant: markdown_github
+  #   toc: true
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    highlight: tango
+    # keep_tex: yes
+# \newcommand{\tuple}[1]{\langle #1 \rangle}
+# Usar Paquete kurier a ver si fija la fuente
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = T)
+```
+
+```{r Load libraries, echo = F, include = F}
+is.installed <- function(paquete) is.element(
+  paquete, installed.packages())
+
+if (!is.installed("dplyr"))
+  install.packages("dplyr")
+if (!is.installed("ggplot2"))
+  install.packages("ggplot2")
+if (!is.installed("GGally"))
+  install.packages("GGally")
+if (!is.installed("ISLR"))
+  install.packages("ISLR")
+if (!is.installed("gridExtra"))
+  install.packages("gridExtra")
+
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(ISLR)
+library(gridExtra)
+```
+
+\newpage
+
+# Ejercicio 1
+
+Usar el conjunto de datos Auto que es parte del paquete ISLR.
+
+En este ejercicio desarrollaremos un modelo para predecir si un coche tiene un
+consumo de carburante alto o bajo usando la base de datos Auto. Se considerará alto
+cuando sea superior a la mediana de la variable mpg y bajo en caso contrario.
+
+- Usar las funciones de R `pairs()` y `boxplot()` para investigar la dependencia entre
+`mpg` y las otras características. ¿Cuáles de las otras características parece más
+útil para predecir `mpg`? Justificar la respuesta. (0.5 puntos)
+
+_En primer lugar cargaremos los datos, y vemos de qué tipo son:_
+
+```{r EXERCISE 1.A}
+# Information dense summary of the data
+(ds <- dplyr::tbl_df(Auto))
+dplyr::glimpse(ds)
+```
+```{r scatterplots, echo=F}
+ds$origin <- factor(ds$origin)
+GGally::ggpairs(ds, aes(colour = origin, alpha = .5),
+                 upper = list(continuous = wrap("cor", size = 2.5)),
+                 lower = list(continuous = "points"),
+                 diag = "blank", axisLabels = "none", columns = 1:7,
+                 title = "Scatterplots of Auto DS",
+                 columnLabels = c("mpg", "cyl", "displ", "cv", "weight", "acc", "year"))
+```
+
+Los colores de los puntos corresponden al origen del coche (Americano, Europeo u
+Japonés), se puede intuir que algunos coches gastan más en función del continente.
+
+Como se aprecia en la gráfica, hay varias variables correlacionadas tanto positiva
+como negativamente. Pero a nosotros solo nos interesan las relacionadas con el 
+consumo de combustible. Con ello en mente, podríamos decir que las variables más 
+correladas son la capacidad del motor (__Displacement__), el peso y la potencia
+(__horsepower__) del coche. Veámoslas mejor:
+
+```{r plotting corr vars, echo = F}
+v <- ds %>% dplyr::select(mpg, horsepower, weight, displacement, origin)
+
+ggplot2::ggplot(data = v, aes(mpg, horsepower)) + 
+  geom_point(aes(colour = origin)) + 
+  theme_bw() + 
+  scale_color_discrete(name = "Origin", labels = c("American", "European", "Japanese"))
+
+ggplot2::ggplot(data = v, aes(mpg, weight)) + 
+  geom_point(aes(colour = origin)) + 
+  theme_bw() + 
+  scale_color_discrete(name = "Origin", labels = c("American", "European", "Japanese"))
+
+ggplot2::ggplot(data = v, aes(mpg, displacement)) + 
+  geom_point(aes(colour = origin)) + 
+  theme_bw() + 
+  scale_color_discrete(name = "Origin", labels = c("American", "European", "Japanese"))
+```
+
+Veamos ahora la correlación mediante `boxplot`:
+
+```{r Boxplots, }
+```
+
+
+
+
