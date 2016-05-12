@@ -22,3 +22,5 @@ vignettes/*.pdf
 .Rproj.user
 *_cache/
 *_files/
+
+metafiles/

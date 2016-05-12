@@ -14,6 +14,7 @@ output:
     toc: true
     highlight: tango
     # md_extensions: +latex_macros+raw_tex
+# fc-list :outline -f "%{family}\n"
 ---
 
 ```{r setup, include=FALSE}
