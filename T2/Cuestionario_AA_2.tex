@@ -435,11 +435,17 @@ Universidad de Granada                 % Institution of author
     %
     \item La técnica de regularización de Tikhonov es bastante general al usar la condición
     \[
-    \textbf{w}^T\mathrm{\Gamma^T\Gamma}\textbf{w}\leq C
+      \textbf{w}^T\mathrm{\Gamma^T\Gamma}\textbf{w}\leq C
     \]
     que define relaciones entre las $w_i$ (La matriz $\Gamma_i$ se denomina regularizador de Tikhonov)
     \begin{enumerate}
       \item Calcular $\Gamma$ cuando $\sum_{q=0}^Q w_q^2 \leq C$
+
+      \miit{Respuesta:}
+
+      Para conseguir ese valor, es necesario que $\mathrm{\Gamma^T\Gamma = I}$, este tipo de matrices son ortogonales, ya que para ellas se cumple
+      $\mathrm{\Gamma^T\Gamma = \Gamma\Gamma^T = I}$. Teniendo $\mathrm{\Gamma^T\Gamma = I}$ se cumpliría $\sum_{q=0}^Q w_q^2 \leq C$.
+
       \item Calcular $\Gamma$ cuando $(\sum_{q=0}^Q w_q)^2 \leq C$
     \end{enumerate}
     Argumentar si el estudio de los regularizadores de Tikhonov puede hacerse a través de las propiedades algebraicas de las matrices $\Gamma$.
