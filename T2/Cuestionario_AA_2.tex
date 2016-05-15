@@ -88,6 +88,11 @@ Universidad de Granada                 % Institution of author
 
 \newcommand{\miit}[1]{{\textbf{\textit{#1}}}}
 
+\usepackage{pgf,tikz}
+\usepackage{mathrsfs}
+\usetikzlibrary{arrows}
+\usetikzlibrary{babel}
+
 %%% Begin document
 \begin{document}
   \maketitle
@@ -231,6 +236,97 @@ Universidad de Granada                 % Institution of author
     %
     \item
     Resolver el siguiente problema: Encontrar el punto $(x_0,y_0)$ sobre la línea $ax+by+d=0$ que este más cerca del punto $(x_1,y_1)$.
+
+    \miit{Respuesta:}
+
+    La menor distancia entre el punto y la recta sería la perpendicular:
+
+    \definecolor{uuuuuu}{rgb}{0.26666666666666666,0.26666666666666666,0.26666666666666666}
+    \definecolor{qqqqff}{rgb}{0.,0.,1.}
+
+    \begin{figure}[!h]
+    \centering
+
+    \begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=1.3333333333333333cm,y=1.4166666666666667cm]
+    \clip(5.,2.1) rectangle (7.5,4.5);
+    \draw [domain=5.:7.5] plot(\x,{(-4.428531747021518--1.782059032545761*\x)/2.802321837438366});
+    \draw (5.231756133978087,4.208332847560416) node[anchor=north west] {$(x_1, y_1)$};
+    \draw (6.4546255741581,2.6003076781898455) node[anchor=north west] {$(x_0, y_0)$};
+    \draw [dash pattern=on 1pt off 1pt,color=qqqqff] (5.490617799800959,3.756375060472591)-- (6.326083313959511,2.4425895954599097);
+    \begin{scriptsize}
+    \draw[color=black] (-0.3144863663659077,-1.6075186632169782) node {$f$};
+    \draw [fill=qqqqff] (5.490617799800959,3.756375060472591) circle (2.5pt);
+    \draw [fill=uuuuuu] (6.326083313959511,2.4425895954599097) circle (1.5pt);
+    \end{scriptsize}
+    \end{tikzpicture}
+    \end{figure}
+
+    Usaremos el método de \textit{Lagrange} para calcularlo:
+
+    La función a minimizar es la función de la distancia
+    \[
+        d(x_0, y_0) = \left ( x_0 - x_1 \right )^2 + \left ( y_0 - y_1 \right )^2
+    \]
+    Bajo la siguiente restricción
+    \[
+      g(x_0, y_0) = ax_0 + by_0 + d
+    \]
+
+    La función de \textit{Lagrange} es
+    \begin{IEEEeqnarray*}{rCl}
+      \mathcal{L}(x_0, y_0, \lambda) & = & d(x_0, y_0) + \lambda g(x_0, y_0) \\
+      & = &  \left ( x_0 - x_1 \right )^2 + \left ( y_0 - y_1 \right )^2 +
+      \lambda \left( ax_0 + by_0 + d \right )
+    \end{IEEEeqnarray*}
+
+    Y para resolver el problema necesitamos resolver el siguiente sistema:
+
+    \[
+      \left\{ \frac{\partial \mathcal{L}}{\partial x_0}=0,\frac{\partial \mathcal{L}}{\partial y_0}=0,\frac{\partial \mathcal{L}}{\partial \lambda }
+=0\right\}
+    \]
+
+    \begin{eqnarray}
+      \left\{
+      \begin{array}{c}
+        2(x_0 - x_1) + \lambda a = 0 \\
+        2(y_0 - y_1) + \lambda b = 0 \\
+        ax_0 + by_0 + d = 0
+      \end{array}
+      \right.  &\Leftrightarrow & \left\{
+      \begin{array}{c}
+        x_0 = x_1 - \frac{\lambda a}{2}\\
+        y_0 = y_1 - \frac{\lambda b}{2}\\
+        a\left(x_1 - \frac{\lambda a}{2}\right) + b\left(y_1 - \frac{\lambda b}{2}\right) + d = 0
+      \end{array}
+      \right.
+  \end{eqnarray}
+
+  Operamos en la tercera ecuación para despejar $\lambda$:
+
+  \begin{IEEEeqnarray*}{rCl}
+    ax_1 - \frac{\lambda a^2}{2} + by_1 - \frac{\lambda b^2}{2} + d  & = & 0 \\
+    2ax_1 - \lambda a^2 + 2by_1 - \lambda b^2 + 2d & = & 0 \\
+    - \lambda a^2 - \lambda b^2 & = & -2ax_1 -2by_1 -2d  \\
+    \lambda\left ( a^2 + b^2 \right ) & = & 2ax_1 + 2by_1 + 2d \\
+    \lambda & = & \frac{2ax_1 + 2by_1 + 2d}{a^2 + b^2} \\
+    \lambda & = & \frac{2 \left ( ax_1 + by_1 + d \right )}{a^2 + b^2}\\
+  \end{IEEEeqnarray*}
+
+  Con $\lambda$ despejada, la sustituimos en $x_0, y_0$:
+
+  \begin{IEEEeqnarray*}{rCl}
+     x_0 & = & x_1 - \frac{a(ax_1 + by_1 + d)}{a^2 + b^2}\\
+     y_0 & = & y_1 - \frac{b(ax_1 + by_1 + d)}{a^2 + b^2}\\
+  \end{IEEEeqnarray*}
+
+  Ahora solo  resta sustituir estos valores en la función objetivo $d(x_0, y_0)$ y conseguimos así el valor mínimo:
+
+  \begin{IEEEeqnarray*}{rCl}
+     d(x_0, y_0) & = & \left( x_1 - \frac{a(ax_1 + by_1 + d)}{a^2 + b^2} -x_1 \right )^2 + \left ( y_1 - \frac{b(ax_1 + by_1 + d)}{a^2 + b^2} -y_1 \right )^2 \\
+     & = & \left(\frac{a(ax_1 + by_1 + d)}{a^2 + b^2}\right )^2 + \left (\frac{b(ax_1 + by_1 + d)}{a^2 + b^2}\right )^2
+  \end{IEEEeqnarray*}
+
     %
     \item Consideremos el problema de optimización lineal con restricciones definido por
     \[
@@ -251,20 +347,85 @@ Universidad de Granada                 % Institution of author
 
     \item  Consideremos las mismas condiciones generales del enunciado del Ejercicio.2 del apartado de Regresión de la relación de ejercicios.2.
     Considerar ahora $\sigma=0.1$ y $d=8$, ¿cual es el más pequeño tamaño muestral que resultará en un valor esperado de $E_{in}$ mayor de $0.008$?.
+
+    \begin{IEEEeqnarray*}{rCl}
+       \mathbb{E}\left [ E_{in}(\mathbf{w}_{lin}) \right ] &=& \sigma^2\left ( 1 - \frac{d+1}{N} \right ) \\
+       \frac{\mathbb{E}\left [ E_{in}(\mathbf{w}_{lin}) \right ]}{\sigma^2} - 1 &=& - \frac{d+1}{N} \\
+       N\left ( \frac{\mathbb{E}\left [ E_{in}(\mathbf{w}_{lin}) \right ]}{\sigma^2} - 1  \right ) &=& - d+1 \\
+       N &=& \frac{-\left( d+1 \right )}{\left ( \frac{\mathbb{E}\left [ E_{in}(\mathbf{w}_{lin}) \right ]}{\sigma^2} - 1  \right )} \\
+       N &=& \frac{-\left( 8+1 \right )}{\left ( \frac{0.008}{0.1^2} - 1  \right )} \\
+       N &=& 45
+    \end{IEEEeqnarray*}
+
+    Y por tanto concluimos que $N > 45$, el valor más pequeño de $N$ sería pues $46$.
+
     %
     %
     \item En regresión logística mostrar que
+
     \[
     \nabla E_{in}(\textbf{w})=-\frac{1}{N}\sum_{n=1}^{N}\frac{y_n\textbf{x}_n}{1+e^{y_n \textbf{w}^T\textbf{x}_n}}= \frac{1}{N}\sum_{n=1}^{N}-y_n\textbf{x}_n\sigma(-y_n\textbf{w}^T\textbf{x}_n)
     \]
+    \miit{Respuesta:}
+
+    Sabemos que
+    \[
+      \sigma(x) = \frac{1}{1 + e^{-x}}
+    \]
+    Si partimos de
+    \[
+      \frac{1}{N}\sum_{n=1}^{N}-y_n\textbf{x}_n\sigma(-y_n\textbf{w}^T\textbf{x}_n)
+    \]
+    y aplicamos la fórmula $\sigma(x)$, es trivial llegar a que ambas expresiones son equivalentes:
+
+    \begin{IEEEeqnarray*}{rCl}
+      \frac{1}{N}\sum_{n=1}^{N}-y_n\textbf{x}_n\sigma(-y_n\textbf{w}^T\textbf{x}_n)  & = & \frac{1}{N}\sum_{n=1}^{N}-y_n\textbf{x}_n\frac{1}{1 + e^{y_n\textbf{w}^T\textbf{x}_n}} \\
+      & = & \frac{1}{N}\sum_{n=1}^{N}-\frac{y_n\textbf{x}_n}{1 + e^{y_n\textbf{w}^T\textbf{x}_n}} \\
+      & = & -\frac{1}{N}\sum_{n=1}^{N}\frac{y_n\textbf{x}_n}{1 + e^{y_n\textbf{w}^T\textbf{x}_n}} \\
+      & = & \nabla E_{in}(\textbf{w})
+    \end{IEEEeqnarray*}
 
     Argumentar que un ejemplo mal clasificado contribuye  al gradiente más que un ejemplo bien clasificado.
 
-    \item  Definamos el error en un punto $(\textbf{x}_n,y_n)$ por
+    \miit{Respuesta:}
+
+    Cuando un punto está mal clasificado, $e^{y_n\textbf{w}^T\textbf{x}_n} \to 0$, y por tanto el resultado de la división en $\frac{y_n\textbf{x}_n}{1+e^{y_n \textbf{w}^T\textbf{x}_n}}$ contribuye más a la sumatoria y por tanto al gradiente. Por
+    otro lado, cuando un punto está bien clasificado $e^{y_n\textbf{w}^T\textbf{x}_n} \to \infty$ y $\frac{y_n\textbf{x}_n}{1+e^{y_n \textbf{w}^T\textbf{x}_n}} \to 0$, aportando poco al gradiente.
+
+    \item  Definamos el error en un punto $(\mathbf{x}_n,y_n)$ por
     \[
     \textbf{e}_n(\textbf{w})=\max(0,-y_n\textbf{w}^T\textbf{x}_n)
     \]
     Argumentar que el algoritmo PLA puede interpretarse como SGD sobre $\textbf{e}_n$ con tasa de aprendizaje $\nu=1$.
+
+    \miit{Respuesta:}
+
+    La regla de actualización para SGD es:
+    \[
+      \mathbf{w} = \mathbf{w} - \eta \nabla \mathbf{e}_n(\mathbf{w})
+    \]
+    y la de PLA:
+    \[
+      \mathbf{w}(t+1) = \mathbf{w}(t) + y(t)\mathbf{x}(t)
+    \]
+
+    El gradiente para la función de error dada es:
+    \[
+      \nabla\mathbf{e}_n(\mathbf{w}) = \max(0, -y_n \mathbf{x}_n)
+    \]
+
+    PLA escoge un punto mal clasificado, lo cual quiere decir $y(t) \neq sign(\mathbf{w}^T(t)\mathbf{x}(t))$ y se le aplica la regla de actualización.
+    Para ese mismo punto mal clasificado en SGD con la función de error tenemos (No ponemos $\eta$ ya que vale $1$):
+
+    \begin{IEEEeqnarray*}{rCl}
+       \mathbf{w} & = & \mathbf{w} - \nabla \mathbf{e}_n(\mathbf{w}) \\
+                  & = & \mathbf{w} - \max(0, -y_n \mathbf{x}_n) \\
+                  & = & \mathbf{w} - y_n \mathbf{x}_n
+    \end{IEEEeqnarray*}
+
+    Al estar el punto mal clasificado $-y_n\textbf{w}^T\textbf{x}_n > 0 $ y por tanto se escoge ese valor en lugar del $0$.
+
+
     \item El ruido determinista depende de $\mathcal{H}$, ya que algunos modelos aproximan mejor $f$ que otros.
     \begin{enumerate}
       \item Suponer que $\mathcal{H}$ es fija y que incrementamos la complejidad de $f$.
