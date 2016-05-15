@@ -432,6 +432,19 @@ Universidad de Granada                 % Institution of author
       \item Suponer que $ f$ es fija y decrementamos la complejidad de $\mathcal{H}$
     \end{enumerate}
     Contestar para ambos escenarios: ¿En general subirá o bajará el ruido determinista? ¿La tendencia a sobrejaustar será mayor o menor? (Ayuda: analizar los detalles que influencian el sobreajuste)
+
+    \miit{Respuesta:}
+
+    Por lo general, el comportamiento para ambos casos será el mismo. Si fijamos $\mathcal{H}$ e incrementamos la complejidad de $f$, el ruido
+    determinista tenderá a aumentar,  ya que habrá más partes de $f$ que $\mathcal{H}$ no será capaz de capturar. Por contra, el sobre ajuste tenderá
+    a decrementar por razones similares, si $\mathcal{H}$ mantiene la misma complejidad, pero $f$ la aumenta, el sobre ajuste será menor ya que
+    $\mathcal{H}$ no será capaz de “pegarse” tanto a $f$.
+
+    Para el segundo caso, al fijar $f$ y decrementar $\mathcal{H}$, estamos haciendo algo similar, ya que al decrementar la complejidad de
+    $\mathcal{H}$ y mantener la de $f$, las nuevas $\mathcal{H}$ no serán capaces de ajustarse tan bien como las de mayor complejidad, y por tanto
+    aumentará el ruido determinista. Para el sobre ajuste, al bajar la complejidad $\mathcal{H}$ no se “pegará” tanto a los puntos de $f$, y por tanto
+    decrementará.
+
     %
     \item La técnica de regularización de Tikhonov es bastante general al usar la condición
     \[
@@ -447,6 +460,57 @@ Universidad de Granada                 % Institution of author
       $\mathrm{\Gamma^T\Gamma = \Gamma\Gamma^T = I}$. Teniendo $\mathrm{\Gamma^T\Gamma = I}$ se cumpliría $\sum_{q=0}^Q w_q^2 \leq C$.
 
       \item Calcular $\Gamma$ cuando $(\sum_{q=0}^Q w_q)^2 \leq C$
+
+      \miit{Respuesta:}
+
+      En este caso necesitamos que $\mathrm{\Gamma^T\Gamma}$ sea una matriz de todo unos. Para conseguirlo, $\mathrm{\Gamma}$ debe ser Suponiendo dimensión $2\times2$:
+      \[
+      \mathrm{\Gamma} =
+        \begin{pmatrix}
+          \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\\
+          \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}
+        \end{pmatrix}
+      \]
+
+      De este modo $\mathrm{\Gamma^T\Gamma}$ es
+      \[
+      \begin{pmatrix}
+        \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\\
+        \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}
+      \end{pmatrix}
+      \begin{pmatrix}
+        \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\\
+        \frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}
+      \end{pmatrix} =
+      \begin{pmatrix}
+        1 & 1\\
+        1 & 1
+      \end{pmatrix}
+      \]
+      y al hacer la operación
+
+      \begin{IEEEeqnarray*}{rCl}
+        \begin{pmatrix}
+          \mathbf{w}_0 & \mathbf{w}_1
+        \end{pmatrix}
+        \begin{pmatrix}
+          1 & 1\\
+          1 & 1
+        \end{pmatrix}
+        \begin{pmatrix}
+          \mathbf{w}_0 \\
+          \mathbf{w}_1
+        \end{pmatrix}
+          & = &
+        \left(
+          \mathbf{w}_0 + \mathbf{w}_1
+        \right)^2
+      \end{IEEEeqnarray*}
+
+      Que generalizada sería
+      \[
+        (\sum_{q=0}^Q w_q)^2 \leq C
+      \]
     \end{enumerate}
     Argumentar si el estudio de los regularizadores de Tikhonov puede hacerse a través de las propiedades algebraicas de las matrices $\Gamma$.
   \end{enumerate}
