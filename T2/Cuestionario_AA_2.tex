@@ -96,7 +96,6 @@ Universidad de Granada                 % Institution of author
 %%% Begin document
 \begin{document}
   \maketitle
-  \tableofcontents
   \thispagestyle{fancy}       % Enabling the custom headers/footers for the first page
   % The first character should be within \initial{}
 
@@ -339,11 +338,54 @@ Universidad de Granada                 % Institution of author
 
     \begin{enumerate}
       \item Para un conjunto de datos linealmente separable mostrar que para algún $\textbf{w}$ se debe de verificar la condición  $\mathrm{y_n\textbf{w}^T\textbf{x}_n>0 }$ para todo $\mathrm{(\textbf{x}_n,y_n)}$ del conjunto.
+
+      \miit{Respuesta:}
+
+      Si los datos son linealmente separables, entonces $\exists\mathbf{w}$ que divide los datos correctamente. Supuesto que ese $\mathbf{w}$ existe,
+      se cumple que $\forall y_n\mathbf{w}^\mathrm{T}\mathbf{x}_n > 0$ ya que el producto de la etiqueta de un punto por su predicción $\mathbf{w}^\mathrm{T}\mathbf{x}_n$ siempre será $>0$, ya que tanto el signo de $y_n$ como el de $\mathbf{w}^\mathrm{T}\mathbf{x}_n$ es el mismo.
+
       \item Formular un problema de programación lineal que resuelva el problema de la búsqueda del hiperplano separador. Es decir, identifique quienes son  A, \textbf{z}, \textbf{b} y \textbf{c} para este caso.
+
+      \miit{Respuesta:}
+
+      Supongamos el caso de estar en un espacio 2D, en ese caso las dimensiones de los vectores estarán en $\mathrm{R}^3$.
+
+      El vector $\mathbf{z}$ corresponde al hiperplano que queremos encotrar, $\mathbf{b}$ especifica las restricciones de dicho hiperplano. Así que
+      por un lado tenemos a la matriz $A$ de puntos de tamaño $m\times3$, que deben cumplir las restricciones impuestas por $\mathbf{b}$. $\mathbf{c}$
+      impone la condición de que $\mathrm{\mathbf{c}^T\textbf{z}}$ sea mínimo sujeto a $\mathrm{A\textbf{z} \leq \mathbf{b}}$.
+
     \end{enumerate}
 
 
     \item Probar que en el caso general de funciones con ruido se verifica que $\mathbb{E}_{\mathcal{D}}[E_{out}]= \sigma^2+\texttt{\textbf{bias}}+\texttt{\textbf{var}}$ ( ver transparencias de clase)
+
+    \miit{Respuesta:}
+
+    Si partimos de
+    \[
+      \mathbb{E}_D[(g^D(x) - (f(x) + \epsilon(x)))^2]
+    \]
+    y desarrollamos, llegamos a
+    \begin{IEEEeqnarray*}{rCl}
+        \mathbb{E}_x[\mathbb{E}_D\underbrace{(g^D(x)^2) - \tilde{g}(x)^2}_{var(x)} + \underbrace{\tilde{g}(x)^2 - 2\tilde{g}(x)f(x) + f(x)^2}_{bias(x)} \\ +
+        \epsilon(x)^2 + 2f(x)\epsilon(x) - 2\tilde{g}(x)\epsilon(x) ]
+    \end{IEEEeqnarray*}
+
+    Como suponemos que la media del ruido es $0$ y la varianza $\sigma^2$, tenemos que
+
+    \[
+      \mathbb{E}_x(\epsilon(x)^2) = \sigma^2
+    \]
+
+    \[
+    \mathbb{E}_x(2f(x)\epsilon(x) - 2\tilde{g}(x)\epsilon(x)) = 0
+    \]
+
+    y por tanto
+
+    \[
+    \mathbb{E}_x[\mathbb{E}_D\underbrace{(g^D(x)^2) - \tilde{g}(x)^2}_{var(x)} + \underbrace{\tilde{g}(x)^2 - 2\tilde{g}(x)f(x) + f(x)^2}_{bias(x)} + \underbrace{\epsilon(x)^2}_{\sigma^2}]
+    \]
 
     \item  Consideremos las mismas condiciones generales del enunciado del Ejercicio.2 del apartado de Regresión de la relación de ejercicios.2.
     Considerar ahora $\sigma=0.1$ y $d=8$, ¿cual es el más pequeño tamaño muestral que resultará en un valor esperado de $E_{in}$ mayor de $0.008$?.
