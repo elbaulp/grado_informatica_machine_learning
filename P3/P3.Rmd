@@ -112,15 +112,16 @@ Veamos ahora la correlación mediante `boxplot`:
 ```{r Boxplots, echo = F}
 Auto <- dplyr::mutate(Auto, mpg01 = as.factor(ifelse(mpg > median(mpg), 1, 0)))
 
-bp1 <- ggplot(Auto) + geom_boxplot(aes(mpg01, cylinders))
-bp2 <- ggplot(Auto) + geom_boxplot(aes(mpg01, displacement))
-bp3 <- ggplot(Auto) + geom_boxplot(aes(mpg01, horsepower))
-bp4 <- ggplot(Auto) + geom_boxplot(aes(mpg01, weight))
-bp5 <- ggplot(Auto) + geom_boxplot(aes(mpg01, acceleration))
-bp6 <- ggplot(Auto) + geom_boxplot(aes(mpg01, year))
+bp1 <- ggplot(Auto) + geom_boxplot(aes(mpg01, cylinders)) + labs(x = "")
+bp2 <- ggplot(Auto) + geom_boxplot(aes(mpg01, displacement)) + labs(x = "")
+bp3 <- ggplot(Auto) + geom_boxplot(aes(mpg01, horsepower)) + labs(x = "")
+bp4 <- ggplot(Auto) + geom_boxplot(aes(mpg01, weight)) + labs(x = "")
+bp5 <- ggplot(Auto) + geom_boxplot(aes(mpg01, acceleration)) + labs(x = "")
+bp6 <- ggplot(Auto) + geom_boxplot(aes(mpg01, year)) + labs(x = "")
 
 grid.arrange(bp1, bp2, bp3, bp4, bp5, bp6,
-             nrow = 2, ncol = 3)
+             nrow = 2, ncol = 3,
+             top = "Variables vs mpg01")
 rm(bp1, bp2, bp3, bp4, bp5, bp6)
 ```
 
