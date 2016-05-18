@@ -199,7 +199,7 @@ contingency.table <- table(glm.pred, test$mpg01)
 test.error <- mean(glm.pred != test$mpg01)
 ```
 
-Para ajustar el modelo logístico se ha usado `glm`, la tabla de contingencia es la
+Para ajustar el modelo logístico se ha usado `glm`, la matríz de confusión es la
 siguiente:
 
 |     	| $0$                          	| $1$                          	|
@@ -207,7 +207,10 @@ siguiente:
 | $0$ 	| $`r contingency.table[1,1]`$ 	| $`r contingency.table[1,2]`$ 	|
 | $1$ 	| $`r contingency.table[2,1]`$ 	| $`r contingency.table[2,2]`$ 	|
 
+Esta matríz muestra en la diagonal secundaria los falsos positivos
+y los negativos ($3$ y $6$ respetivamente).
 
 El error de test que hemos obtenido es del $`r (test.error)*100`\%$, lo cual 
 quiere decir que estamos fallando en clasificar correctamente ese porcentaje de veces.
+
 
