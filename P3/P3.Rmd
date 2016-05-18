@@ -65,7 +65,7 @@ En primer lugar cargaremos los datos, y vemos de qué tipo son:
 
 ```{r EXERCISE 1.A}
 # Information dense summary of the data
-(Auto <- dplyr::tbl_df(Auto))
+(Auto <- dplyr::tbl_df(ISLR::Auto))
 dplyr::glimpse(Auto)
 ```
 ```{r scatterplots, echo=F}
@@ -104,12 +104,31 @@ ggplot2::ggplot(data = v, aes(displacement, mpg)) +
   geom_point(aes(colour = origin)) + 
   theme_bw() + 
   scale_color_discrete(name = "Origin", labels = c("American", "European", "Japanese"))
+rm(v)
 ```
 
 Veamos ahora la correlación mediante `boxplot`:
 
-```{r Boxplots, }
+```{r Boxplots, echo = F}
+Auto <- dplyr::mutate(Auto, mpg01 = as.factor(ifelse(mpg > median(mpg), 1, 0)))
+
+bp1 <- ggplot(Auto) + geom_boxplot(aes(mpg01, cylinders))
+bp2 <- ggplot(Auto) + geom_boxplot(aes(mpg01, displacement))
+bp3 <- ggplot(Auto) + geom_boxplot(aes(mpg01, horsepower))
+bp4 <- ggplot(Auto) + geom_boxplot(aes(mpg01, weight))
+bp5 <- ggplot(Auto) + geom_boxplot(aes(mpg01, acceleration))
+bp6 <- ggplot(Auto) + geom_boxplot(aes(mpg01, year))
+
+grid.arrange(bp1, bp2, bp3, bp4, bp5, bp6,
+             nrow = 2, ncol = 3)
+rm(bp1, bp2, bp3, bp4, bp5, bp6)
 ```
+
+Como vemos, llegamos a la misma conclusión, la interpretación en boxplots es la
+siguiente: Si los boxplots no se solapan entre sí, las variables están correladas.
+Además, a mayor sea la distancia que los separa, más correladas estarán. Por tanto
+salvo la aceleración y el año, el resto de variables están correladas en mayor o 
+menor medida con las millas por galón de combustible que consume el coche.
 
 - __Seleccionar las variables predictoras que considere más relevantes.__
 
@@ -151,7 +170,9 @@ contiene un valor por encima de la mediana, y $-1$ si `mpg` contiene un valor po
 debajo. La mediana se puede calcular usando la función `median()`.__
 
 ```{r EXERCISE 1.D}
-# High levels of comsumption when above the median
+# A car has a low fuel comsumption if mpg is higher (It travels more milles per gallon of fuel).
+# Consider the cars with mpg above the median as low consumption (1), and high
+# comsumption those bellow the median
 training <- dplyr::mutate(partition$training, mpg01 = ifelse(mpg > median(mpg), 1, 0))
 test <- dplyr::mutate(partition$test, mpg01 = ifelse(mpg > median(mpg), 1, 0))
 ```
@@ -174,7 +195,7 @@ glm.pred <- rep("0", nrow(test))
 glm.pred[glm.probs > .5] = "1"
 
 contingency.table <- table(glm.pred, test$mpg01)
-test.error <- mean(glm.pred == test$mpg01)
+test.error <- mean(glm.pred != test$mpg01)
 ```
 
 Para ajustar el modelo logístico se ha usado `glm`, la tabla de contingencia es la
@@ -186,6 +207,6 @@ siguiente:
 | $1$ 	| $`r contingency.table[2,1]`$ 	| $`r contingency.table[2,2]`$ 	|
 
 
-El error de test que hemos obtenido es del $`r (1 - test.error)*100`\%$, lo cual 
+El error de test que hemos obtenido es del $`r (test.error)*100`\%$, lo cual 
 quiere decir que estamos fallando en clasificar correctamente ese porcentaje de veces.
 
