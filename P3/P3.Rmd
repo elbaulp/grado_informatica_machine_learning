@@ -214,9 +214,7 @@ summary(glm.fit)
 
 # Compute the test error
 glm.probs <- predict(glm.fit, newdata = test, type = "response")
-
-glm.pred <- rep("0", nrow(test))
-glm.pred[glm.probs > .5] = "1"
+glm.pred <- ifelse(glm.probs > .5, 1, 0)
 
 confusion.table <- table(glm.pred, test$mpg01)
 test.error <- mean(glm.pred != test$mpg01)*100
