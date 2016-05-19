@@ -91,13 +91,16 @@ dplyr::glimpse(Auto)
 Auto <- Auto %>% dplyr::select(-name)
 ```
 ```{r scatterplots, echo=F}
+debug <- F
 Auto$origin <- factor(Auto$origin)
+if (!debug){
 GGally::ggpairs(Auto, aes(colour = origin, alpha = .5),
                  upper = list(continuous = wrap("cor", size = 2.5)),
                  lower = list(continuous = "points"),
                  diag = "blank", axisLabels = "none", columns = 1:7,
                  title = "Scatterplots of Auto Auto",
                  columnLabels = c("mpg", "cyl", "displ", "cv", "weight", "acc", "year"))
+}
 ```
 
 Los colores de los puntos corresponden al origen del coche (Americano, Europeo o
@@ -253,7 +256,7 @@ data <- data.frame(train = training.X, y = ytraining)
 
 # Find the best k
 cl <- GetParCluster()
-brute.force.k <- parSapply(cl, 1:30, function(x) {
+brute.force.k <- parSapply(cl, 1:nrow(data), function(x) {
   pred <- class::knn(data[,-4], test.X, data[,4], k = x)
   mean(pred != test$mpg01)
 })
@@ -263,7 +266,8 @@ k <- which(brute.force.k == min(brute.force.k))[1]
 pred <- class::knn(data[,-4],
                    test.X,
                    data[,4],
-                   k = k)
+                   k = k,
+                   prob = T)
 
 confusion.table <- table(pred, test$mpg01)
 test.error <- mean(pred != test$mpg01)*100
@@ -325,16 +329,23 @@ ROCAUC <- function(predob) {
   auc.area_rdock
 }
 
-pred.object.knn <- ROCCurve(pred, test$mpg01, main = "ROC curve for KNN with k = 5")
-pred.object.glm <- ROCCurve(glm.pred, test$mpg01, main = "ROC curve for GLM")
+pred.object.knn <- ROCCurve(pred, test$mpg01, col = "blue", lwd = 2)
+pred.object.glm <- ROCCurve(glm.pred, test$mpg01, add = T, lwd = 2, col = "red")
+legend("bottomright", c("knn", "glm"), col = c("blue", "red"), lwd = 2)
 
 auc.knn <- ROCAUC(pred.object.knn)
 auc.glm <- ROCAUC(pred.object.glm)
+
+# prob <- attr(pred, "prob")
+# # http://stackoverflow.com/questions/11741599/how-to-plot-a-roc-curve-for-a-knn-model
+# pred_knn <- prediction(prob, test$mpg01)
+# pred_knn <- performance(pred_knn, "tpr", "fpr")
+# plot(pred_knn, avg= "threshold", colorize=T, lwd=3, main="Voilà, a ROC curve!")
 ```
 
 En el código anterior se han pintado y calculado las curvas _ROC_ para `KNN` y 
 regresión logística (`glm`). Como se puede apreciar en las gráficas, el clasificador
 que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamos
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
-En concreto, $AUC_{knn} = 0.9142857$ y $AUC_{glm} = 0.8714286$
+En concreto, $AUC_{knn} = 0.9510417$ y $AUC_{glm} = 0.9020833$
 
