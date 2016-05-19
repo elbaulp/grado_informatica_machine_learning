@@ -43,6 +43,8 @@ if (!is.installed("class"))
   install.packages("class")
 if (!is.installed("parallel"))
   install.packages("parallel")
+if (!is.installed("e1071"))
+  install.packages("e1071")
 
 library(dplyr)
 library(ggplot2)
@@ -52,6 +54,7 @@ library(gridExtra)
 library(caret)
 library(class)
 library(parallel)
+library(e1071)
 
 
 GetParCluster <- function(seed = 1000000007) {
@@ -250,7 +253,7 @@ data <- data.frame(train = training.X, y = ytraining)
 
 # Find the best k
 cl <- GetParCluster()
-brute.force.k <- parSapply(cl, 1:nrow(training.X), function(x) {
+brute.force.k <- parSapply(cl, 1:30, function(x) {
   pred <- class::knn(data[,-4], test.X, data[,4], k = x)
   mean(pred != test$mpg01)
 })
@@ -268,7 +271,7 @@ rm(data, cl)
 ```
 
 Primero preparamos los datos necesarios para aplicar `class:knn`, luego se ha
-buscado el mejor valor de `k` mediante fuerza bruta, el cual ha resultado ser
+buscado el mejor valor de `k` comprendido entre $1$ y $30$, el mejor ha sido
 $5$. Con este valor para `k` se ha obtenido la siguiente matriz de confusión:
 
 |     	| $0$  	| $1$  	|
@@ -277,6 +280,9 @@ $5$. Con este valor para `k` se ha obtenido la siguiente matriz de confusión:
 | $1$ 	| $1$  	| $42$ 	|
 
 Y un error de test de $5.194805\%$, el cual es bastante bueno.
+
+Se probó a buscar un valor para `k` usando `tune.knn`, pero se obtenían peores
+resultados para los valores de `k` propuestos.
 
 En cuanto a la eleccion de `k` no es tarea fácil, ya que en función de la elección
 podemos obtener efectos muy variantes en el clasificador. Una regla que puede 
