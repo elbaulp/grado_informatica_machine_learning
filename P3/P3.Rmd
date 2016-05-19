@@ -55,7 +55,7 @@ library(caret)
 library(class)
 library(parallel)
 library(e1071)
-
+library(ROCR)
 
 GetParCluster <- function(seed = 1000000007) {
   # Calculate the number of cores
@@ -290,3 +290,51 @@ servir de guía es que a medida que `k` aumenta, la frontera de decisión se vue
 más rígida (Más lineal), y a medida que decrece es más flexible. Por tanto es
 importante encontrar un punto medio para no obtener ni sobreajuste ni demasiado
 error en la clasificación
+
+- __Pintar las curvas ROC (instalar paquete ROCR en R) y comparar y valorar los
+resultados obtenidos para ambos modelos. (0.5 puntos)__
+
+```{r EXERCISE 1.D.3}
+ROCCurve <- function(pred, truth, ...) {
+  # Draw a ROC curve
+  #
+  # Args:
+  #   pred: Predicted values
+  #   truth: Real labels for the data
+  #   
+  # Returns:
+  #   The prediction object
+  predob = prediction(as.numeric(pred) , as.numeric(truth))
+  perf = performance(predob , "tpr" , "fpr")
+  plot(perf, ...)
+  
+  predob
+}
+
+ROCAUC <- function(predob) {
+  # Computes Area under ROC
+  #
+  # Args:
+  #   predob: Prediction object
+  #
+  #  Returns:
+  #    Area under ROC
+  auc_rdock <- performance(predob, "auc")
+  auc.area_rdock <- slot(auc_rdock, "y.values")[[1]]
+  
+  auc.area_rdock
+}
+
+pred.object.knn <- ROCCurve(pred, test$mpg01, main = "ROC curve for KNN with k = 5")
+pred.object.glm <- ROCCurve(glm.pred, test$mpg01, main = "ROC curve for GLM")
+
+auc.knn <- ROCAUC(pred.object.knn)
+auc.glm <- ROCAUC(pred.object.glm)
+```
+
+En el código anterior se han pintado y calculado las curvas _ROC_ para `KNN` y 
+regresión logística (`glm`). Como se puede apreciar en las gráficas, el clasificador
+que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamos
+el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
+En concreto, $AUC_{knn} = 0.9142857$ y $AUC_{glm} = 0.8714286$
+
