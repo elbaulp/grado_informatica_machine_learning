@@ -55,6 +55,7 @@ library(class)
 library(parallel)
 library(e1071)
 library(ROCR)
+library(MASS)
 
 set.seed(1000000007)
 
@@ -270,6 +271,12 @@ pred <- class::knn(data[,-4],
                    k = k,
                    prob = T)
 
+prob <- attr(pred, "prob")
+
+# this is necessary because k-NN by default outputs
+# the posterior probability of the winning class
+prob[pred == 0] <- 1 - prob[pred == 0]
+
 confusion.table <- table(pred, test$mpg01)
 test.error <- mean(pred != test$mpg01)*100
 
@@ -331,12 +338,16 @@ ROCAUC <- function(predob) {
   auc.area_rdock
 }
 
-pred.object.knn <- ROCCurve(pred, test$mpg01, col = "blue", lwd = 2)
+pred.object.knn <- ROCCurve(prod, test$mpg01, col = "blue", lwd = 2)
 pred.object.glm <- ROCCurve(glm.pred, test$mpg01, add = T, lwd = 2, col = "red")
 legend("bottomright", c("knn", "glm"), col = c("blue", "red"), lwd = 2)
 
 auc.knn <- ROCAUC(pred.object.knn)
 auc.glm <- ROCAUC(pred.object.glm)
+
+
+# Hay que extraer la probabilidad del knn con prob, y luego restar 1-prob para 
+# poder dibujar la curva roc bien.
 
 # prob <- attr(pred, "prob")
 # # http://stackoverflow.com/questions/11741599/how-to-plot-a-roc-curve-for-a-knn-model
@@ -351,3 +362,43 @@ que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamo
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
 En concreto, $AUC_{knn} = `r auc.knn`$ y $AUC_{glm} = `r auc.glm`$
 
+- __Bonus-1. (1 punto) Estimar el error de test de ambos modelos (`RL, K-NN`) pero
+usando Validación Cruzada de 5-particiones. Comparar con los resultados
+obtenidos en el punto anterior.__
+
+- __Bonus-2 (1 punto): Ajustar el mejor modelo de regresión posible considerando
+la variable `mpg` como salida y el resto como predictoras. Justificar el modelo
+ajustado en base al patrón de los residuos. Estimar su error de entrenamiento y
+test.__
+
+# Ejercicio 2
+
+__Usar la base de datos `Boston` (en el paquete MASS de R) para ajustar un modelo que
+prediga si dado un suburbio este tiene una tasa de criminalidad (`crim`) por encima o
+por debajo de la mediana. Para ello considere la variable `crim` como la variable salida y
+el resto como variables predictoras.__
+
+- __Encontrar el subconjunto óptimo de variables predictoras a partir de un
+modelo de regresión-LASSO (usar paquete `glmnet` de R) donde seleccionamos
+solo aquellas variables con coeficiente mayor de un umbral prefijado. (1
+punto)__
+
+```{r EXERCISE 2.1}
+
+```
+
+
+- __Ajustar un modelo de regresión regularizada con “`weight-decay`” (`ridge-regression`) 
+y las variables seleccionadas. Estimar el error residual del modelo
+y discutir si el comportamiento de los residuos muestran algún indicio de
+“underfitting”. (1 punto)__
+
+- __Definir una nueva variable con valores -1 y 1 usando el valor de la mediana de
+la variable `crim` como umbral. Ajustar un modelo SVM que prediga la nueva
+variable definida. (Usar el paquete `e1071` de R). Describir con detalle cada
+uno de los pasos dados en el aprendizaje del modelo SVM. Comience
+ajustando un modelo lineal y argumente si considera necesario usar algún
+núcleo. Valorar los resultados del uso de distintos núcleos. (1 punto)__
+
+- __Bonus-3 (1 punto): Estimar el error de entrenamiento y test por validación cruzada de
+5 particiones.__
