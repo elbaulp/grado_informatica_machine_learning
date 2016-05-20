@@ -19,8 +19,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = T)
-set.seed(1000000007)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r Load libraries, echo = F, include = F}
@@ -56,6 +55,8 @@ library(class)
 library(parallel)
 library(e1071)
 library(ROCR)
+
+set.seed(1000000007)
 
 GetParCluster <- function(seed = 1000000007) {
   # Calculate the number of cores
@@ -229,15 +230,15 @@ test.error <- mean(glm.pred != test$mpg01)*100
 Para ajustar el modelo logístico se ha usado `glm`, la matríz de confusión es la
 siguiente:
 
-|     	| $0$   | $1$   |
-|-----	|------ |------ |
-| $0$ 	| $30$ 	| $6$ 	|
-| $1$ 	| $2$ 	| $39$ 	|
+ |     	| $0$                          	| $1$                          	|
+ |-----	|------------------------------	|------------------------------	|
+ | $0$ 	| $`r confusion.table[1,1]`$ 	  | $`r confusion.table[1,2]`$ 	  |
+ | $1$ 	| $`r confusion.table[2,1]`$ 	  | $`r confusion.table[2,2]`$ 	  |
 
 Esta matríz muestra en la diagonal secundaria los falsos positivos
-y los negativos ($3$ y $6$ respetivamente).
+y los negativos ($`r confusion.table[1,2]`$ y $`r confusion.table[2,1]`$ respetivamente).
 
-El error de test que hemos obtenido es del $10.38961\%$, lo cual 
+El error de test que hemos obtenido es del $`r test.error`\%$, lo cual 
 quiere decir que estamos fallando en clasificar correctamente ese porcentaje de veces.
 
 - __Ajustar un modelo K-NN a los datos de entrenamiento y predecir `mpg01`
@@ -256,7 +257,7 @@ data <- data.frame(train = training.X, y = ytraining)
 
 # Find the best k
 cl <- GetParCluster()
-brute.force.k <- parSapply(cl, 1:nrow(data), function(x) {
+brute.force.k <- parSapply(cl, 1:30, function(x) {
   pred <- class::knn(data[,-4], test.X, data[,4], k = x)
   mean(pred != test$mpg01)
 })
@@ -271,19 +272,20 @@ pred <- class::knn(data[,-4],
 
 confusion.table <- table(pred, test$mpg01)
 test.error <- mean(pred != test$mpg01)*100
+
 rm(data, cl)
 ```
 
 Primero preparamos los datos necesarios para aplicar `class:knn`, luego se ha
 buscado el mejor valor de `k` comprendido entre $1$ y $30$, el mejor ha sido
-$5$. Con este valor para `k` se ha obtenido la siguiente matriz de confusión:
+$`r k`$. Con este valor para `k` se ha obtenido la siguiente matriz de confusión:
 
-|     	| $0$  	| $1$  	|
-|-----	|------	|------	|
-| $0$ 	| $31$ 	| $3$  	|
-| $1$ 	| $1$  	| $42$ 	|
+|     	| $0$                          	| $1$                          	|
+|-----	|------------------------------	|------------------------------	|
+| $0$ 	| $`r confusion.table[1,1]`$ 	  | $`r confusion.table[1,2]`$ 	  |
+| $1$ 	| $`r confusion.table[2,1]`$ 	  | $`r confusion.table[2,2]`$ 	  |
 
-Y un error de test de $5.194805\%$, el cual es bastante bueno.
+Y un error de test de $`r test.error`\%$, el cual es bastante bueno.
 
 Se probó a buscar un valor para `k` usando `tune.knn`, pero se obtenían peores
 resultados para los valores de `k` propuestos.
@@ -347,5 +349,5 @@ En el código anterior se han pintado y calculado las curvas _ROC_ para `KNN` y
 regresión logística (`glm`). Como se puede apreciar en las gráficas, el clasificador
 que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamos
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
-En concreto, $AUC_{knn} = 0.9510417$ y $AUC_{glm} = 0.9020833$
+En concreto, $AUC_{knn} = `r auc.knn`$ y $AUC_{glm} = `r auc.glm`$
 
