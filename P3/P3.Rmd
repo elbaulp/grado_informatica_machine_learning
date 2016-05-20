@@ -256,15 +256,11 @@ test.X <- scale(test.X)[,]
 
 data <- data.frame(train = training.X, y = ytraining)
 
-# Find the best k
-cl <- GetParCluster()
-brute.force.k <- parSapply(cl, 1:30, function(x) {
-  pred <- class::knn(data[,-4], test.X, data[,4], k = x)
-  mean(pred != test$mpg01)
-})
-stopCluster(cl)
+# Find the best k with cross validation with 10 partitions
+k <- e1071::tune.knn(data[,-4], data[,4], k = 1:30, 
+                     tunecontrol = tune.control(sampling = "cross"))
+k <- k$best.parameters$k
 
-k <- which(brute.force.k == min(brute.force.k))[1]
 pred <- class::knn(data[,-4],
                    test.X,
                    data[,4],
@@ -338,13 +334,21 @@ ROCAUC <- function(predob) {
   auc.area_rdock
 }
 
-pred.object.knn <- ROCCurve(prod, test$mpg01, col = "blue", lwd = 2)
-pred.object.glm <- ROCCurve(glm.pred, test$mpg01, add = T, lwd = 2, col = "red")
+pred.object.knn <- ROCCurve(prob, test$mpg01, col = "blue", lwd = 2)
+pred.object.glm <- ROCCurve(glm.probs, test$mpg01, add = T, lwd = 2, col = "red")
 legend("bottomright", c("knn", "glm"), col = c("blue", "red"), lwd = 2)
 
 auc.knn <- ROCAUC(pred.object.knn)
 auc.glm <- ROCAUC(pred.object.glm)
 
+
+# devtools::install_github("hadley/ggplot2")
+# devtools::install_github("sachsmc/plotROC")
+# library(plotROC)
+
+# data <- data.frame(M = prob, D = test$mpg01)
+
+# ggplot(data, aes(d = D, m = M)) + ?geom_roc()
 
 # Hay que extraer la probabilidad del knn con prob, y luego restar 1-prob para 
 # poder dibujar la curva roc bien.
