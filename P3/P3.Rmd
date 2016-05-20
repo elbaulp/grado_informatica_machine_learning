@@ -333,8 +333,10 @@ ROCCurve <- function(data) {
 pred.object.knn <- prediction(as.numeric(prob), as.numeric(test$mpg01))
 pred.object.glm <- prediction(glm.probs, test$mpg01)
 
-data <- data.frame(M = c(unlist(attr(pred.object.knn, "predictions")), unlist(attr(pred.object.glm, "predictions"))),
-                   D = c(unlist(attr(pred.object.knn, "labels")), unlist(attr(pred.object.glm, "labels"))),
+data <- data.frame(M = c(unlist(attr(pred.object.knn, "predictions")), 
+                         unlist(attr(pred.object.glm, "predictions"))),
+                   D = c(unlist(attr(pred.object.knn, "labels")), 
+                         unlist(attr(pred.object.glm, "labels"))),
                    model = c(rep("knn", 77), rep("glm", 77)))
 auc <- ROCCurve(data)
 ```
