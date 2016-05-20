@@ -44,6 +44,8 @@ if (!is.installed("parallel"))
   install.packages("parallel")
 if (!is.installed("e1071"))
   install.packages("e1071")
+if (!is.installed("plotROC"))
+  install.packages("plotROC")
 
 library(dplyr)
 library(ggplot2)
@@ -56,6 +58,10 @@ library(parallel)
 library(e1071)
 library(ROCR)
 library(MASS)
+library(plotROC)
+
+devtools::install_github("hadley/ggplot2")
+devtools::install_github("sachsmc/plotROC")
 
 set.seed(1000000007)
 
@@ -304,67 +310,40 @@ error en la clasificación
 resultados obtenidos para ambos modelos. (0.5 puntos)__
 
 ```{r EXERCISE 1.D.3}
-ROCCurve <- function(pred, truth, ...) {
+ROCCurve <- function(data) {
   # Draw a ROC curve
   #
   # Args:
-  #   pred: Predicted values
-  #   truth: Real labels for the data
+  #   data: Data frame with three columns (M for predicted objects, D for true
+  #         classes and model if more than one ROC curve wants to be drawn)
   #   
   # Returns:
-  #   The prediction object
-  predob = prediction(as.numeric(pred) , as.numeric(truth))
-  perf = performance(predob , "tpr" , "fpr")
-  plot(perf, ...)
+  #   The Area Under ROC Curve (AUC)
+  # TODO: Check dataframe columns (Error handling)
+  g <- ggplot(data, aes(d = D, m = M, color = model)) + geom_roc(n.cuts = 0) + style_roc()
+  auc <- round(calc_auc(g), 6)
+  g <- g + annotate("text", x = .75, y = .25, 
+                    label = paste("AUC_knn = ", auc$AUC[2], "\nAUC_glm = ", auc$AUC[1]))
+
+  print(g)
   
-  predob
+  list(auc$AUC[2], auc$AUC[1])
 }
 
-ROCAUC <- function(predob) {
-  # Computes Area under ROC
-  #
-  # Args:
-  #   predob: Prediction object
-  #
-  #  Returns:
-  #    Area under ROC
-  auc_rdock <- performance(predob, "auc")
-  auc.area_rdock <- slot(auc_rdock, "y.values")[[1]]
-  
-  auc.area_rdock
-}
+pred.object.knn <- prediction(as.numeric(prob), as.numeric(test$mpg01))
+pred.object.glm <- prediction(glm.probs, test$mpg01)
 
-pred.object.knn <- ROCCurve(prob, test$mpg01, col = "blue", lwd = 2)
-pred.object.glm <- ROCCurve(glm.probs, test$mpg01, add = T, lwd = 2, col = "red")
-legend("bottomright", c("knn", "glm"), col = c("blue", "red"), lwd = 2)
-
-auc.knn <- ROCAUC(pred.object.knn)
-auc.glm <- ROCAUC(pred.object.glm)
-
-
-# devtools::install_github("hadley/ggplot2")
-# devtools::install_github("sachsmc/plotROC")
-# library(plotROC)
-
-# data <- data.frame(M = prob, D = test$mpg01)
-
-# ggplot(data, aes(d = D, m = M)) + ?geom_roc()
-
-# Hay que extraer la probabilidad del knn con prob, y luego restar 1-prob para 
-# poder dibujar la curva roc bien.
-
-# prob <- attr(pred, "prob")
-# # http://stackoverflow.com/questions/11741599/how-to-plot-a-roc-curve-for-a-knn-model
-# pred_knn <- prediction(prob, test$mpg01)
-# pred_knn <- performance(pred_knn, "tpr", "fpr")
-# plot(pred_knn, avg= "threshold", colorize=T, lwd=3, main="Voilà, a ROC curve!")
+data <- data.frame(M = c(unlist(attr(pred.object.knn, "predictions")), unlist(attr(pred.object.glm, "predictions"))),
+                   D = c(unlist(attr(pred.object.knn, "labels")), unlist(attr(pred.object.glm, "labels"))),
+                   model = c(rep("knn", 77), rep("glm", 77)))
+auc <- ROCCurve(data)
 ```
 
 En el código anterior se han pintado y calculado las curvas _ROC_ para `KNN` y 
 regresión logística (`glm`). Como se puede apreciar en las gráficas, el clasificador
 que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamos
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
-En concreto, $AUC_{knn} = `r auc.knn`$ y $AUC_{glm} = `r auc.glm`$
+En concreto, $AUC_{knn} = `r auc[1]`$ y $AUC_{glm} = `r auc[2]`$
 
 - __Bonus-1. (1 punto) Estimar el error de test de ambos modelos (`RL, K-NN`) pero
 usando Validación Cruzada de 5-particiones. Comparar con los resultados
