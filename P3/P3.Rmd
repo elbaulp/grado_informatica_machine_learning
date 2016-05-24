@@ -46,6 +46,8 @@ if (!is.installed("e1071"))
   install.packages("e1071")
 if (!is.installed("plotROC"))
   install.packages("plotROC")
+if (!is.installed("glmnet"))
+  install.packages("glmnet")
 
 library(dplyr)
 library(ggplot2)
@@ -59,6 +61,7 @@ library(e1071)
 library(ROCR)
 library(MASS)
 library(plotROC)
+library(glmnet)
 
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
@@ -189,9 +192,7 @@ estratificado.
 ```{r EXERCISE 1.C}
 partitionDistribution <- function(partition) {
   print(paste('Training: ', nrow(partition$training), 'instances'))
-  print(summary(partition$training$origin) / nrow(partition$training) * 100)
   print(paste('Test: ', nrow(partition$test), 'instances'))
-  print(summary(partition$test$origin)  / nrow(partition$test) * 100)
 }
 
 indexes <- createDataPartition(Auto$origin, p = .8, list = FALSE)
@@ -369,9 +370,50 @@ solo aquellas variables con coeficiente mayor de un umbral prefijado. (1
 punto)__
 
 ```{r EXERCISE 2.1}
+# Partition data into test and training
+indexes <- createDataPartition(Boston$crim, p = .8, list = FALSE)
+partition <- list(training = Boston[indexes,], test = Boston[-indexes,])
+partitionDistribution(partition)
+# Prepare the data for the model
+data.boston.training.X <- as.matrix(partition$training[,-1])
+data.boston.training.Y <- as.matrix(partition$training[,1])
+data.boston.test.X <- as.matrix(partition$test[,-1])
+data.boston.test.Y <- as.matrix(partition$test[,1])
 
+# Generate a set of lambdas to prove
+grid <- 10 ^ seq(10 , -2 , length = 1000)
+# grid <- 10 ^ seq(-1, -0.2, by = 0.01)
+# Fit a Lasso model
+lasso.model <- glmnet(data.boston.training.X,
+                      data.boston.training.Y, alpha = 1, lambda = grid)
+# Compute the cross validation error
+cv.lasso.out <- cv.glmnet(data.boston.training.X, 
+                          data.boston.training.Y, alpha = 1, lambda = grid)
+# Select the best lambda from the cross validation test
+best.lambda <-  cv.lasso.out$lambda.min
+# Make predictions and compute the associate test error
+lasso.pred <- predict(lasso.model, s = best.lambda, newx = data.boston.test.X)
+test.error <- mean((lasso.pred - data.boston.test.Y ) ^ 2)
+
+# How many variables are being used to predict crime rates?
+out <- glmnet(as.matrix(Boston[,-1]),
+              as.matrix(Boston[,1]), alpha = 1, lambda = grid)
+# Out of 12 variables, the model uses 10 to predict crime rates.
+lasso.coef <- predict(out, type = "coefficients", s = best.lambda)
 ```
 
+En el código de arriba hemos ajustado el modelo usando la técnica _LASSO_. Con 
+esta técnica podemos ver que hay dos variables que no son de utilidad a la hora
+de predecir la tasa de criminalidad, estas dos variables son `age` y `tax`. La 
+variable que parece tener más importancia es `nox`. También se ha calculado
+el error en fuera de la muestra despues de aplicar validación cruzada, habiendo
+obtenido
+
+$$E_{test} = `r test.error`$$
+
+
+
+Los coeficientes que se obtienen son 
 
 - __Ajustar un modelo de regresión regularizada con “`weight-decay`” (`ridge-regression`) 
 y las variables seleccionadas. Estimar el error residual del modelo
