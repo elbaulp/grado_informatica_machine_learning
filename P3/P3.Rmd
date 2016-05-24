@@ -66,7 +66,7 @@ library(glmnet)
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
 
-set.seed(1000000007)
+set.seed(1000000008)
 
 GetParCluster <- function(seed = 1000000007) {
   # Calculate the number of cores
@@ -393,27 +393,44 @@ cv.lasso.out <- cv.glmnet(data.boston.training.X,
 best.lambda <-  cv.lasso.out$lambda.min
 # Make predictions and compute the associate test error
 lasso.pred <- predict(lasso.model, s = best.lambda, newx = data.boston.test.X)
-test.error <- mean((lasso.pred - data.boston.test.Y ) ^ 2)
+lasso.test.error <- mean((lasso.pred - data.boston.test.Y ) ^ 2)
 
 # How many variables are being used to predict crime rates?
 out <- glmnet(as.matrix(Boston[,-1]),
               as.matrix(Boston[,1]), alpha = 1, lambda = grid)
 # Out of 12 variables, the model uses 10 to predict crime rates.
-lasso.coef <- predict(out, type = "coefficients", s = best.lambda)
+(lasso.coef <- predict(out, type = "coefficients", s = best.lambda))
 ```
 
 En el código de arriba hemos ajustado el modelo usando la técnica _LASSO_. Con 
 esta técnica podemos ver que hay dos variables que no son de utilidad a la hora
 de predecir la tasa de criminalidad, estas dos variables son `age` y `tax`. La 
 variable que parece tener más importancia es `nox`. También se ha calculado
-el error en fuera de la muestra despues de aplicar validación cruzada, habiendo
+el error fuera de la muestra despues de aplicar validación cruzada, habiendo
 obtenido
 
-$$E_{test} = `r test.error`$$
+$$E_{test} = `r lasso.test.error`\%$$
 
+Los coeficientes que se obtienen son:
 
+$$
+w = \begin{bmatrix}
+zn = `r lasso.coef[2]` \\
+indus = `r lasso.coef[3]` \\
+chas = `r lasso.coef[4]` \\
+nox = `r lasso.coef[5]` \\
+rm = `r lasso.coef[6]` \\
+dis = `r lasso.coef[8]` \\
+rad = `r lasso.coef[9]` \\
+ptratio = `r lasso.coef[11]` \\
+black = `r lasso.coef[12]` \\
+lstat = `r lasso.coef[13]` \\
+mdev = `r lasso.coef[14]` \\
+\end{bmatrix}
+$$
 
-Los coeficientes que se obtienen son 
+Basándonos en estos valores aún podríamos descartar algunas variables más, por 
+ejemplo todas aquellas con un coeficiente $< 0.01$.
 
 - __Ajustar un modelo de regresión regularizada con “`weight-decay`” (`ridge-regression`) 
 y las variables seleccionadas. Estimar el error residual del modelo
