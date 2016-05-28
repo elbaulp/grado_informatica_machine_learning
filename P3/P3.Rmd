@@ -414,7 +414,7 @@ $$E_{test} = `r lasso.test.error`\%$$
 Los coeficientes que se obtienen son:
 
 $$
-w = \begin{bmatrix}
+\mathbf{w} = \begin{bmatrix}
 zn = `r lasso.coef[2]` \\
 indus = `r lasso.coef[3]` \\
 chas = `r lasso.coef[4]` \\
@@ -437,12 +437,33 @@ y las variables seleccionadas. Estimar el error residual del modelo
 y discutir si el comportamiento de los residuos muestran algún indicio de
 “underfitting”. (1 punto)__
 
+```{r EXERCISE 2.2}
+data.boston.training.selected.variables.X <- data.boston.training.X[,c(-6,-9)]
+ridge.model <- glmnet(data.boston.training.selected.variables.X,
+                      data.boston.training.Y, alpha = 0, lambda = best.lambda)
+
+data.boston.test.selected.variables.X <- data.boston.test.X[,c(-6,-9)]
+w.reg <- coef(ridge.model)
+ridge.pred <- predict(ridge.model, s = best.lambda,
+                      newx = data.boston.test.selected.variables.X)
+
+# https://en.wikipedia.org/wiki/Errors_and_residuals
+residual.error <- mean(ridge.pred - data.boston.test.Y)
+```
+
+Tras ajustar el modelo y predecir los valores usando los datos de test, se ha 
+obtenido un error residual del $`r residual.error * 100`\%$, lo cual es bastante
+alto y puede significar que se esté produciendo _underfitting_. Un posible motivo
+pudiera ser la no correcta elección de las variables predictoras.
+
 - __Definir una nueva variable con valores -1 y 1 usando el valor de la mediana de
 la variable `crim` como umbral. Ajustar un modelo SVM que prediga la nueva
 variable definida. (Usar el paquete `e1071` de R). Describir con detalle cada
 uno de los pasos dados en el aprendizaje del modelo SVM. Comience
 ajustando un modelo lineal y argumente si considera necesario usar algún
 núcleo. Valorar los resultados del uso de distintos núcleos. (1 punto)__
+
+
 
 - __Bonus-3 (1 punto): Estimar el error de entrenamiento y test por validación cruzada de
 5 particiones.__
