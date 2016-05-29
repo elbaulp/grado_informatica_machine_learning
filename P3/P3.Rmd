@@ -19,7 +19,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = F)
 ```
 
 ```{r Load libraries, echo = F, include = F}
@@ -419,8 +419,7 @@ $$E_{test} = `r lasso.test.error`\%$$
 
 Los coeficientes que se obtienen son:
 
-$$
-\mathbf{w} = \begin{bmatrix}
+$$\mathbf{w} = \begin{bmatrix}
 zn = `r lasso.coef[2]` \\
 indus = `r lasso.coef[3]` \\
 chas = `r lasso.coef[4]` \\
@@ -432,8 +431,7 @@ ptratio = `r lasso.coef[11]` \\
 black = `r lasso.coef[12]` \\
 lstat = `r lasso.coef[13]` \\
 mdev = `r lasso.coef[14]` \\
-\end{bmatrix}
-$$
+\end{bmatrix}$$
 
 Basándonos en estos valores aún podríamos descartar algunas variables más, por 
 ejemplo todas aquellas con un coeficiente $< 0.01$.
@@ -606,7 +604,7 @@ __Usar el conjunto de datos Boston y las librerías `randomForest` y `gbm` de R.
 ```{r EXERCISE 3.1}
 data.boston <- dplyr::tbl_df(Boston)
 
-indexes <- createDataPartition(data.boston$crim01, p = .8, list = FALSE)
+indexes <- createDataPartition(data.boston$medv, p = .8, list = FALSE)
 partition <- list(training = data.boston[indexes,], test = data.boston[-indexes,])
 
 data.boston.training <- dplyr::as.tbl(partition$training)
@@ -617,10 +615,75 @@ data.boston.test <- dplyr::as.tbl(partition$test)
 modelo de regresión usando bagging. Explicar cada uno de los parámetros
 usados. Calcular el error del test. (1 punto)__
 
+```{r EXERCISE 3.2}
+bagging.model <- randomForest(medv ~.,
+                              data = data.boston.training,
+                              mtray = ncol(data.boston.training) - 1,
+                              importance = T)
+
+bagging.predicted <- predict(bagging.model, newdata = data.boston.test)
+bagging.test.error <- mean((bagging.predicted - data.boston.test$medv) ^ 2)
+```
+
+Para ajustar un modelo mediante _bagging_ hemos de decirle al método `randomForest`
+que use todas las variables predictoras del dataset. Además, hemos fijado `importance = T`
+para que se nos devuelva la importancia de cada variable predictora. Tras ajustar
+el modelo, obtenemos un error en test de $`r bagging.test.error`\%$, y las variables
+predictoras más importantes son:
+
+```{r echo = F}
+importance(bagging.model)
+```
+
+{r randomForest}
+randomFor <- randomForest(medv ~., data = Boston, subset = index, importance = TRUE)
+randomFor.prediction <- predict(randomFor, newdata = Boston.test)
+randomFor.error <- mse(medv[-index], randomFor.prediction)
+
+El número de árboles usado es
+r I(randomFor$ntree)
+. El error de test es
+r I(randomFor.error)
+.
+
 - __3. Ajustar un modelo de regresión usando “Random Forest”. Obtener una
 estimación del número de árboles necesario. Justificar el resto de parámetros
 usados en el ajuste. Calcular el error de test y compararlo con el obtenido con
 bagging. (1 punto)__
+
+```{r EXERCISE 3.3}
+randomForest.model <- randomForest(medv ~.,
+                                   data = data.boston.training,
+                                   importance = T)
+
+randomForest.predicted <- predict(randomForest.model, newdata = data.boston.test)
+randomForest.test.error <- mean((randomForest.predicted - data.boston.test$medv) ^ 2)
+```
+
+Para obtener un valor óptimo para el número de árboles necesarios basta con mirar
+cuando se estabiliza el error conforme aumenta el número de árboles, o coger directamente
+el número de árboles que da el mínimo error:
+
+```{r echo = F}
+myplot <- data.frame(Trees = 1:randomForest.model$ntree, MSE = randomForest.model$mse)
+ggplot2::ggplot(data = myplot, aes(x = Trees, y = MSE)) + 
+  geom_line() + 
+  theme_bw()
+```
+
+## TODO, Si elegimos el que numero de arboles con menor mse quiza estemos sobre
+ajustando, seria mejor coger el num de cuando empieza a estabilizarse mse 
+de todos modos probar con ambos y ver cual da mejor error de test.
+
+```{r}
+which(randomForest.model$mse == min(randomForest.model$mse))
+randomForest.model$ntree
+randomForest.model$mse
+```
+
+
+
+El error de test para _Random Forest_ es del $`r randomForest.test.error`\%$
 
 - __4. Ajustar un modelo de regresión usando Boosting (usar gbm con distribution =
 ’gaussian’). Calcular el error de test y compararlo con el obtenido con bagging y
