@@ -48,6 +48,10 @@ if (!is.installed("plotROC"))
   install.packages("plotROC")
 if (!is.installed("glmnet"))
   install.packages("glmnet")
+if (!is.installed("randomForest"))
+  install.packages("randomForest")
+if (!is.installed("gbm"))
+  install.packages("gbm")
 
 library(dplyr)
 library(ggplot2)
@@ -62,6 +66,8 @@ library(ROCR)
 library(MASS)
 library(plotROC)
 library(glmnet)
+library(randomForest)
+library(gbm)
 
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
@@ -596,6 +602,16 @@ Y un error de test del $`r test.error.polynomial`\%$.
 __Usar el conjunto de datos Boston y las librerías `randomForest` y `gbm` de R.__
 
 - __1. Dividir la base de datos en dos conjuntos de entrenamiento (80%) y test (20%).__
+
+```{r EXERCISE 3.1}
+data.boston <- dplyr::tbl_df(Boston)
+
+indexes <- createDataPartition(data.boston$crim01, p = .8, list = FALSE)
+partition <- list(training = data.boston[indexes,], test = data.boston[-indexes,])
+
+data.boston.training <- dplyr::as.tbl(partition$training)
+data.boston.test <- dplyr::as.tbl(partition$test)
+```
 
 - __2. Usando la variable medv como salida y el resto como predictoras, ajustar un
 modelo de regresión usando bagging. Explicar cada uno de los parámetros
