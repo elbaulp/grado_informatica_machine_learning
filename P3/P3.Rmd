@@ -14,6 +14,7 @@ output:
     latex_engine: xelatex
     toc: true
     highlight: tango
+    keep_tex: true
     # md_extensions: +latex_macros+raw_tex
 # fc-list :outline -f "%{family}\n"
 ---
@@ -709,3 +710,30 @@ predictoras nos aseguramos que los árboles generados estén poco correlados.
 - __4. Ajustar un modelo de regresión usando Boosting (usar gbm con distribution =
 ’gaussian’). Calcular el error de test y compararlo con el obtenido con bagging y
 Random Forest. (1 punto)__
+
+```{r EXERCISE 3.4}
+boosting.model <- gbm(medv ~ .,
+                      data = data.boston.training, 
+                      distribution = "gaussian", 
+                      n.trees = 5000,
+                      interaction.depth = 4)
+```
+
+Tras ajustar usando _Boosting_, podemos ver qué variables son las más importantes
+en la siguiente gŕafica:
+
+```{r echo = F}
+summary(boosting.model)
+```
+
+Como se puede apreciar, las más predictoras son `lstat` y `rm`.
+
+```{r EXERCISE 3.4.test.error}
+boosting.predicted <- predict(boosting.model, newdata = data.boston.test,
+                              n.trees = 5000)
+boosting.test.error <- mean((boosting.predicted - data.boston.test$medv) ^ 2)
+```
+
+Para calcular el error en test ha sido del $`r boosting.test.error`\%$
+
+
