@@ -635,17 +635,6 @@ predictoras más importantes son:
 importance(bagging.model)
 ```
 
-{r randomForest}
-randomFor <- randomForest(medv ~., data = Boston, subset = index, importance = TRUE)
-randomFor.prediction <- predict(randomFor, newdata = Boston.test)
-randomFor.error <- mse(medv[-index], randomFor.prediction)
-
-El número de árboles usado es
-r I(randomFor$ntree)
-. El error de test es
-r I(randomFor.error)
-.
-
 - __3. Ajustar un modelo de regresión usando “Random Forest”. Obtener una
 estimación del número de árboles necesario. Justificar el resto de parámetros
 usados en el ajuste. Calcular el error de test y compararlo con el obtenido con
@@ -662,28 +651,60 @@ randomForest.test.error <- mean((randomForest.predicted - data.boston.test$medv)
 
 Para obtener un valor óptimo para el número de árboles necesarios basta con mirar
 cuando se estabiliza el error conforme aumenta el número de árboles, o coger directamente
-el número de árboles que da el mínimo error:
+el número de árboles que da el mínimo error. 
+
+El error de test que se ha obtenido para este primer ajuste de _RandomForest_ ha 
+sido del $`r randomForest.test.error`\%$, veamos si somos capaces de mejorarlo
+ajustando el número de árboles.
+
+En la siguiente figura se muestra el número de árboles en función de su error 
+cuadrático, también se ha señalado el número de árboles para el que se obtiene 
+el menor error:
 
 ```{r echo = F}
+minmse <- which(randomForest.model$mse == min(randomForest.model$mse))
+meanmse <-  mean(randomForest.model$mse)
 myplot <- data.frame(Trees = 1:randomForest.model$ntree, MSE = randomForest.model$mse)
 ggplot2::ggplot(data = myplot, aes(x = Trees, y = MSE)) + 
   geom_line() + 
+  geom_point(aes(x = minmse, y = randomForest.model$mse[minmse], colour = "Min MSE")) +
+  scale_color_discrete(name = "") + 
   theme_bw()
 ```
 
-## TODO, Si elegimos el que numero de arboles con menor mse quiza estemos sobre
-ajustando, seria mejor coger el num de cuando empieza a estabilizarse mse 
-de todos modos probar con ambos y ver cual da mejor error de test.
+Tras conocer estos datos, es interesante volver a ejecutar _RandomForest_ para ver
+si obtenemos mejores resultados ajustando el parámetro `ntree`. 
 
-```{r}
-which(randomForest.model$mse == min(randomForest.model$mse))
-randomForest.model$ntree
-randomForest.model$mse
+```{r echo = F}
+randomForest.model <- randomForest(medv ~.,
+                                   data = data.boston.training,
+                                   ntree = minmse,
+                                   mtry = 7,
+                                   importance = T)
+
+randomForest.predicted <- predict(randomForest.model, newdata = data.boston.test)
+randomForest.test.error <- mean((randomForest.predicted - data.boston.test$medv) ^ 2)
 ```
 
+Tras realizar un nuevo ajuste con $ntree = `r minmse`$ se ha obtenido un error 
+para test del $`r randomForest.test.error`\%$, es una mejora pequeña, pero mejora
+al fin y al cabo.
 
+Como análisis quizá deberíamos de considerar que al elegir el `ntree` de menor MSE
+podamos estar cometiendo sobre ajuste, sin embargo, tras realizar varios experimentos
+se ha comprobado que elegir el `ntree` de menor MSE es el que mejor resultados
+da para test.
 
-El error de test para _Random Forest_ es del $`r randomForest.test.error`\%$
+La principal diferencia con _bagging_ es que este primero usa todas las variables 
+predictoras para generar los árboles, mientras que _RandomForest_ usa un subconjunto
+de predictores. En el caso que nos ocupa (regresión), se usan $\frac{p}{3}$ variables
+predictoras, donde $p$ es el número de variables.
+
+La razón de usar un conjunto de variables predictoras de forma aleatoria cada
+vez es para rebajar la correlación entre árboles. De esta forma, si hay una variable
+con gran potencial predictor, no estará siempre la primera en el árbol, lo cual
+daría resultado a árboles muy parecidos. Seleccionando subconjuntos de variables
+predictoras nos aseguramos que los árboles generados estén poco correlados.
 
 - __4. Ajustar un modelo de regresión usando Boosting (usar gbm con distribution =
 ’gaussian’). Calcular el error de test y compararlo con el obtenido con bagging y
