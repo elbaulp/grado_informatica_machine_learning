@@ -53,6 +53,8 @@ if (!is.installed("randomForest"))
   install.packages("randomForest")
 if (!is.installed("gbm"))
   install.packages("gbm")
+if (!is.installed("tree"))
+  install.packages("tree")
 
 library(dplyr)
 library(ggplot2)
@@ -69,6 +71,7 @@ library(plotROC)
 library(glmnet)
 library(randomForest)
 library(gbm)
+library(tree)
 
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
@@ -744,6 +747,25 @@ __Usar el conjunto de datos OJ que es parte del paquete ISLR.__
 observaciones, y un conjunto de test conteniendo el resto de las observaciones.
 Ajustar un árbol a los datos de entrenamiento, con “Purchase” como la variable
 respuesta y las otras variables como predictores (paquete tree de R).__
+
+```{r EXERCISE 4.1}
+# Do stratified partitioning (So the probability distribution of 
+# the response variable is the same in training and test)
+data.oj <- dplyr::tbl_df(ISLR::OJ)
+indexes <- createDataPartition(data.oj$Purchase, p = .7473, list = FALSE)
+partition <- list(training = data.oj[indexes,], test = data.oj[-indexes,])
+
+data.oj.training <- dplyr::as.tbl(partition$training)
+data.oj.test <- dplyr::as.tbl(partition$test)
+
+# Fitting a tree
+tree.model <- tree::tree(Purchase ~ ., 
+                         data = data.oj.training)
+summary(tree.model)
+plot(tree.model)
+text(tree.model, pretty=1)
+```
+
 
 - __2. Usar la función summary() para generar un resumen estadístico acerca del árbol y
 describir los resultados obtenidos: tasa de error de “training”, número de nodos
