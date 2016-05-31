@@ -791,12 +791,31 @@ los consumidores no leales a _CH_ (Rama de la izquierda) el consumidor directame
 compra la otra marca de zumo (_MM_). Sin embargo, entre los leales a _CH_, existe
 la posiblidad de que compren zumo de la competencia si el ususario tiene un porcentaje
 de lealtad inferior al $76\%$, la diferencia de precio es menor de 0.23 y además 
-la competencia hace un descuento superior al $19\%$,bajo estas condiciones
+la competencia hace un descuento superior al $19\%$, bajo estas condiciones
 el consumidor comprará _MM_.
 
 - __4. Predecir la respuesta de los datos de test, y generar e interpretar la matriz de
 confusión de los datos de test. ¿Cuál es la tasa de error del test? ¿Cuál es la
 precisión del test? (1 punto)__
+
+```{r EXERCISE 4.3}
+tree.predicted <- predict(tree.model,
+                          newdata = data.oj.test,
+                          type = "class")
+confusion.table <- table(tree.predicted, data.oj.test$Purchase)
+tree.test.error <- mean(tree.predicted != data.oj.test$Purchase)*100
+```
+
+La matriz de confusión calculada es la siguiente:
+
+|     	| CH                            | MM                          	|
+|-----	|------------------------------	|------------------------------	|
+| CH 	  | $`r confusion.table[1,1]`$ 	  | $`r confusion.table[1,2]`$ 	  |
+| MM 	  | $`r confusion.table[2,1]`$ 	  | $`r confusion.table[2,2]`$ 	  |
+
+De la cual podemos saber que la tasa de error para test del modelo de árboles
+es del $`r tree.test.error`\%$, lo cual es bastante alta. La precisión por tanto
+es del $`r 100 - tree.test.error`\%$
 
 - __5. Aplicar la función cv.tree() al conjunto de “training” y determinar el tamaño óptimo
 del árbol. ¿Qué hace cv.tree? (0.5 puntos)__
