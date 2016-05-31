@@ -763,22 +763,36 @@ tree.model <- tree::tree(Purchase ~ .,
                          data = data.oj.training)
 ```
 
-Tras ajustar este modelo de árbol, se puede deducir que las variables más predictoras
-son `LoyalCH, SalePriceMM, PriceDiff` y `ListPriceDiff`. A continuación se muestra
-el árbol generado:
-
-```{r echo = F}
-plot(tree.model)
-text(tree.model)
-```
-
-
-
 - __2. Usar la función summary() para generar un resumen estadístico acerca del árbol y
 describir los resultados obtenidos: tasa de error de “training”, número de nodos
 del árbol, etc. (0.5 puntos)__
 
+El `summary` obtenido para el modelo es:
+
+```{r EXERCISE 4.2, echo = F}
+summary(tree.model)
+```
+
+Como vemos, las variables más predictoras son `LoyalCH, PriceDiff, ListPriceDiff`
+y `PctDiscMM`. Con un error para training del $16\%$ y únicamente 7 nodos terminales.
+
 - __3. Crear un dibujo del árbol e interpretar los resultados (0.5 puntos)__
+
+```{r echo = F}
+plot(tree.model)
+text(tree.model, pretty = 0)
+```
+
+La interpretación que podemos darle a este árbol podría ser que el factor decisivo
+que lleva a los consumidores a comprar un tipo de zumo u otro es cómo de leales
+son a la marca _CH_, aunque con un porcentaje casi cercano al $50\%$ podría decirse
+que es aleatorio. Son más interesantes las siguientes ramas del árbol. Entre
+los consumidores no leales a _CH_ (Rama de la izquierda) el consumidor directamente
+compra la otra marca de zumo (_MM_). Sin embargo, entre los leales a _CH_, existe
+la posiblidad de que compren zumo de la competencia si el ususario tiene un porcentaje
+de lealtad inferior al $76\%$, la diferencia de precio es menor de 0.23 y además 
+la competencia hace un descuento superior al $19\%$,bajo estas condiciones
+el consumidor comprará _MM_.
 
 - __4. Predecir la respuesta de los datos de test, y generar e interpretar la matriz de
 confusión de los datos de test. ¿Cuál es la tasa de error del test? ¿Cuál es la
