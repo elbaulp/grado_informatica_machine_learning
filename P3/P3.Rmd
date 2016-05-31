@@ -761,10 +761,17 @@ data.oj.test <- dplyr::as.tbl(partition$test)
 # Fitting a tree
 tree.model <- tree::tree(Purchase ~ ., 
                          data = data.oj.training)
-summary(tree.model)
-plot(tree.model)
-text(tree.model, pretty=1)
 ```
+
+Tras ajustar este modelo de árbol, se puede deducir que las variables más predictoras
+son `LoyalCH, SalePriceMM, PriceDiff` y `ListPriceDiff`. A continuación se muestra
+el árbol generado:
+
+```{r echo = F}
+plot(tree.model)
+text(tree.model)
+```
+
 
 
 - __2. Usar la función summary() para generar un resumen estadístico acerca del árbol y
