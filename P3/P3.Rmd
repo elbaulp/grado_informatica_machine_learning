@@ -489,7 +489,7 @@ ridge.pred <- predict(ridge.model, s = best.lambda,
                       newx = data.boston.test.selected.variables.X)
 
 # https://en.wikipedia.org/wiki/Errors_and_residuals
-residual.error <- mean(ridge.pred - data.boston.test.Y)
+residual.error <- abs(mean(ridge.pred - data.boston.test.Y))
 ```
 
 Tras ajustar el modelo y predecir los valores usando los datos de test, se ha 
@@ -538,7 +538,7 @@ confusion.table.radial <- table(svm.predicted, data.boston.test$crim01)
 test.error.radial <- mean(svm.predicted != data.boston.test$crim01)*100
 ```
 
-En principio se ha ajustado con un núcle lineal, pero no se han obtenido buenos 
+En principio se ha ajustado con un núcleo lineal, pero no se han obtenido buenos 
 resultados, ya que el error obtenido en test ha sido del $`r test.error.linear`\%$. Con
 una matriz de confusión como la siguiente:
 
@@ -567,17 +567,21 @@ Probamos un kernel de base radial esta vez, su matriz de confusión es:
 
 Con un error para test del $`r test.error.radial`\%$
 
-Sin embargo podemos obtener mejores resultados si usamos validación cruzada
-para encontrar una combinación de parámetros adecuada, veamos:
 
-```{r EXERCISE 2.3.tune}
+- __Bonus-3 (1 punto): Estimar el error de entrenamiento y test por validación cruzada de
+5 particiones.__
+
+Sin embargo podemos obtener mejores resultados para el punto anterior si usamos
+validación cruzada para encontrar una combinación de parámetros adecuada, veamos:
+
+```{r EXERCISE 2.BONUS.1}
 tune.radial <- tune.svm(crim01 ~ ., 
                         data = data.boston.training, 
                         kernel = "radial",
                         cost = c(0.1, 1, 10),
                         gamma = c(0.5, 1, 2, 3, 4),
                         scale = T,
-                        tunecontrol = tune.control(sampling = "cross"))
+                        tunecontrol = tune.control(sampling = "cross", cross = 5))
 
 tune.poly <- tune.svm(crim01 ~ ., 
                         data = data.boston.training, 
@@ -586,26 +590,30 @@ tune.poly <- tune.svm(crim01 ~ .,
                         gamma = c(0.5, 1, 2, 3, 4),
                         degree = c(1, 3, 4, 5, 2),
                         scale = T,
-                        tunecontrol = tune.control(sampling = "cross"))
+                        tunecontrol = tune.control(sampling = "cross", cross = 5))
 
 # Radial kernel
 svm.model <- e1071::svm(crim01 ~ ., data.boston.training, kernel = "radial",
                         cost = tune.radial$best.parameters$cost, 
                         gamma = tune.radial$best.parameters$gamma,
-                        scale = T)
+                        scale = T,
+                        fitted = T)
 svm.predicted <- predict(svm.model, dplyr::select(data.boston.test, -crim01))
 confusion.table.radial <- table(svm.predicted, data.boston.test$crim01)
 test.error.radial <- mean(svm.predicted != data.boston.test$crim01)*100
-
+training.error.radial <- mean(svm.model$fitted != data.boston.training$crim01)*100
+  
 # Polynomial kernel
 svm.model <- e1071::svm(crim01 ~ ., data.boston.training, kernel = "polynomial",
                         cost = tune.poly$best.parameters$cost, 
                         degree = tune.poly$best.parameters$degree,
                         gamma = tune.poly$best.parameters$gamma,
-                        scale = T)
+                        scale = T,
+                        fitted = T)
 svm.predicted <- predict(svm.model, dplyr::select(data.boston.test, -crim01))
 confusion.table.polynomial <- table(svm.predicted, data.boston.test$crim01)
 test.error.polynomial <- mean(svm.predicted != data.boston.test$crim01)*100
+training.error.polynomial <- mean(svm.model$fitted != data.boston.training$crim01)*100
 ```
 
 Tras ajustar los parámetros para los kernel radial y poinómico, se han obtenido
@@ -617,7 +625,7 @@ confusión para un kernel radial, con parámetros $\gamma = `r tune.radial$best.
 | $-1$ 	| $`r confusion.table.radial[1,1]`$ 	  | $`r confusion.table.radial[1,2]`$ 	  |
 | $1$ 	| $`r confusion.table.radial[2,1]`$ 	  | $`r confusion.table.radial[2,2]`$ 	  |
 
-Con un error para test del $`r test.error.radial`\%$.
+Con un error para test del $`r test.error.radial`\%$, y de training del $`r training.error.radial`\%$.
 
 Y para un kernel polinómico, con parámetros $\gamma = `r tune.poly$best.parameters$gamma`$ 
 y $degree = `r tune.poly$best.parameters$degree`$:
@@ -627,10 +635,7 @@ y $degree = `r tune.poly$best.parameters$degree`$:
 | $-1$ 	| $`r confusion.table.polynomial[1,1]`$ 	  | $`r confusion.table.polynomial[1,2]`$ 	  |
 | $1$ 	| $`r confusion.table.polynomial[2,1]`$ 	  | $`r confusion.table.polynomial[2,2]`$ 	  |
 
-Y un error de test del $`r test.error.polynomial`\%$.
-
-- __Bonus-3 (1 punto): Estimar el error de entrenamiento y test por validación cruzada de
-5 particiones.__
+Y un error de test del $`r test.error.polynomial`\%$ y de training del $`r training.error.polynomial`\%$..
 
 # Ejercicio 3
 
