@@ -55,6 +55,8 @@ if (!is.installed("gbm"))
   install.packages("gbm")
 if (!is.installed("tree"))
   install.packages("tree")
+if (!is.installed("kknn"))
+  install.packages("kknn")
 
 library(dplyr)
 library(ggplot2)
@@ -72,6 +74,8 @@ library(glmnet)
 library(randomForest)
 library(gbm)
 library(tree)
+library(kknn)
+library(boot)
 
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
@@ -112,7 +116,7 @@ dplyr::glimpse(Auto)
 Auto <- Auto %>% dplyr::select(-name)
 ```
 ```{r scatterplots, echo=F}
-debug <- F
+debug <- T
 Auto$origin <- factor(Auto$origin)
 if (!debug){
 GGally::ggpairs(Auto, aes(colour = origin, alpha = .5),
@@ -292,8 +296,6 @@ prob[pred == 0] <- 1 - prob[pred == 0]
 
 confusion.table <- table(pred, test$mpg01)
 test.error <- mean(pred != test$mpg01)*100
-
-rm(data, cl)
 ```
 
 Primero preparamos los datos necesarios para aplicar `class:knn`, luego se ha
@@ -362,10 +364,41 @@ En concreto, $AUC_{knn} = `r auc[1]`$ y $AUC_{glm} = `r auc[2]`$
 usando Validación Cruzada de 5-particiones. Comparar con los resultados
 obtenidos en el punto anterior.__
 
+```{r EXERCISE 1.BONUS.1}
+data <- data.frame(train = training.X, y = ytraining)
+# 5 Folds cross validation for knn
+cross.validation.knn <- kknn::cv.kknn(mpg01 ~ . , data, kcv = 5)
+# 5 Folds cross validation for glm
+names(data) <- c("horsepower", "weight", "displacement", "mpg01")
+cross.validation.glm <- boot::cv.glm(data, glm.fit, K = 5)
+```
+
+Tras aplicar validación cruzada a ambos modelos, se han obtenido mejores resultados.
+Para `knn` con una validación cruzada de $5$ folds se ha obtenido un error del 
+$`r (1 - cross.validation.knn[[2]])*100`\%$, lo cual está bastante mejor que el
+error obtenido anteriormente. 
+
+Sin embargo para `glm` se han obtenido peores resultados usando valdación cruzada,
+en concreto un error del $`r cross.validation.glm$delta[2] * 100`\%$.
+
 - __Bonus-2 (1 punto): Ajustar el mejor modelo de regresión posible considerando
 la variable `mpg` como salida y el resto como predictoras. Justificar el modelo
 ajustado en base al patrón de los residuos. Estimar su error de entrenamiento y
 test.__
+
+```{r EXERCISE 1.BONUS.2}
+data.auto.training <- training %>% dplyr::select(-mpg01)
+data.auto.test <- test %>% dplyr::select(-mpg01)
+
+glm.mpg.fit <- glm(mpg ~ ., data = data.auto.training)
+glm.mpg.predict <- predict(glm.mpg.fit, data.auto.test)
+glm.training.error <- mean((glm.mpg.fit$fitted.values - data.auto.training$mpg) ^ 2)
+glm.test.error <- mean((glm.mpg.predict - data.auto.test$mpg) ^ 2)
+```
+
+El modelo ajustado es algo peor que su homólogo de clasificación anterior, en el
+que creamos la variable `mpg01`, ya que ahora estamos obteniendo un error cuadrático
+medio del $`r glm.test.error`\%$ en test, y $`r glm.training.error`\%$ en training.
 
 # Ejercicio 2
 
