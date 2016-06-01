@@ -1,7 +1,7 @@
 ---
 title: "Aprendizaje Automático - Práctica 3"
 author: "Alejandro Alcalde"
-date: "05/05/2016"
+date: "01/06/2016"
 fontsize: 10pt
 # monofont: "DejaVu Sans Mono"
 # monofont: "Source Code Pro Light"
@@ -14,7 +14,7 @@ output:
     latex_engine: xelatex
     toc: true
     highlight: pygments
-    keep_tex: true
+    # keep_tex: true
     # md_extensions: +latex_macros+raw_tex
 # fc-list :outline -f "%{family}\n"
 ---
@@ -118,7 +118,7 @@ dplyr::glimpse(Auto)
 Auto <- Auto %>% dplyr::select(-name)
 ```
 ```{r scatterplots, echo=F}
-debug <- T
+debug <- F
 Auto$origin <- factor(Auto$origin)
 if (!debug){
 GGally::ggpairs(Auto, aes(colour = origin, alpha = .5),
@@ -281,11 +281,15 @@ test en el modelo? ¿Cuál es el valor de K que mejor ajusta los datos?
 Justificar la respuesta. (Usar el paquete class de R) (1 punto)__
 
 ```{r EXERCISE 1.D.2}
+
 ytraining <- training %>% dplyr::select(mpg01)
 training.X <- training %>% dplyr::select(horsepower, weight, displacement)
 training.X <- scale(training.X)
 test.X <- test %>% dplyr::select(horsepower, weight, displacement)
-test.X <- scale(test.X)[,]
+# Apply the same scale to test
+test.X <- scale(test.X, 
+                attr(training.X, "scaled:center"),
+                attr(training.X, "scaled:scale"))[,]
 
 data <- data.frame(train = training.X, y = ytraining)
 
