@@ -103,6 +103,8 @@ __En este ejercicio desarrollaremos un modelo para predecir si un coche tiene un
 consumo de carburante alto o bajo usando la base de datos Auto. Se considerará alto
 cuando sea superior a la mediana de la variable mpg y bajo en caso contrario.__
 
+## Apartado a
+
 - __Usar las funciones de R `pairs()` y `boxplot()` para investigar la dependencia entre
 `mpg` y las otras características. ¿Cuáles de las otras características parece más
 útil para predecir `mpg`? Justificar la respuesta. (0.5 puntos)__
@@ -184,11 +186,15 @@ Además, a mayor sea la distancia que los separa, más correladas estarán. Por 
 salvo la aceleración y el año, el resto de variables están correladas en mayor o 
 menor medida con las millas por galón de combustible que consume el coche.
 
+## Apartado b
+
 - __Seleccionar las variables predictoras que considere más relevantes.__
 
 Como hemos comentado en el punto anterior, las variables que parecen estar más
 relacionadas con el consumo de combustible son `Horsepower, Weight` y `Displacement`.
 Por lo tanto las usaremos como predictoras.
+
+## Apartado c
 
 - __Particionar el conjunto de datos en un conjunto de entrenamiento ($80\%$) y otro
 de test ($20\%$). Justificar el procedimiento usado.__
@@ -217,6 +223,8 @@ partitionDistribution(partition)
 Podemos ver en la salida enterior como se ha mantenido la proporción de los 
 orígenes de coches en ambas particiones.
 
+## Apartado d
+
 - __Crear una variable binaria, `mpg01`, que será igual a $1$ si la variable `mpg`
 contiene un valor por encima de la mediana, y $-1$ si `mpg` contiene un valor por
 debajo. La mediana se puede calcular usando la función `median()`.__
@@ -229,6 +237,8 @@ debajo. La mediana se puede calcular usando la función `median()`.__
 training <- partition$training
 test <- partition$test
 ```
+
+### Apartado d.1
 
 - __Ajustar un modelo de regresión Logística a los datos de entrenamiento y
 predecir `mpg01` usando las variables seleccionadas en b). ¿Cuál es el error
@@ -262,6 +272,8 @@ y los negativos ($`r confusion.table[1,2]`$ y $`r confusion.table[2,1]`$ respeti
 
 El error de test que hemos obtenido es del $`r test.error`\%$, lo cual 
 quiere decir que estamos fallando en clasificar correctamente ese porcentaje de veces.
+
+### Apartado d.2
 
 - __Ajustar un modelo K-NN a los datos de entrenamiento y predecir `mpg01`
 usando solamente las variables seleccionadas en b). ¿Cuál es el error de
@@ -319,6 +331,8 @@ más rígida (Más lineal), y a medida que decrece es más flexible. Por tanto e
 importante encontrar un punto medio para no obtener ni sobreajuste ni demasiado
 error en la clasificación
 
+### Apartado d.3
+
 - __Pintar las curvas ROC (instalar paquete ROCR en R) y comparar y valorar los
 resultados obtenidos para ambos modelos. (0.5 puntos)__
 
@@ -360,6 +374,8 @@ que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamo
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
 En concreto, $AUC_{knn} = `r auc[1]`$ y $AUC_{glm} = `r auc[2]`$
 
+## Bonus 1
+
 - __Bonus-1. (1 punto) Estimar el error de test de ambos modelos (`RL, K-NN`) pero
 usando Validación Cruzada de 5-particiones. Comparar con los resultados
 obtenidos en el punto anterior.__
@@ -386,6 +402,8 @@ la variable `mpg` como salida y el resto como predictoras. Justificar el modelo
 ajustado en base al patrón de los residuos. Estimar su error de entrenamiento y
 test.__
 
+## Bonus 2
+
 ```{r EXERCISE 1.BONUS.2}
 data.auto.training <- training %>% dplyr::select(-mpg01)
 data.auto.test <- test %>% dplyr::select(-mpg01)
@@ -406,6 +424,8 @@ __Usar la base de datos `Boston` (en el paquete MASS de R) para ajustar un model
 prediga si dado un suburbio este tiene una tasa de criminalidad (`crim`) por encima o
 por debajo de la mediana. Para ello considere la variable `crim` como la variable salida y
 el resto como variables predictoras.__
+
+## Apartado a
 
 - __Encontrar el subconjunto óptimo de variables predictoras a partir de un
 modelo de regresión-LASSO (usar paquete `glmnet` de R) donde seleccionamos
@@ -473,6 +493,8 @@ mdev = `r lasso.coef[14]` \\
 Basándonos en estos valores aún podríamos descartar algunas variables más, por 
 ejemplo todas aquellas con un coeficiente $< 0.01$.
 
+## Apartado b
+
 - __Ajustar un modelo de regresión regularizada con “`weight-decay`” (`ridge-regression`) 
 y las variables seleccionadas. Estimar el error residual del modelo
 y discutir si el comportamiento de los residuos muestran algún indicio de
@@ -503,6 +525,8 @@ variable definida. (Usar el paquete `e1071` de R). Describir con detalle cada
 uno de los pasos dados en el aprendizaje del modelo SVM. Comience
 ajustando un modelo lineal y argumente si considera necesario usar algún
 núcleo. Valorar los resultados del uso de distintos núcleos. (1 punto)__
+
+## Apartado c
 
 ```{r EXERCISE 2.3}
 data.boston <- dplyr::tbl_df(Boston)
@@ -567,6 +591,7 @@ Probamos un kernel de base radial esta vez, su matriz de confusión es:
 
 Con un error para test del $`r test.error.radial`\%$
 
+## Bonus 3
 
 - __Bonus-3 (1 punto): Estimar el error de entrenamiento y test por validación cruzada de
 5 particiones.__
@@ -641,6 +666,8 @@ Y un error de test del $`r test.error.polynomial`\%$ y de training del $`r train
 
 __Usar el conjunto de datos Boston y las librerías `randomForest` y `gbm` de R.__
 
+## Apartado a
+
 - __1. Dividir la base de datos en dos conjuntos de entrenamiento (80%) y test (20%).__
 
 ```{r EXERCISE 3.1}
@@ -652,6 +679,8 @@ partition <- list(training = data.boston[indexes,], test = data.boston[-indexes,
 data.boston.training <- dplyr::as.tbl(partition$training)
 data.boston.test <- dplyr::as.tbl(partition$test)
 ```
+
+## Apartado b
 
 - __2. Usando la variable medv como salida y el resto como predictoras, ajustar un
 modelo de regresión usando bagging. Explicar cada uno de los parámetros
@@ -676,6 +705,8 @@ predictoras más importantes son:
 ```{r echo = F}
 importance(bagging.model)
 ```
+
+## Apartado c
 
 - __3. Ajustar un modelo de regresión usando “Random Forest”. Obtener una
 estimación del número de árboles necesario. Justificar el resto de parámetros
@@ -748,6 +779,8 @@ con gran potencial predictor, no estará siempre la primera en el árbol, lo cua
 daría resultado a árboles muy parecidos. Seleccionando subconjuntos de variables
 predictoras nos aseguramos que los árboles generados estén poco correlados.
 
+## Apartado d
+
 - __4. Ajustar un modelo de regresión usando Boosting (usar gbm con distribution =
 ’gaussian’). Calcular el error de test y compararlo con el obtenido con bagging y
 Random Forest. (1 punto)__
@@ -781,6 +814,8 @@ Para calcular el error en test ha sido del $`r boosting.test.error`\%$.
 
 __Usar el conjunto de datos OJ que es parte del paquete ISLR.__
 
+## Apartado a
+
 - __1. Crear un conjunto de entrenamiento conteniendo una muestra aleatoria de 800
 observaciones, y un conjunto de test conteniendo el resto de las observaciones.
 Ajustar un árbol a los datos de entrenamiento, con “Purchase” como la variable
@@ -801,6 +836,8 @@ tree.model <- tree::tree(Purchase ~ .,
                          data = data.oj.training)
 ```
 
+## Apartado b
+
 - __2. Usar la función summary() para generar un resumen estadístico acerca del árbol y
 describir los resultados obtenidos: tasa de error de “training”, número de nodos
 del árbol, etc. (0.5 puntos)__
@@ -813,6 +850,8 @@ summary(tree.model)
 
 Como vemos, las variables más predictoras son `LoyalCH, PriceDiff, ListPriceDiff`
 y `PctDiscMM`. Con un error para training del $16\%$ y únicamente 7 nodos terminales.
+
+## Apartado c
 
 - __3. Crear un dibujo del árbol e interpretar los resultados (0.5 puntos)__
 
@@ -831,6 +870,8 @@ la posiblidad de que compren zumo de la competencia si el ususario tiene un porc
 de lealtad inferior al $76\%$, la diferencia de precio es menor de 0.23 y además 
 la competencia hace un descuento superior al $19\%$, bajo estas condiciones
 el consumidor comprará _MM_.
+
+## Apartado d
 
 - __4. Predecir la respuesta de los datos de test, y generar e interpretar la matriz de
 confusión de los datos de test. ¿Cuál es la tasa de error del test? ¿Cuál es la
@@ -854,6 +895,8 @@ La matriz de confusión calculada es la siguiente:
 De la cual podemos saber que la tasa de error para test del modelo de árboles
 es del $`r tree.test.error`\%$, lo cual es bastante alta. La precisión por tanto
 es del $`r 100 - tree.test.error`\%$
+
+## Apartado e
 
 - __5. Aplicar la función cv.tree() al conjunto de “training” y determinar el tamaño óptimo
 del árbol. ¿Qué hace cv.tree? (0.5 puntos)__
@@ -897,6 +940,8 @@ text(prune.oj, pretty = 0)
 
 El cual es el mismo que teníamos antes, con el mismo error para test ($`r tree.test.error`\%$).
 Por tanto no se ha obtenido mejora.
+
+## Bonus 4
 
 - __Bonus-4 (1 punto). Generar un gráfico con el tamaño del árbol en el eje x (número de
 nodos) y la tasa de error de validación cruzada en el eje y. ¿Qué tamaño de árbol
