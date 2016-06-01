@@ -3,7 +3,7 @@ title: "Aprendizaje Automático - Práctica 3"
 author: "Alejandro Alcalde"
 date: "05/05/2016"
 fontsize: 10pt
-monofont: "DejaVu Sans Mono"
+# monofont: "DejaVu Sans Mono"
 # monofont: "Source Code Pro Light"
 # mathfont: "Source Code Pro Light"
 # mainfont: "Ubuntu Light"
@@ -13,7 +13,7 @@ output:
       in_header: header.tex
     latex_engine: xelatex
     toc: true
-    highlight: tango
+    highlight: pygments
     keep_tex: true
     # md_extensions: +latex_macros+raw_tex
 # fc-list :outline -f "%{family}\n"
@@ -778,7 +778,7 @@ y `PctDiscMM`. Con un error para training del $16\%$ y únicamente 7 nodos termi
 
 - __3. Crear un dibujo del árbol e interpretar los resultados (0.5 puntos)__
 
-```{r echo = F}
+```{r EXERCISE 4.3, echo = F}
 plot(tree.model)
 text(tree.model, pretty = 0)
 ```
@@ -798,7 +798,7 @@ el consumidor comprará _MM_.
 confusión de los datos de test. ¿Cuál es la tasa de error del test? ¿Cuál es la
 precisión del test? (1 punto)__
 
-```{r EXERCISE 4.3}
+```{r EXERCISE 4.4}
 tree.predicted <- predict(tree.model,
                           newdata = data.oj.test,
                           type = "class")
@@ -820,8 +820,46 @@ es del $`r 100 - tree.test.error`\%$
 - __5. Aplicar la función cv.tree() al conjunto de “training” y determinar el tamaño óptimo
 del árbol. ¿Qué hace cv.tree? (0.5 puntos)__
 
+```{r EXERCISE 4.5}
+tree.model.cv <- cv.tree(tree.model, FUN = prune.misclass)
+best.tree.size <- tree.model.cv$size[which(tree.model.cv$dev == min(tree.model.cv$dev))][1]
+```
+
+Tras aplicar validación cruzada al modelo, obtenemos como tamaño óptimo del árbol
+$`r best.tree.size`$. Este corresponde con el menor error de validación cruzada, 
+que resultó ser de $`r min(tree.model.cv$dev)`$ datos mal clasificados.
+
+`cv.tree`, como su nombre indica, realiza una validación cruzada sobre el modelo
+para encontrar el tamaño óptimo para el árbol. Por defecto usa $10$ folds para la
+validación. Además del tamaño y el error para cada tamaño devuelve los valores usados
+para el parámetro de regularización $\sigma$, a mayor valor más tendencia a podar 
+el árbol para obtener menos nodos terminales.
+
+```{r}
+# # Fitting a tree
+# tree.model <- tree::tree(Purchase ~ ., 
+#                          data = data.oj.training)
+# tree.predicted <- predict(tree.model,
+#                           newdata = data.oj.test,
+#                           type = "class")
+# confusion.table <- table(tree.predicted, data.oj.test$Purchase)
+# tree.test.error <- mean(tree.predicted != data.oj.test$Purchase)*100
+```
+
 - __Bonus-4 (1 punto). Generar un gráfico con el tamaño del árbol en el eje x (número de
 nodos) y la tasa de error de validación cruzada en el eje y. ¿Qué tamaño de árbol
 corresponde a la tasa más pequeña de error de clasificación por validación cruzada?__
+
+```{r echo = F}
+myplot <- data.frame(size = tree.model.cv$size, dev = tree.model.cv$dev, k = tree.model.cv$k)
+ggplot2::ggplot(data = myplot, aes(x = size, y = dev)) + 
+  ggtitle("Error rate as a function of tree size") +
+  geom_line() + 
+  theme_bw()
+```
+
+Como se comentó en el apartado anterior, tras hacer validación cruzada, el tamaño 
+óptimo del árbol es $`r best.tree.size`$, con un error de test de $`r min(tree.model.cv$dev)`$
+tal y como se aprecia el la gráfica.
 
 
