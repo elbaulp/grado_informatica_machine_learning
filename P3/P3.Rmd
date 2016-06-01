@@ -236,7 +236,6 @@ debajo. La mediana se puede calcular usando la función `median()`.__
 # A car has a low fuel comsumption if mpg is higher (It travels more milles per 
 # gallon of fuel). Consider the cars with mpg above the median as low consumption
 # (1), and high comsumption those bellow the median 
-# Auto <- dplyr::mutate(Auto, mpg01 = as.factor(ifelse(mpg > median(mpg), 1, 0)))
 training <- partition$training
 test <- partition$test
 ```
@@ -299,6 +298,7 @@ data <- data.frame(train = training.X, y = ytraining)
 # Find the best k with cross validation with 10 partitions
 k <- e1071::tune.knn(data[,-4], data[,4], k = 1:30, 
                      tunecontrol = tune.control(sampling = "cross"))
+
 k <- k$best.parameters$k
 
 pred <- class::knn(data[,-4],
@@ -351,10 +351,13 @@ ROCCurve <- function(data) {
   # Returns:
   #   The Area Under ROC Curve (AUC)
   # TODO: Check dataframe columns (Error handling)
-  g <- ggplot(data, aes(d = D, m = M, color = model)) + geom_roc(n.cuts = 0) + style_roc()
+  g <- ggplot(data, aes(d = D, m = M, color = model)) + 
+    geom_roc(n.cuts = 0) + style_roc()
+  
   auc <- round(calc_auc(g), 6)
   g <- g + annotate("text", x = .75, y = .25, 
-                    label = paste("AUC_knn = ", auc$AUC[2], "\nAUC_glm = ", auc$AUC[1]))
+                    label = paste("AUC_knn = ", auc$AUC[2],
+                                  "\nAUC_glm = ", auc$AUC[1]))
 
   print(g)
   
@@ -540,12 +543,14 @@ núcleo. Valorar los resultados del uso de distintos núcleos. (1 punto)__
 
 ```{r EXERCISE 2.3}
 data.boston <- dplyr::tbl_df(Boston)
-data.boston <- data.boston %>% dplyr::mutate(crim01 = factor(ifelse(crim > median(crim), 1, -1)))
+data.boston <- data.boston %>% 
+  dplyr::mutate(crim01 = factor(ifelse(crim > median(crim), 1, -1)))
 # Remove crim variable, since we are going to use crim01
 data.boston <- data.boston %>% dplyr::select(-crim)
 
 indexes <- createDataPartition(data.boston$crim01, p = .8, list = FALSE)
-partition <- list(training = data.boston[indexes,], test = data.boston[-indexes,])
+partition <- list(training = data.boston[indexes,], 
+                  test = data.boston[-indexes,])
 
 data.boston.training <- dplyr::as.tbl(partition$training)
 data.boston.test <- dplyr::as.tbl(partition$test)
@@ -632,6 +637,7 @@ svm.model <- e1071::svm(crim01 ~ ., data.boston.training, kernel = "radial",
                         gamma = tune.radial$best.parameters$gamma,
                         scale = T,
                         fitted = T)
+
 svm.predicted <- predict(svm.model, dplyr::select(data.boston.test, -crim01))
 confusion.table.radial <- table(svm.predicted, data.boston.test$crim01)
 test.error.radial <- mean(svm.predicted != data.boston.test$crim01)*100
