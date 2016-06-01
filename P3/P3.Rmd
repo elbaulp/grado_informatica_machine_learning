@@ -835,16 +835,30 @@ validación. Además del tamaño y el error para cada tamaño devuelve los valor
 para el parámetro de regularización $\sigma$, a mayor valor más tendencia a podar 
 el árbol para obtener menos nodos terminales.
 
+Veamos ahora si conseguimos mejorar la precisión del árbol tras aplicar validación
+cruzada. Podaremos ahora el modelo usando el valor óptimo para el tamaño del árbol:
+
 ```{r}
-# # Fitting a tree
-# tree.model <- tree::tree(Purchase ~ ., 
-#                          data = data.oj.training)
-# tree.predicted <- predict(tree.model,
-#                           newdata = data.oj.test,
-#                           type = "class")
-# confusion.table <- table(tree.predicted, data.oj.test$Purchase)
-# tree.test.error <- mean(tree.predicted != data.oj.test$Purchase)*100
+prune.oj <- prune.misclass(tree.model,
+                           best = best.tree.size)
+
+tree.predicted <- predict(prune.oj,
+                          newdata = data.oj.test,
+                          type = "class")
+
+confusion.table <- table(tree.predicted, data.oj.test$Purchase)
+tree.test.error <- mean(tree.predicted != data.oj.test$Purchase)*100
 ```
+
+Tras podar el árbol, lo hemos reducido a este otro:
+
+```{r echo = F}
+plot(prune.oj)
+text(prune.oj, pretty = 0)
+```
+
+El cual es el mismo que teníamos antes, con el mismo error para test ($`r tree.test.error`\%$).
+Por tanto no se ha obtenido mejora.
 
 - __Bonus-4 (1 punto). Generar un gráfico con el tamaño del árbol en el eje x (número de
 nodos) y la tasa de error de validación cruzada en el eje y. ¿Qué tamaño de árbol
