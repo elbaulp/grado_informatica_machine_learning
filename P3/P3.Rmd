@@ -57,6 +57,8 @@ if (!is.installed("tree"))
   install.packages("tree")
 if (!is.installed("kknn"))
   install.packages("kknn")
+if (!is.installed("bestglm"))
+  install.packages("bestglm")
 
 library(dplyr)
 library(ggplot2)
@@ -76,6 +78,7 @@ library(gbm)
 library(tree)
 library(kknn)
 library(boot)
+library(bestglm)
 
 devtools::install_github("hadley/ggplot2")
 devtools::install_github("sachsmc/plotROC")
@@ -220,7 +223,7 @@ partition <- list(training = Auto[indexes,], test = Auto[-indexes,])
 partitionDistribution(partition)
 ```
 
-Podemos ver en la salida enterior como se ha mantenido la proporción de los 
+Podemos ver en la salida anterior como se ha mantenido la proporción de los 
 orígenes de coches en ambas particiones.
 
 ## Apartado d
@@ -259,7 +262,7 @@ confusion.table <- table(glm.pred, test$mpg01)
 test.error <- mean(glm.pred != test$mpg01)*100
 ```
 
-Para ajustar el modelo logístico se ha usado `glm`, la matríz de confusión es la
+Para ajustar el modelo logístico se ha usado `glm`, la matriz de confusión es la
 siguiente:
 
  |     	| $0$                          	| $1$                          	|
@@ -267,7 +270,7 @@ siguiente:
  | $0$ 	| $`r confusion.table[1,1]`$ 	  | $`r confusion.table[1,2]`$ 	  |
  | $1$ 	| $`r confusion.table[2,1]`$ 	  | $`r confusion.table[2,2]`$ 	  |
 
-Esta matríz muestra en la diagonal secundaria los falsos positivos
+Esta matriz muestra en la diagonal secundaria los falsos positivos
 y los negativos ($`r confusion.table[1,2]`$ y $`r confusion.table[2,1]`$ respetivamente).
 
 El error de test que hemos obtenido es del $`r test.error`\%$, lo cual 
@@ -281,11 +284,11 @@ test en el modelo? ¿Cuál es el valor de K que mejor ajusta los datos?
 Justificar la respuesta. (Usar el paquete class de R) (1 punto)__
 
 ```{r EXERCISE 1.D.2}
-
 ytraining <- training %>% dplyr::select(mpg01)
 training.X <- training %>% dplyr::select(horsepower, weight, displacement)
 training.X <- scale(training.X)
 test.X <- test %>% dplyr::select(horsepower, weight, displacement)
+
 # Apply the same scale to test
 test.X <- scale(test.X, 
                 attr(training.X, "scaled:center"),
@@ -325,12 +328,9 @@ $`r k`$. Con este valor para `k` se ha obtenido la siguiente matriz de confusió
 
 Y un error de test de $`r test.error`\%$, el cual es bastante bueno.
 
-Se probó a buscar un valor para `k` usando `tune.knn`, pero se obtenían peores
-resultados para los valores de `k` propuestos.
-
 En cuanto a la eleccion de `k` no es tarea fácil, ya que en función de la elección
 podemos obtener efectos muy variantes en el clasificador. Una regla que puede 
-servir de guía es que a medida que `k` aumenta, la frontera de decisión se vuelve
+servir de guía es que conforme `k` aumenta, la frontera de decisión se vuelve
 más rígida (Más lineal), y a medida que decrece es más flexible. Por tanto es
 importante encontrar un punto medio para no obtener ni sobreajuste ni demasiado
 error en la clasificación
@@ -374,7 +374,7 @@ auc <- ROCCurve(data)
 
 En el código anterior se han pintado y calculado las curvas _ROC_ para `KNN` y 
 regresión logística (`glm`). Como se puede apreciar en las gráficas, el clasificador
-que obtiene mejores resultados es `knn`. Esto se pone de manifiesto si calculamos
+que obtiene mejores resultados es `glm`. Esto se pone de manifiesto si calculamos
 el área bajo la curva _ROC_. A mayor área, mejor rendimiento tiene el clasificador.
 En concreto, $AUC_{knn} = `r auc[1]`$ y $AUC_{glm} = `r auc[2]`$
 
@@ -401,20 +401,25 @@ error obtenido anteriormente.
 Sin embargo para `glm` se han obtenido peores resultados usando valdación cruzada,
 en concreto un error del $`r cross.validation.glm$delta[2] * 100`\%$.
 
+## Bonus 2
+
 - __Bonus-2 (1 punto): Ajustar el mejor modelo de regresión posible considerando
 la variable `mpg` como salida y el resto como predictoras. Justificar el modelo
 ajustado en base al patrón de los residuos. Estimar su error de entrenamiento y
 test.__
 
-## Bonus 2
 
 ```{r EXERCISE 1.BONUS.2}
 data.auto.training <- training %>% dplyr::select(-mpg01)
+data.auto.training <- data.auto.training %>% dplyr::select(origin:mpg)
+
 data.auto.test <- test %>% dplyr::select(-mpg01)
 
-glm.mpg.fit <- glm(mpg ~ ., data = data.auto.training)
-glm.mpg.predict <- predict(glm.mpg.fit, data.auto.test)
-glm.training.error <- mean((glm.mpg.fit$fitted.values - data.auto.training$mpg) ^ 2)
+best.glm <- bestglm::bestglm(as.data.frame(data.auto.training))
+best.glm.fit <- best.glm$BestModel
+glm.mpg.predict <- predict(best.glm.fit, data.auto.test)
+
+glm.training.error <- mean((best.glm.fit$fitted.values - data.auto.training$mpg) ^ 2)
 glm.test.error <- mean((glm.mpg.predict - data.auto.test$mpg) ^ 2)
 ```
 
@@ -466,7 +471,7 @@ lasso.test.error <- mean((lasso.pred - data.boston.test.Y ) ^ 2)
 out <- glmnet(as.matrix(Boston[,-1]),
               as.matrix(Boston[,1]), alpha = 1, lambda = grid)
 # Out of 12 variables, the model uses 10 to predict crime rates.
-(lasso.coef <- predict(out, type = "coefficients", s = best.lambda))
+lasso.coef <- predict(out, type = "coefficients", s = best.lambda)
 ```
 
 En el código de arriba hemos ajustado el modelo usando la técnica _LASSO_. Con 
@@ -523,6 +528,8 @@ obtenido un error residual del $`r residual.error * 100`\%$, lo cual es bastante
 alto y puede significar que se esté produciendo _underfitting_. Un posible motivo
 pudiera ser la no correcta elección de las variables predictoras.
 
+## Apartado c
+
 - __Definir una nueva variable con valores -1 y 1 usando el valor de la mediana de
 la variable `crim` como umbral. Ajustar un modelo SVM que prediga la nueva
 variable definida. (Usar el paquete `e1071` de R). Describir con detalle cada
@@ -530,7 +537,6 @@ uno de los pasos dados en el aprendizaje del modelo SVM. Comience
 ajustando un modelo lineal y argumente si considera necesario usar algún
 núcleo. Valorar los resultados del uso de distintos núcleos. (1 punto)__
 
-## Apartado c
 
 ```{r EXERCISE 2.3}
 data.boston <- dplyr::tbl_df(Boston)
@@ -566,9 +572,9 @@ confusion.table.radial <- table(svm.predicted, data.boston.test$crim01)
 test.error.radial <- mean(svm.predicted != data.boston.test$crim01)*100
 ```
 
-En principio se ha ajustado con un núcleo lineal, pero no se han obtenido buenos 
-resultados, ya que el error obtenido en test ha sido del $`r test.error.linear`\%$. Con
-una matriz de confusión como la siguiente:
+En principio se ha ajustado con un núcleo lineal, obteniendo un error
+en test ha sido del $`r test.error.linear`\%$. Con una matriz de confusión como
+la siguiente:
 
 |     	| $-1$                                	| $1$                                 	|
 |-----	|-------------------------------------	|-------------------------------------	|
@@ -576,15 +582,14 @@ una matriz de confusión como la siguiente:
 | $1$ 	| $`r confusion.table.linear[2,1]`$ 	  | $`r confusion.table.linear[2,2]`$ 	  |
 
 Debido a que los datos seguramente no sean linealmente separables, probamos ahora
-con un kernel polinómico, obteniendo unos resultados algo mejores:
+con un kernel polinómico:
 
 |     	| $-1$                                	| $1$                                 	|
 |-----	|-------------------------------------	|-------------------------------------	|
 | $-1$ 	| $`r confusion.table.polynomial[1,1]`$ 	  | $`r confusion.table.polynomial[1,2]`$ 	  |
 | $1$ 	| $`r confusion.table.polynomial[2,1]`$ 	  | $`r confusion.table.polynomial[2,2]`$ 	  |
 
-Y un error de test del $`r test.error.polynomial`\%$, lo cual es una mejora, poca,
-pero algo mejor.
+Y un error de test del $`r test.error.polynomial`\%$.
 
 Probamos un kernel de base radial esta vez, su matriz de confusión es:
 
@@ -764,8 +769,7 @@ randomForest.test.error <- mean((randomForest.predicted - data.boston.test$medv)
 ```
 
 Tras realizar un nuevo ajuste con $ntree = `r minmse`$ se ha obtenido un error 
-para test del $`r randomForest.test.error`\%$, es una mejora pequeña, pero mejora
-al fin y al cabo.
+para test del $`r randomForest.test.error`\%$.
 
 Como análisis quizá deberíamos de considerar que al elegir el `ntree` de menor MSE
 podamos estar cometiendo sobre ajuste, sin embargo, tras realizar varios experimentos
@@ -812,7 +816,7 @@ boosting.predicted <- predict(boosting.model, newdata = data.boston.test,
 boosting.test.error <- mean((boosting.predicted - data.boston.test$medv) ^ 2)
 ```
 
-Para calcular el error en test ha sido del $`r boosting.test.error`\%$. 
+El error en test ha sido del $`r boosting.test.error`\%$. 
 
 # Ejercicio 4
 
@@ -852,8 +856,8 @@ El `summary` obtenido para el modelo es:
 summary(tree.model)
 ```
 
-Como vemos, las variables más predictoras son `LoyalCH, PriceDiff, ListPriceDiff`
-y `PctDiscMM`. Con un error para training del $16\%$ y únicamente 7 nodos terminales.
+Como vemos, las variables más predictoras son `LoyalCH, PriceDiff` y `SalePriceMM`.
+Con un error para training del $14\%$ y 9 nodos terminales.
 
 ## Apartado c
 
@@ -869,11 +873,11 @@ que lleva a los consumidores a comprar un tipo de zumo u otro es cómo de leales
 son a la marca _CH_, aunque con un porcentaje casi cercano al $50\%$ podría decirse
 que es aleatorio. Son más interesantes las siguientes ramas del árbol. Entre
 los consumidores no leales a _CH_ (Rama de la izquierda) el consumidor directamente
-compra la otra marca de zumo (_MM_). Sin embargo, entre los leales a _CH_, existe
+compra la otra marca de zumo (_MM_) salvo un pequeño porcentaje de fieles a _CH_.
+Sin embargo, entre los leales a _CH_, existe
 la posiblidad de que compren zumo de la competencia si el ususario tiene un porcentaje
-de lealtad inferior al $76\%$, la diferencia de precio es menor de 0.23 y además 
-la competencia hace un descuento superior al $19\%$, bajo estas condiciones
-el consumidor comprará _MM_.
+de lealtad inferior al $76\%$, la diferencia de precio está en torno a $0.39$,
+bajo estas condiciones el consumidor comprará _MM_.
 
 ## Apartado d
 
