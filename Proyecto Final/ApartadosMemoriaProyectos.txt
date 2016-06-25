@@ -1,0 +1,28 @@
+Todos los proyectos deben contener los siguientes apartados:
+
+1.- Definición del problema a resolver y enfoque elegido
+2.- Codificación de los datos de entrada para hacerlos útiles a los algoritmos.
+3.- Valoración del interés de la variables para el problema y selección de un subconjunto (en su caso).
+4.- Normalización de las variables (en su caso)
+5.- Selección de las técnica (parámetrica) y valoración de la idoneidad de la misma frente a otras alternativas
+6.- Aplicación de la técnica especificando claramente que algoritmos se usan en la estimación de los parámetros, los hiperparámetros y el error de generalización.
+7.- Argumentar sobre la idoneidad de la función regularización usada (en su caso)
+8.- Valoración de los resultados ( gráficas, métricas de error, análisis de residuos, etc )
+9.- Justificar que se ha obtenido la mejor de las posibles soluciones con la técnica elegida y la muestra dada. Argumentar en términos de la dimensión VC del modelo, el error de generalización y las curvas de aprendizaje. 
+
+Solo son elegibles los modelos explicados en la asignatura incluyendo técnicas de reducción de dimensionalidad (PCA).
+
+Proyectos de hasta 20 puntos
+----------------------------
+Solo es necesario aplicar un modelo de tipo parámetrico.
+
+
+Proyectos de hasta 25 puntos
+---------------------------
+Implementar, valorar y comparar al menos dos modelos uno parmétrico y otra a elegir entre (k-NN, "Función de Base Radial"). 
+
+
+Proyectos de hasta 30 puntos
+-----------------------------
+Implementar, valorar y comparar los resultados de un modelo paramétrico, un modelo de "Función de Base Radial" y un modelo de Red Neuronal Multicapa.
+ 

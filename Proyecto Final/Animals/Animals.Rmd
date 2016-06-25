@@ -1,0 +1,118 @@
+---
+title: "Animals"
+author: "Alejandro Alcalde"
+date: "May 5, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = T)
+set.seed(1000000271)
+```
+
+```{r Load libraries}
+set.seed(1000000271)
+is.installed <- function(paquete) is.element(
+  paquete, installed.packages())
+
+if (!is.installed("dplyr"))
+  install.packages("dplyr")
+if (!is.installed("tidyr"))
+  install.packages("tidyr")
+if (!is.installed("ggplot2"))
+  install.packages("ggplot2")
+if (!is.installed("GGally"))
+  install.packages("GGally")
+if (!is.installed("lubridate"))
+  install.packages("lubridate")
+
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(lubridate)
+library(tidyr)
+
+# Todos los proyectos deben contener los siguientes apartados:
+# 
+# 1.- Definición del problema a resolver y enfoque elegido
+# 2.- Codificación de los datos de entrada para hacerlos útiles a los algoritmos.
+# 3.- Valoración del interés de la variables para el problema y selección de un subconjunto (en su caso).
+# 4.- Normalización de las variables (en su caso)
+# 5.- Selección de las técnica (parámetrica) y valoración de la idoneidad de la misma frente a otras alternativas
+# 6.- Aplicación de la técnica especificando claramente que algoritmos se usan en la estimación de los parámetros, los hiperparámetros y el error de generalización.
+# 7.- Argumentar sobre la idoneidad de la función regularización usada (en su caso)
+# 8.- Valoración de los resultados ( gráficas, métricas de error, análisis de residuos, etc )
+# 9.- Justificar que se ha obtenido la mejor de las posibles soluciones con la técnica elegida y la muestra dada. Argumentar en términos de la dimensión VC del modelo, el error de generalización y las curvas de aprendizaje. 
+# 
+# Solo son elegibles los modelos explicados en la asignatura incluyendo técnicas de reducción de dimensionalidad (PCA).
+# 
+# Proyectos de hasta 20 puntos
+# ----------------------------
+# Solo es necesario aplicar un modelo de tipo parámetrico.
+# 
+# 
+# Proyectos de hasta 25 puntos
+# ---------------------------
+# Implementar, valorar y comparar al menos dos modelos uno parmétrico y otra a elegir entre (k-NN, "Función de Base Radial"). 
+# 
+# 
+# Proyectos de hasta 30 puntos
+# -----------------------------
+# Implementar, valorar y comparar los resultados de un modelo paramétrico, un modelo de "Función de Base Radial" y un modelo de Red Neuronal Multicapa.
+#  
+```
+
+
+```{r Data preprocesing}
+set.seed(1000000271)
+# Information dense summary of the data
+train <- dplyr::tbl_df(read.csv("./data/train.csv"))
+# Show information about the data
+summary(train)
+# There is many animals with no value, give them a category
+apply(train, 2, function(x) sum(x == ""))
+
+# Deal with missing values and nans
+levels(train$Name) <- c(levels(train$Name),"NoName")
+levels(train$OutcomeSubtype) <- c(levels(train$OutcomeSubtype),"Unknown")
+train$Name[train$Name == ""] <- "NoName"
+train$OutcomeSubtype[train$OutcomeSubtype == ""] <- "Unknown"
+train <- dplyr::filter(train, AgeuponOutcome != "")
+train <- dplyr::filter(train, SexuponOutcome != "")
+
+summary(train)
+# No more missing values
+apply(train, 2, function(x) sum(x == ""))
+
+
+train <- dplyr::select(train, -AnimalID, -DateTime)
+
+TimeValue <- sapply(train$AgeuponOutcome, 
+                    function(x) strsplit(x, split = " ")[[1]][1])
+
+UnitofTime <- sapply(train$AgeuponOutcome,  
+                     function(x) strsplit(x, split = " ")[[1]][2])
+
+UnitofTime <- gsub('s', '', UnitofTime)
+
+TimeValue  <- as.numeric(TimeValue)
+UnitofTime <- as.factor(UnitofTime)
+
+multiplier <- ifelse(UnitofTime == 'day', 1,
+                     ifelse(UnitofTime == 'week', 7,
+                            ifelse(UnitofTime == 'month', 30, 
+                                   ifelse(UnitofTime == 'year', 365, NA))))
+
+# Aplicamos 
+train$AgeuponOutcome <- TimeValue * multiplier
+
+# There is only 18 nans, remove them
+train <- dplyr::filter(train, !is.na(AgeuponOutcome))
+# Divide SexuponOutcome in three categories (Male, Female, Unknown)
+# train <- train[which(train$SexuponOutcome == ""),]
+train <- tidyr::separate(dplyr::filter(train, SexuponOutcome != "Unknown"),
+                         SexuponOutcome,
+                         c("neutered", "sex"))
+train$neutered[train$neutered == "Spayed"] <- "Neutered"
+```
+
