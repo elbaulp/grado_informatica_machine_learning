@@ -66,15 +66,15 @@ library(tidyr)
 ```{r Data preprocesing}
 set.seed(1000000271)
 # Information dense summary of the data
-train <- dplyr::tbl_df(read.csv("./data/train.csv"))
+train <- dplyr::tbl_df(read.csv("./data/train.csv", stringsAsFactors = F))
 # Show information about the data
 summary(train)
 # There is many animals with no value, give them a category
 apply(train, 2, function(x) sum(x == ""))
 
 # Deal with missing values and nans
-levels(train$Name) <- c(levels(train$Name),"NoName")
-levels(train$OutcomeSubtype) <- c(levels(train$OutcomeSubtype),"Unknown")
+# levels(train$Name) <- c(levels(train$Name),"NoName")
+# levels(train$OutcomeSubtype) <- c(levels(train$OutcomeSubtype),"Unknown")
 train$Name[train$Name == ""] <- "NoName"
 train$OutcomeSubtype[train$OutcomeSubtype == ""] <- "Unknown"
 train <- dplyr::filter(train, AgeuponOutcome != "")
@@ -106,13 +106,12 @@ multiplier <- ifelse(UnitofTime == 'day', 1,
 # Aplicamos 
 train$AgeuponOutcome <- TimeValue * multiplier
 
-# There is only 18 nans, remove them
-train <- dplyr::filter(train, !is.na(AgeuponOutcome))
 # Divide SexuponOutcome in three categories (Male, Female, Unknown)
 # train <- train[which(train$SexuponOutcome == ""),]
 train <- tidyr::separate(dplyr::filter(train, SexuponOutcome != "Unknown"),
                          SexuponOutcome,
                          c("neutered", "sex"))
 train$neutered[train$neutered == "Spayed"] <- "Neutered"
+# TODO deal with breed
 ```
 
