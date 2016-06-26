@@ -191,8 +191,63 @@ library(GGally)</code></pre>
 #  </code></pre>
 <pre class="r"><code>set.seed(1000000271)
 # Information dense summary of the data
-train &lt;- dplyr::tbl_df(read.csv(&quot;./data/train.csv&quot;, as.is = T))
-train &lt;- dplyr::select(train, -AnimalID, -Name, -DateTime)
+train &lt;- dplyr::tbl_df(read.csv(&quot;./data/train.csv&quot;, stringsAsFactors = F))
+# Show information about the data
+summary(train)</code></pre>
+<pre><code>##    AnimalID             Name             DateTime        
+##  Length:26729       Length:26729       Length:26729      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##  OutcomeType        OutcomeSubtype      AnimalType       
+##  Length:26729       Length:26729       Length:26729      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##  SexuponOutcome     AgeuponOutcome        Breed          
+##  Length:26729       Length:26729       Length:26729      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##     Color          
+##  Length:26729      
+##  Class :character  
+##  Mode  :character</code></pre>
+<pre class="r"><code># There is many animals with no value, give them a category
+apply(train, 2, function(x) sum(x == &quot;&quot;))</code></pre>
+<pre><code>##       AnimalID           Name       DateTime    OutcomeType OutcomeSubtype 
+##              0           7691              0              0          13612 
+##     AnimalType SexuponOutcome AgeuponOutcome          Breed          Color 
+##              0              1             18              0              0</code></pre>
+<pre class="r"><code># Deal with missing values and nans
+# levels(train$Name) &lt;- c(levels(train$Name),&quot;NoName&quot;)
+# levels(train$OutcomeSubtype) &lt;- c(levels(train$OutcomeSubtype),&quot;Unknown&quot;)
+train$Name[train$Name == &quot;&quot;] &lt;- &quot;NoName&quot;
+train$OutcomeSubtype[train$OutcomeSubtype == &quot;&quot;] &lt;- &quot;Unknown&quot;
+train &lt;- dplyr::filter(train, AgeuponOutcome != &quot;&quot;)
+train &lt;- dplyr::filter(train, SexuponOutcome != &quot;&quot;)
+
+summary(train)</code></pre>
+<pre><code>##    AnimalID             Name             DateTime        
+##  Length:26710       Length:26710       Length:26710      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##  OutcomeType        OutcomeSubtype      AnimalType       
+##  Length:26710       Length:26710       Length:26710      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##  SexuponOutcome     AgeuponOutcome        Breed          
+##  Length:26710       Length:26710       Length:26710      
+##  Class :character   Class :character   Class :character  
+##  Mode  :character   Mode  :character   Mode  :character  
+##     Color          
+##  Length:26710      
+##  Class :character  
+##  Mode  :character</code></pre>
+<pre class="r"><code># No more missing values
+apply(train, 2, function(x) sum(x == &quot;&quot;))</code></pre>
+<pre><code>##       AnimalID           Name       DateTime    OutcomeType OutcomeSubtype 
+##              0              0              0              0              0 
+##     AnimalType SexuponOutcome AgeuponOutcome          Breed          Color 
+##              0              0              0              0              0</code></pre>
+<pre class="r"><code>train &lt;- dplyr::select(train, -AnimalID, -DateTime)
 
 TimeValue &lt;- sapply(train$AgeuponOutcome, 
                     function(x) strsplit(x, split = &quot; &quot;)[[1]][1])
@@ -213,21 +268,13 @@ multiplier &lt;- ifelse(UnitofTime == 'day', 1,
 # Aplicamos 
 train$AgeuponOutcome &lt;- TimeValue * multiplier
 
-# There is only 18 nans, remove them
-train &lt;- dplyr::filter(train, !is.na(AgeuponOutcome))
 # Divide SexuponOutcome in three categories (Male, Female, Unknown)
-train[which(train$SexuponOutcome == &quot;&quot;),]</code></pre>
-<pre><code>## Source: local data frame [1 x 7]
-## 
-##       OutcomeType OutcomeSubtype AnimalType SexuponOutcome AgeuponOutcome
-##             (chr)          (chr)      (chr)          (chr)          (dbl)
-## 1 Return_to_owner                       Dog                          2555
-## Variables not shown: Breed (chr), Color (chr)</code></pre>
-<pre class="r"><code>train &lt;- tidyr::separate(dplyr::filter(train, SexuponOutcome != &quot;Unknown&quot;),
+# train &lt;- train[which(train$SexuponOutcome == &quot;&quot;),]
+train &lt;- tidyr::separate(dplyr::filter(train, SexuponOutcome != &quot;Unknown&quot;),
                          SexuponOutcome,
-                         c(&quot;neutered&quot;, &quot;sex&quot;))</code></pre>
-<pre><code>## Warning: Too few values at 1 locations: 3046</code></pre>
-<pre class="r"><code>train$neutered[train$neutered == &quot;Spayed&quot;] &lt;- &quot;Neutered&quot;</code></pre>
+                         c(&quot;neutered&quot;, &quot;sex&quot;))
+train$neutered[train$neutered == &quot;Spayed&quot;] &lt;- &quot;Neutered&quot;
+# TODO deal with breed</code></pre>
 
 
 
