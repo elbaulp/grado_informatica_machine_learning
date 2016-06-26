@@ -81,7 +81,7 @@ partitionDistribution <- function(partition) {
 }
 
 indexes <- caret::createDataPartition(data$OutcomeType, p = .8, list = FALSE)
-partition <- list(training = train[indexes,], test = train[-indexes,])
+partition <- list(training = data[indexes,], test = data[-indexes,])
 partitionDistribution(partition)
 train <- partition$training
 test <- partition$test
@@ -181,26 +181,22 @@ fit.test <- scale(fit.test,
                   attr(fit, "scaled:center"),
                   attr(fit, "scaled:scale"))
 
-grid <- 10 ^ seq(10 , -2 , length = 100)
 glmnet.fit.dummies <- glmnet::cv.glmnet(
   fit,
   as.matrix(dplyr::select(train, OutcomeType)),
   family = "multinomial",
   type.multinomial = "grouped"
-  # alpha = 0,
-  # lambda = grid
-  # parallel = TRUE
 )
 
 prediction <- predict(glmnet.fit.dummies,
                       newx = fit,
                       s = "lambda.min", type = "class")
 
-prediction <- predict(glmnet.fit.dummies,
+prediction.test <- predict(glmnet.fit.dummies,
                       newx = fit.test,
                       s = "lambda.min", type = "class")
 
 mean(prediction != train[,2])
-mean(prediction != test[,2])
+mean(prediction.test != test[,2])
 ```
 
