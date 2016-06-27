@@ -29,6 +29,8 @@ if (!is.installed("lubridate"))
 #   install.packages("VGAM")
 if (!is.installed("gbm"))
   install.packages("gbm")
+if (!is.installed("knncat"))
+  install.packages("knncat")
 
 library(dplyr)
 library(ggplot2)
@@ -38,6 +40,9 @@ library(tidyr)
 # library(VGAM)
 library(caret)
 library(gbm)
+library(knncat)
+library(doParallel)
+library(MASS)
 
 # Todos los proyectos deben contener los siguientes apartados:
 # 
@@ -69,6 +74,8 @@ library(gbm)
 #  
 ```
 
+
+# Proyecto hasta 20 puntos
 
 ```{r Data preprocesing}
 set.seed(1000000271)
@@ -128,7 +135,7 @@ dataPreprocesing <- function(data) {
                                      ifelse(UnitofTime == 'year', 365, NA))))
   
   # Aplicamos 
-  data$AgeuponOutcome <- TimeValue * multiplier
+  data$AgeuponOutcome <- (TimeValue * multiplier)
   
   # Divide SexuponOutcome in three categories (Male, Female, Unknown)
   data <- tidyr::separate(dplyr::filter(data, SexuponOutcome != "Unknown"),
@@ -142,19 +149,38 @@ dataPreprocesing <- function(data) {
   data$AnimalTypeDummy <- ifelse(data$AnimalType == "Cat", 0, 1)
   data$neuteredDummy <- ifelse(data$neutered == "Neutered", 0, 1)
   
-  unit_Multiplier_age <- ifelse(data$AgeuponOutcome <= 185,'Infants',
-                                ifelse(data$AgeuponOutcome > 185 & data$AgeuponOutcome<=365,'child',
-                                       ifelse(data$AgeuponOutcome > 365 & data$AgeuponOutcome<=1085,'Adult',
-                                              ifelse(data$AgeuponOutcome>1085,'Aged',NA))))
+  # data$isSuffering <- ifelse(data$OutcomeSubtype == "Suffering", 1, 0)
+  # data$isUnknown <- ifelse(data$OutcomeSubtype == "Unknown", 1, 0)
+  # data$isFoster <- ifelse(data$OutcomeSubtype == "Foster", 1, 0)
+  # data$isPartner <- ifelse(data$OutcomeSubtype == "Partner", 1, 0)
+  # data$isSCRP <- ifelse(data$OutcomeSubtype == "SCRP", 1, 0)
+  # data$isAggressive <- ifelse(data$OutcomeSubtype == "Aggressive", 1, 0)
+  # data$isOffsite <- ifelse(data$OutcomeSubtype == "Offsite", 1, 0)
+  # data$isBehavior <- ifelse(data$OutcomeSubtype == "Behavior", 1, 0)
+  # data$isMedical <- ifelse(data$OutcomeSubtype == "Medical", 1, 0)
+  # data$isinKennel <- ifelse(data$OutcomeSubtype == "In Kennel", 1, 0)
+  # data$isinFoster <- ifelse(data$OutcomeSubtype == "In Foster", 1, 0)
+  # data$isRabies <- ifelse(data$OutcomeSubtype == "Rabies Risk", 1, 0)
+  # data$isBarn <- ifelse(data$OutcomeSubtype == "Barn", 1, 0)
+  # data$iscourt <- ifelse(data$OutcomeSubtype == "Court/Investigation", 1, 0)
+  # data$isEnroute <- ifelse(data$OutcomeSubtype == "Enroute", 1, 0)
+  # data$isatvet <- ifelse(data$OutcomeSubtype == "At Vet", 1, 0)
+  # data$isSurgery <- ifelse(data$OutcomeSubtype == "In Surgery", 1, 0)
   
-  data$AgeuponOutcomeDummy <- unit_Multiplier_age
-  data$AgeuponOutcomeDummy <- ifelse(data$AgeuponOutcomeDummy == "Infants", 0,
-                                     ifelse(data$AgeuponOutcomeDummy == "child", 1,
-                                            ifelse(data$AgeuponOutcomeDummy == "Adult", 2,
-                                                   ifelse(data$AgeuponOutcomeDummy == "Aged", 3, NA))))
   
-  data$BreedDummy <- ifelse(grepl("Mix", data$Breed, ignore.case = T), 1, 2)
+  # unit_Multiplier_age <- ifelse(data$AgeuponOutcome <= 185,'Infants',
+  #                               ifelse(data$AgeuponOutcome > 185 & data$AgeuponOutcome<=365,'child',
+  #                                      ifelse(data$AgeuponOutcome > 365 & data$AgeuponOutcome<=1085,'Adult',
+  #                                             ifelse(data$AgeuponOutcome>1085,'Aged',NA))))
+  # 
+  # data$AgeuponOutcomeDummy <- unit_Multiplier_age
+  # data$AgeuponOutcomeDummy <- ifelse(data$AgeuponOutcomeDummy == "Infants", 0,
+  #                                    ifelse(data$AgeuponOutcomeDummy == "child", 1,
+  #                                           ifelse(data$AgeuponOutcomeDummy == "Adult", 2,
+  #                                                  ifelse(data$AgeuponOutcomeDummy == "Aged", 3, NA))))
   
+  data$BreedDummy <- ifelse(grepl("Mix", data$Breed, ignore.case = T), 0, 1)
+
   data
 }
 
@@ -162,41 +188,131 @@ train <- dataPreprocesing(train)
 test <- dataPreprocesing(test)
 dplyr::glimpse(train)
 dplyr::glimpse(test)
-fit <- as.matrix(train %>% dplyr::select(AnimalTypeDummy,
-                                         neuteredDummy,
-                                         sexDummy,
-                                         AgeuponOutcomeDummy,
-                                         NameDummy,
-                                         BreedDummy))
 
-fit.test <- as.matrix(test %>% dplyr::select(AnimalTypeDummy,
-                                         neuteredDummy,
-                                         sexDummy,
-                                         AgeuponOutcomeDummy,
-                                         NameDummy,
-                                         BreedDummy))
+# fit <- as.matrix(train %>% dplyr::select(AnimalTypeDummy,
+#                                          neuteredDummy,
+#                                          sexDummy,
+#                                          # AgeuponOutcomeDummy,
+#                                          # OutcomeSubtype,
+#                                          NameDummy,
+#                                          BreedDummy,
+#                                          AgeuponOutcome,
+#                                          isSuffering,
+#                                           isUnknown,
+#                                           isFoster ,
+#                                           isPartner,
+#                                           isSCRP,
+#                                           isAggressive,
+#                                           isOffsite,
+#                                           isBehavior,
+#                                           isMedical,
+#                                           isinKennel,
+#                                           isinFoster,
+#                                           isRabies,
+#                                           isBarn,
+#                                           iscourt,
+#                                           isEnroute,
+#                                           isatvet,
+#                                           isSurgery))
+# 
+# fit.test <- as.matrix(test %>% dplyr::select(AnimalTypeDummy,
+#                                          neuteredDummy,
+#                                          sexDummy,
+#                                          # AgeuponOutcomeDummy,
+#                                          # OutcomeSubtype,
+#                                          NameDummy,
+#                                          BreedDummy,
+#                                          AgeuponOutcome,
+#                                          isSuffering,
+#                                           isUnknown,
+#                                           isFoster ,
+#                                           isPartner,
+#                                           isSCRP,
+#                                           isAggressive,
+#                                           isOffsite,
+#                                           isBehavior,
+#                                           isMedical,
+#                                           isinKennel,
+#                                           isinFoster,
+#                                           isRabies,
+#                                           isBarn,
+#                                           iscourt,
+#                                           isEnroute,
+#                                           isatvet,
+#                                           isSurgery))
+# 
+# 
+# doParallel::registerDoParallel(4)
+# glmnet.fit.dummies <- glmnet::cv.glmnet(
+#   fit,
+#   as.matrix(dplyr::select(train, OutcomeType)),
+#   family = "multinomial",
+#   type.multinomial = "grouped",
+#   parallel = T
+# )
+# 
+# 
+# prediction <- predict(glmnet.fit.dummies,
+#                       newx = fit,
+#                       s = "lambda.min", type = "class")
+# prediction.test <- predict(glmnet.fit.dummies,
+#                       newx = fit.test,
+#                       s = "lambda.min", type = "class")
+# 
+# mean(prediction != train[,2])
+# mean(prediction != test[,2])
 
-fit <- scale(fit)
-fit.test <- scale(fit.test,
-                  attr(fit, "scaled:center"),
-                  attr(fit, "scaled:scale"))
+fit <- train %>% dplyr::select(OutcomeType,
+                               OutcomeSubtype,
+                               AnimalTypeDummy,
+                               neuteredDummy,
+                               sexDummy,
+                               # AgeuponOutcomeDummy,
+                               NameDummy,
+                               BreedDummy,
+                               AgeuponOutcome)
 
-glmnet.fit.dummies <- glmnet::cv.glmnet(
-  fit,
-  as.matrix(dplyr::select(train, OutcomeType)),
-  family = "multinomial",
-  type.multinomial = "grouped"
-)
+lda.fit <- MASS::lda(OutcomeType ~ AnimalType + neutered + sex + AgeuponOutcome + NameDummy + OutcomeSubtype + BreedDummy, data = train)
+lda.predict <- predict(lda.fit, train)
 
-prediction <- predict(glmnet.fit.dummies,
-                      newx = fit,
-                      s = "lambda.min", type = "class")
-
-prediction.test <- predict(glmnet.fit.dummies,
-                      newx = fit.test,
-                      s = "lambda.min", type = "class")
-
-mean(prediction != train[,2])
-mean(prediction.test != test[,2])
+mean(lda.predict$class != train$OutcomeType)
 ```
+
+# Proyectos hasta 25 puntos
+
+```{r}
+set.seed(1000000271)
+
+# fit <- as.data.frame(train %>% dplyr::select(AnimalTypeDummy,
+#                                          neuteredDummy,
+#                                          sexDummy,
+#                                          AgeuponOutcomeDummy,
+#                                          NameDummy,
+#                                          BreedDummy,
+#                                          OutcomeType))
+# 
+# fit.test <- as.data.frame(test %>% dplyr::select(AnimalTypeDummy,
+#                                          neuteredDummy,
+#                                          sexDummy,
+#                                          AgeuponOutcomeDummy,
+#                                          NameDummy,
+#                                          BreedDummy,
+#                                          OutcomeType))
+
+require(parallelSVM)
+svm.model <- parallelSVM::parallelSVM(OutcomeType ~ ., fit, 
+                        type = "C-classification",
+                        kernel = "radial",
+                        # degree = 6,
+                        cross = 10,
+                        seed = 1000000271,
+                        cost = 10, scale = T)
+
+
+svm.predicted <- predict(svm.model, fit.test[,-7])
+table(svm.predicted, fit.test[,7])
+mean(svm.predicted != fit.test[,7])*100  
+
+```
+
 
