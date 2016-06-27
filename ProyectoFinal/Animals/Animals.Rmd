@@ -135,7 +135,7 @@ dataPreprocesing <- function(data) {
                                      ifelse(UnitofTime == 'year', 365, NA))))
   
   # Aplicamos 
-  data$AgeuponOutcome <- (TimeValue * multiplier)
+  data$AgeuponOutcome <- (TimeValue * multiplier) / 365
   
   # Divide SexuponOutcome in three categories (Male, Female, Unknown)
   data <- tidyr::separate(dplyr::filter(data, SexuponOutcome != "Unknown"),
@@ -149,22 +149,22 @@ dataPreprocesing <- function(data) {
   data$AnimalTypeDummy <- ifelse(data$AnimalType == "Cat", 0, 1)
   data$neuteredDummy <- ifelse(data$neutered == "Neutered", 0, 1)
   
-  # data$isSuffering <- ifelse(data$OutcomeSubtype == "Suffering", 1, 0)
-  # data$isUnknown <- ifelse(data$OutcomeSubtype == "Unknown", 1, 0)
-  # data$isFoster <- ifelse(data$OutcomeSubtype == "Foster", 1, 0)
-  # data$isPartner <- ifelse(data$OutcomeSubtype == "Partner", 1, 0)
-  # data$isSCRP <- ifelse(data$OutcomeSubtype == "SCRP", 1, 0)
-  # data$isAggressive <- ifelse(data$OutcomeSubtype == "Aggressive", 1, 0)
-  # data$isOffsite <- ifelse(data$OutcomeSubtype == "Offsite", 1, 0)
-  # data$isBehavior <- ifelse(data$OutcomeSubtype == "Behavior", 1, 0)
-  # data$isMedical <- ifelse(data$OutcomeSubtype == "Medical", 1, 0)
-  # data$isinKennel <- ifelse(data$OutcomeSubtype == "In Kennel", 1, 0)
-  # data$isinFoster <- ifelse(data$OutcomeSubtype == "In Foster", 1, 0)
-  # data$isRabies <- ifelse(data$OutcomeSubtype == "Rabies Risk", 1, 0)
-  # data$isBarn <- ifelse(data$OutcomeSubtype == "Barn", 1, 0)
-  # data$iscourt <- ifelse(data$OutcomeSubtype == "Court/Investigation", 1, 0)
-  # data$isEnroute <- ifelse(data$OutcomeSubtype == "Enroute", 1, 0)
-  # data$isatvet <- ifelse(data$OutcomeSubtype == "At Vet", 1, 0)
+  data$isSuffering <- ifelse(data$OutcomeSubtype == "Suffering", 1, 0)
+  data$isUnknown <- ifelse(data$OutcomeSubtype == "Unknown", 1, 0)
+  data$isFoster <- ifelse(data$OutcomeSubtype == "Foster", 1, 0)
+  data$isPartner <- ifelse(data$OutcomeSubtype == "Partner", 1, 0)
+  data$isSCRP <- ifelse(data$OutcomeSubtype == "SCRP", 1, 0)
+  data$isAggressive <- ifelse(data$OutcomeSubtype == "Aggressive", 1, 0)
+  data$isOffsite <- ifelse(data$OutcomeSubtype == "Offsite", 1, 0)
+  data$isBehavior <- ifelse(data$OutcomeSubtype == "Behavior", 1, 0)
+  data$isMedical <- ifelse(data$OutcomeSubtype == "Medical", 1, 0)
+  data$isinKennel <- ifelse(data$OutcomeSubtype == "In Kennel", 1, 0)
+  data$isinFoster <- ifelse(data$OutcomeSubtype == "In Foster", 1, 0)
+  data$isRabies <- ifelse(data$OutcomeSubtype == "Rabies Risk", 1, 0)
+  data$isBarn <- ifelse(data$OutcomeSubtype == "Barn", 1, 0)
+  data$iscourt <- ifelse(data$OutcomeSubtype == "Court/Investigation", 1, 0)
+  data$isEnroute <- ifelse(data$OutcomeSubtype == "Enroute", 1, 0)
+  data$isatvet <- ifelse(data$OutcomeSubtype == "At Vet", 1, 0)
   # data$isSurgery <- ifelse(data$OutcomeSubtype == "In Surgery", 1, 0)
   
   
@@ -179,7 +179,15 @@ dataPreprocesing <- function(data) {
   #                                           ifelse(data$AgeuponOutcomeDummy == "Adult", 2,
   #                                                  ifelse(data$AgeuponOutcomeDummy == "Aged", 3, NA))))
   
-  data$BreedDummy <- ifelse(grepl("Mix", data$Breed, ignore.case = T), 0, 1)
+  data$BreedDummy <- ifelse(grepl("Mix", data$Breed, ignore.case = T), 1, 0)
+  
+  # Split on "/" and remove " Mix" to simplify Breed
+  data$SimpleBreed <- sapply(data$Breed, 
+                        function(x) gsub(' Mix', '', 
+                          strsplit(x, split = '/')[[1]][1]))
+  # Use strsplit to grab the first color
+  data$SimpleColor <- sapply(data$Color, 
+                      function(x) strsplit(x, split = '/| ')[[1]][1])
 
   data
 }
@@ -264,55 +272,162 @@ dplyr::glimpse(test)
 
 fit <- train %>% dplyr::select(OutcomeType,
                                OutcomeSubtype,
-                               AnimalTypeDummy,
-                               neuteredDummy,
-                               sexDummy,
-                               # AgeuponOutcomeDummy,
+                               AnimalType,
+                               neutered,
+                               sex,
+                               AgeuponOutcome,
                                NameDummy,
-                               BreedDummy,
-                               AgeuponOutcome)
+                               BreedDummy)
+                               # SimpleColor)
 
-lda.fit <- MASS::lda(OutcomeType ~ AnimalType + neutered + sex + AgeuponOutcome + NameDummy + OutcomeSubtype + BreedDummy, data = train)
-lda.predict <- predict(lda.fit, train)
+fit.test <- test %>% dplyr::select(OutcomeType,
+                               OutcomeSubtype,
+                               AnimalType,
+                               neutered,
+                               sex,
+                               AgeuponOutcome,
+                               NameDummy,
+                               BreedDummy)
+                               # SimpleColor)
 
-mean(lda.predict$class != train$OutcomeType)
+lda.fit <- MASS::lda(OutcomeType ~ ., data = fit)
+
+lda.predict <- predict(lda.fit, fit %>% dplyr::select(-OutcomeType))
+mean(lda.predict$class != fit$OutcomeType)
+lda.predict <- predict(lda.fit, test %>% dplyr::select(-OutcomeType))
+mean(lda.predict$class != fit.test$OutcomeType)
 ```
 
 # Proyectos hasta 25 puntos
 
 ```{r}
+
+library(kknn)
+library(e1071)
+
+fit <- train %>% dplyr::select(OutcomeType,
+                               AnimalTypeDummy,
+                               neuteredDummy,
+                               sexDummy,
+                               # AgeuponOutcomeDummy,
+                               # OutcomeSubtype,
+                               NameDummy,
+                               BreedDummy,
+                               AgeuponOutcome,
+                               isSuffering,
+                                isUnknown,
+                                isFoster ,
+                                isPartner,
+                                isSCRP,
+                                isAggressive,
+                                isOffsite,
+                                isBehavior,
+                                isMedical,
+                                isinKennel,
+                                isinFoster,
+                                isRabies,
+                                isBarn,
+                                iscourt,
+                                isEnroute,
+                                isatvet)
+fit.test <- test %>% dplyr::select(OutcomeType,
+                               AnimalTypeDummy,
+                               neuteredDummy,
+                               sexDummy,
+                               # AgeuponOutcomeDummy,
+                               # OutcomeSubtype,
+                               NameDummy,
+                               BreedDummy,
+                               AgeuponOutcome,
+                               isSuffering,
+                                isUnknown,
+                                isFoster ,
+                                isPartner,
+                                isSCRP,
+                                isAggressive,
+                                isOffsite,
+                                isBehavior,
+                                isMedical,
+                                isinKennel,
+                                isinFoster,
+                                isRabies,
+                                isBarn,
+                                iscourt,
+                                isEnroute,
+                                isatvet)
+
+fit <- as.data.frame(fit)
+fit.test <- as.data.frame(fit.test)
+
+fit$AgeuponOutcome <- scale(fit$AgeuponOutcome)
+fit$OutcomeType <- as.factor(fit$OutcomeType)
+
+fit.test$OutcomeType <- as.factor(fit.test$OutcomeType)
+
+fit.test$AgeuponOutcome <- scale(fit.test$AgeuponOutcome, 
+                                attr(fit$AgeuponOutcome, "scaled:center"),
+                                attr(fit$AgeuponOutcome, "scaled:scale"))
+
+k <- e1071::tune.knn(fit[,-1],
+                     fit[,1], 
+                     k = 1:10, 
+                     tunecontrol = tune.control(sampling = "cross"))
+
+k <- k$best.parameters$k
+
+pred <- class::knn(fit[,-1],
+                   fit.test[,-1],
+                   fit[,1],
+                   k = k,
+                   prob = T)
+
+prob <- attr(pred, "prob")
+
+# this is necessary because k-NN by default outputs
+# the posterior probability of the winning class
+prob[pred == 0] <- 1 - prob[pred == 0]
+
+mean(pred != fit.test$OutcomeType)
+
+
 set.seed(1000000271)
-
-# fit <- as.data.frame(train %>% dplyr::select(AnimalTypeDummy,
-#                                          neuteredDummy,
-#                                          sexDummy,
-#                                          AgeuponOutcomeDummy,
-#                                          NameDummy,
-#                                          BreedDummy,
-#                                          OutcomeType))
-# 
-# fit.test <- as.data.frame(test %>% dplyr::select(AnimalTypeDummy,
-#                                          neuteredDummy,
-#                                          sexDummy,
-#                                          AgeuponOutcomeDummy,
-#                                          NameDummy,
-#                                          BreedDummy,
-#                                          OutcomeType))
-
 require(parallelSVM)
-svm.model <- parallelSVM::parallelSVM(OutcomeType ~ ., fit, 
+
+# fit <- train %>% dplyr::select(OutcomeType,
+#                                AnimalType,
+#                                neutered,
+#                                sex,
+#                                AgeuponOutcome,
+#                                NameDummy,
+#                                OutcomeSubtype,
+#                                BreedDummy)
+# 
+# fit$OutcomeType <- as.factor(fit$OutcomeType)
+# fit$AnimalType <- as.factor(fit$AnimalType)
+# fit$neutered <- as.factor(fit$neutered)
+# fit$sex <- as.factor(fit$sex)
+# fit$OutcomeSubtype <- as.factor(fit$OutcomeSubtype)
+# fit$SimpleColor <- as.factor(fit$SimpleColor)
+# fit$SimpleBreed <- as.factor(fit$SimpleBreed)
+# 
+# fit.test <- test %>% dplyr::select(OutcomeType,
+#                                AnimalType,
+#                                neutered,
+#                                sex,
+#                                AgeuponOutcome,
+#                                NameDummy,
+#                                OutcomeSubtype,
+#                                BreedDummy)
+
+svm.model <- parallelSVM::parallelSVM(OutcomeType ~ ., data = fit,
                         type = "C-classification",
                         kernel = "radial",
-                        # degree = 6,
                         cross = 10,
                         seed = 1000000271,
-                        cost = 10, scale = T)
+                        cost = 10)
 
-
-svm.predicted <- predict(svm.model, fit.test[,-7])
-table(svm.predicted, fit.test[,7])
-mean(svm.predicted != fit.test[,7])*100  
-
+svm.predicted.test <- predict(svm.model, newdata = dplyr::select(fit.test, -OutcomeType))
+mean(svm.predicted.test != fit.test$OutcomeType)
 ```
 
 
