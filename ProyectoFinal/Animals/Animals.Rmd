@@ -1,16 +1,27 @@
 ---
-title: "Animals"
+title: "Aprendizaje Automático - Proyecto final (Animal Shelter)"
 author: "Alejandro Alcalde"
-date: "May 5, 2016"
-output: html_document
+date: "28 de Junio, 2016"
+fontsize: 10pt
+# monofont: "DejaVu Sans Mono"
+# monofont: "Source Code Pro Light"
+# mathfont: "Source Code Pro Light"
+# mainfont: "Ubuntu Light"
+output:
+  pdf_document:
+    includes:
+      in_header: header.tex
+    latex_engine: xelatex
+    toc: true
+    highlight: pygments
 ---
-
+  
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = T)
 set.seed(1000000271)
 ```
 
-```{r Load libraries}
+```{r Load libraries, echo=F, message=FALSE, warning=FALSE}
 set.seed(1000000271)
 is.installed <- function(paquete) is.element(
   paquete, installed.packages())
@@ -25,12 +36,8 @@ if (!is.installed("GGally"))
   install.packages("GGally")
 if (!is.installed("lubridate"))
   install.packages("lubridate")
-# if (!is.installed("VGAM"))
-#   install.packages("VGAM")
 if (!is.installed("gbm"))
   install.packages("gbm")
-if (!is.installed("knncat"))
-  install.packages("knncat")
 
 library(dplyr)
 library(ggplot2)
@@ -40,44 +47,74 @@ library(tidyr)
 # library(VGAM)
 library(caret)
 library(gbm)
-library(knncat)
 library(doParallel)
 library(MASS)
-
-# Todos los proyectos deben contener los siguientes apartados:
-# 
-# 1.- Definición del problema a resolver y enfoque elegido
-# 2.- Codificación de los datos de entrada para hacerlos útiles a los algoritmos.
-# 3.- Valoración del interés de la variables para el problema y selección de un subconjunto (en su caso).
-# 4.- Normalización de las variables (en su caso)
-# 5.- Selección de las técnica (parámetrica) y valoración de la idoneidad de la misma frente a otras alternativas
-# 6.- Aplicación de la técnica especificando claramente que algoritmos se usan en la estimación de los parámetros, los hiperparámetros y el error de generalización.
-# 7.- Argumentar sobre la idoneidad de la función regularización usada (en su caso)
-# 8.- Valoración de los resultados ( gráficas, métricas de error, análisis de residuos, etc )
-# 9.- Justificar que se ha obtenido la mejor de las posibles soluciones con la técnica elegida y la muestra dada. Argumentar en términos de la dimensión VC del modelo, el error de generalización y las curvas de aprendizaje. 
-# 
-# Solo son elegibles los modelos explicados en la asignatura incluyendo técnicas de reducción de dimensionalidad (PCA).
-# 
-# Proyectos de hasta 20 puntos
-# ----------------------------
-# Solo es necesario aplicar un modelo de tipo parámetrico.
-# 
-# 
-# Proyectos de hasta 25 puntos
-# ---------------------------
-# Implementar, valorar y comparar al menos dos modelos uno parmétrico y otra a elegir entre (k-NN, "Función de Base Radial"). 
-# 
-# 
-# Proyectos de hasta 30 puntos
-# -----------------------------
-# Implementar, valorar y comparar los resultados de un modelo paramétrico, un modelo de "Función de Base Radial" y un modelo de Red Neuronal Multicapa.
-#  
 ```
 
+# Definición del problema a resolver y enfoque elegido
 
-# Proyecto hasta 20 puntos
+## Shelter Animal Outcomes
 
-```{r Data preprocesing}
+En este problema se trata de predecir el destino de un animal en un centro de
+animales en función de sus caracteristicas (raza, color, sexo, edad, nombre etc.).
+Las posibles salidas son:
+
+- Se da en adopción
+- Muere
+- Se sacrifica
+- Se devuelve a su dueño
+- Se transfiere
+
+## Los datos
+
+A continuación se muestra un ejemplo de los datos:
+
+```r
+Observations: 26,729
+Variables: 10
+$ AnimalID       (chr) "A671945", "A656520", "A686464", "A683430", "A667013",...
+$ Name           (chr) "Hambone", "Emily", "Pearce", "", "", "Elsa", "Jimmy",...
+$ DateTime       (chr) "2014-02-12 18:22:00", "2013-10-13 12:44:00",...
+$ OutcomeType    (chr) "Return_to_owner", "Euthanasia", "Adoption", "Transfer",...
+$ OutcomeSubtype (chr) "", "Suffering", "Foster", "Partner", "Partner", ...
+$ AnimalType     (chr) "Dog", "Cat", "Dog", "Cat", "Dog", "Dog", "Cat", "Cat",...
+$ SexuponOutcome (chr) "Neutered Male", "Spayed Female", "Neutered Male",...
+$ AgeuponOutcome (chr) "1 year", "1 year", "2 years", "3 weeks", "2 years",...
+$ Breed          (chr) "Shetland Sheepdog Mix", "Domestic Shorthair Mix",...
+$ Color          (chr) "Brown/White", "Cream Tabby", "Blue/White", "Blue Cream",...
+```
+
+## Enfoque
+
+Por la naturaleza del problema, casi todas las variables son categóricas, salvo
+la edad del animal. Por tanto sería interesante usar árboles de clasificación
+(_Random forest_). Otra opción sería aplicar _Boosting_, en este caso se usaría
+la librería _XGBoost_ (_eXtreme Gradient Boosting_).
+
+Dado que estamos limitados a usar un subconjunto de modelos, entre los cuales no
+se encuentran los mencionados arriba, se buscará la mejor forma posible de adaptar
+los datos a los modelos candidatos a aplicar.
+
+# Codificación de los datos de entrada.
+
+Para conseguir que los algoritmos propuestos funcionen lo mejor posible con 
+los datos que tenemos, se preprocesan los datos del siguiente modo:
+
+- La edad del animal viene dada en un formato poco riguroso, algunos en años,
+otros en meses o días. Será necesario pasarlo todo a una unidad, se ha decidido
+pasarlo a días.
+- Solo hay 18 valores perdidos, se descartan.
+- La variable _SexuponOutcome_ contiene demasiada información (Si el animal
+está esterilizado y es hembra, castrado y es macho, o si está intacto y es hembra
+o macho). Se han creado dos variables para codificar esta información:
+    - _Sex_: Conteniendo si es hembra o Macho
+    - _Neutered_: Que contiene si el animal ha sido esterilizado o está intacto.
+- Solo se ha tenido en cuenta si el animal tiene nombre o no.
+- Para la raza se considera únicamente si el animal es mezcla o de raza.
+- Por último, la variable _OutcomeSubtype_ se ha dividido en varias variables 
+_dummy_ para facilitar su uso a los modelos (Ya que es categórica)
+
+```{r echo = F, message=FALSE, warning=FALSE, include=FALSE}
 set.seed(1000000271)
 # Information dense summary of the data
 data <- dplyr::tbl_df(read.csv("./data/train.csv", stringsAsFactors = F))
@@ -92,19 +129,6 @@ partition <- list(training = data[indexes,], test = data[-indexes,])
 partitionDistribution(partition)
 train <- partition$training
 test <- partition$test
-# Show information about the data
-# summary(train)
-
-# with(train, table(AnimalType, OutcomeType))
-# summary(train$OutcomeType)
-
-# There is many animals with no value, give them a category
-# apply(train, 2, function(x) sum(x == ""))
-
-# Deal with missing values and nans
-# levels(train$Name) <- c(levels(train$Name),"NoName")
-# levels(train$OutcomeSubtype) <- c(levels(train$OutcomeSubtype),"Unknown")
-# train$Name[train$Name == ""] <- "NoName"
 
 dataPreprocesing <- function(data) {
   
@@ -165,146 +189,109 @@ dataPreprocesing <- function(data) {
   data$iscourt <- ifelse(data$OutcomeSubtype == "Court/Investigation", 1, 0)
   data$isEnroute <- ifelse(data$OutcomeSubtype == "Enroute", 1, 0)
   data$isatvet <- ifelse(data$OutcomeSubtype == "At Vet", 1, 0)
-  # data$isSurgery <- ifelse(data$OutcomeSubtype == "In Surgery", 1, 0)
-  
-  
-  # unit_Multiplier_age <- ifelse(data$AgeuponOutcome <= 185,'Infants',
-  #                               ifelse(data$AgeuponOutcome > 185 & data$AgeuponOutcome<=365,'child',
-  #                                      ifelse(data$AgeuponOutcome > 365 & data$AgeuponOutcome<=1085,'Adult',
-  #                                             ifelse(data$AgeuponOutcome>1085,'Aged',NA))))
-  # 
-  # data$AgeuponOutcomeDummy <- unit_Multiplier_age
-  # data$AgeuponOutcomeDummy <- ifelse(data$AgeuponOutcomeDummy == "Infants", 0,
-  #                                    ifelse(data$AgeuponOutcomeDummy == "child", 1,
-  #                                           ifelse(data$AgeuponOutcomeDummy == "Adult", 2,
-  #                                                  ifelse(data$AgeuponOutcomeDummy == "Aged", 3, NA))))
   
   data$BreedDummy <- ifelse(grepl("Mix", data$Breed, ignore.case = T), 1, 0)
   
   # Split on "/" and remove " Mix" to simplify Breed
   data$SimpleBreed <- sapply(data$Breed, 
-                        function(x) gsub(' Mix', '', 
-                          strsplit(x, split = '/')[[1]][1]))
+                             function(x) gsub(' Mix', '', 
+                                              strsplit(x, split = '/')[[1]][1]))
   # Use strsplit to grab the first color
   data$SimpleColor <- sapply(data$Color, 
-                      function(x) strsplit(x, split = '/| ')[[1]][1])
-
+                             function(x) strsplit(x, split = '/| ')[[1]][1])
+  
   data
 }
 
 train <- dataPreprocesing(train)
 test <- dataPreprocesing(test)
-dplyr::glimpse(train)
-dplyr::glimpse(test)
-
-# fit <- as.matrix(train %>% dplyr::select(AnimalTypeDummy,
-#                                          neuteredDummy,
-#                                          sexDummy,
-#                                          # AgeuponOutcomeDummy,
-#                                          # OutcomeSubtype,
-#                                          NameDummy,
-#                                          BreedDummy,
-#                                          AgeuponOutcome,
-#                                          isSuffering,
-#                                           isUnknown,
-#                                           isFoster ,
-#                                           isPartner,
-#                                           isSCRP,
-#                                           isAggressive,
-#                                           isOffsite,
-#                                           isBehavior,
-#                                           isMedical,
-#                                           isinKennel,
-#                                           isinFoster,
-#                                           isRabies,
-#                                           isBarn,
-#                                           iscourt,
-#                                           isEnroute,
-#                                           isatvet,
-#                                           isSurgery))
-# 
-# fit.test <- as.matrix(test %>% dplyr::select(AnimalTypeDummy,
-#                                          neuteredDummy,
-#                                          sexDummy,
-#                                          # AgeuponOutcomeDummy,
-#                                          # OutcomeSubtype,
-#                                          NameDummy,
-#                                          BreedDummy,
-#                                          AgeuponOutcome,
-#                                          isSuffering,
-#                                           isUnknown,
-#                                           isFoster ,
-#                                           isPartner,
-#                                           isSCRP,
-#                                           isAggressive,
-#                                           isOffsite,
-#                                           isBehavior,
-#                                           isMedical,
-#                                           isinKennel,
-#                                           isinFoster,
-#                                           isRabies,
-#                                           isBarn,
-#                                           iscourt,
-#                                           isEnroute,
-#                                           isatvet,
-#                                           isSurgery))
-# 
-# 
-# doParallel::registerDoParallel(4)
-# glmnet.fit.dummies <- glmnet::cv.glmnet(
-#   fit,
-#   as.matrix(dplyr::select(train, OutcomeType)),
-#   family = "multinomial",
-#   type.multinomial = "grouped",
-#   parallel = T
-# )
-# 
-# 
-# prediction <- predict(glmnet.fit.dummies,
-#                       newx = fit,
-#                       s = "lambda.min", type = "class")
-# prediction.test <- predict(glmnet.fit.dummies,
-#                       newx = fit.test,
-#                       s = "lambda.min", type = "class")
-# 
-# mean(prediction != train[,2])
-# mean(prediction != test[,2])
-
-fit <- train %>% dplyr::select(OutcomeType,
-                               OutcomeSubtype,
-                               AnimalType,
-                               neutered,
-                               sex,
-                               AgeuponOutcome,
-                               NameDummy,
-                               BreedDummy)
-                               # SimpleColor)
-
-fit.test <- test %>% dplyr::select(OutcomeType,
-                               OutcomeSubtype,
-                               AnimalType,
-                               neutered,
-                               sex,
-                               AgeuponOutcome,
-                               NameDummy,
-                               BreedDummy)
-                               # SimpleColor)
-
-lda.fit <- MASS::lda(OutcomeType ~ ., data = fit)
-
-lda.predict <- predict(lda.fit, fit %>% dplyr::select(-OutcomeType))
-mean(lda.predict$class != fit$OutcomeType)
-lda.predict <- predict(lda.fit, test %>% dplyr::select(-OutcomeType))
-mean(lda.predict$class != fit.test$OutcomeType)
 ```
 
-# Proyectos hasta 25 puntos
+# Valoración del interés de la variables para el problema
 
-```{r}
+A continuación se visualizan los datos para extraer algunas conclusiones.
 
-library(kknn)
-library(e1071)
+```{r echo = F, message=FALSE, warning=FALSE}
+ggpairs(train %>% dplyr::select(OutcomeType, AgeuponOutcome),
+        upper = list(combo = "facethist"),
+        aes(colour = OutcomeType, alpha = .7),
+        title = "Scatterplots of OutcomeType against AgeuponOutcome")
 
+ggpairs(train %>% dplyr::select(OutcomeType, AnimalType),
+        upper = list(discrete = "ratio"),
+        lower = list(discrete = "facetbar"),
+        aes(colour = OutcomeType, alpha = .5),
+        title = "Scatterplots of OutcomeType against AnimalType")
+
+ggpairs(train %>% dplyr::select(OutcomeType, neutered),
+        upper = list(discrete = "ratio"),
+        lower = list(discrete = "facetbar"),
+        aes(colour = OutcomeType, alpha = .5),
+        title = "Scatterplots of OutcomeType against neutered")
+
+ggpairs(train %>% dplyr::select(OutcomeType, sex),
+        upper = list(discrete = "ratio"),
+        lower = list(discrete = "facetbar"),
+        aes(colour = OutcomeType, alpha = .5),
+        title = "Scatterplots of OutcomeType against sex")
+
+tmp <- train %>% dplyr::select(OutcomeType, BreedDummy)
+tmp$BreedDummy <- as.factor(tmp$BreedDummy)
+ggpairs(tmp,
+        upper = list(discrete = "ratio"),
+        lower = list(discrete = "facetbar"),
+        aes(colour = OutcomeType, alpha = .5),
+        title = "Scatterplots of OutcomeType against BreedDummy")
+```
+
+De las gráficas anteriores se deduce:
+
+- Los animales más adoptados/transferidos suelen tener entre 0 y 1 años, y los que
+se devuelven a sus dueños entre 1 y 5 años. De todos los animales registrados, hay
+un porcentaje pequeño de animales que terminan muriendo o siendo sacrificados.
+- Diferenciando entre gatos y perros, cabe destacar que hay muchos más perros que
+se devuelven a sus duenos que gatos.
+- Cuando se adopta un animal, prácticamente todos están esterilizados.
+- En cuanto a la raza, se puede decir que gran parte de los animales son mezcla.
+
+Para seleccionar las variables más características se usó un modelo _Lasso_ y se 
+encrontró que las más predictoras son las siguientes:
+
+$$\begin{bmatrix}
+\text{OutcomeSubtype} \\
+\text{AnimalType} \\
+\text{neutered} \\
+\text{sex} \\
+\text{AgeuponOutcome} \\
+\text{NameDummy} \\
+\text{BreedDummy} \\
+\end{bmatrix}$$
+
+# Normalización de las variables
+
+Debido a que todas las variables son categóricas, salvo la edad del animal, es 
+esta la única que se normalizará.
+
+# Selección de la técnica parámetrica
+
+De entrada se puede descartar regresión lineal, ya que por su naturaleza no es
+adecuado para este problema. La razón reside en que es un problema de clasificación
+con más de dos clases (5 en concreto). Dado además que las clases no tienen orden
+entre sí, no hay forma de representar dichas clases para usarse en regresión lineal.
+
+Siendo la naturaleza del problema categórica, nos queda usar técnicas diseñadas
+para tal fin. Estas son regresión logística, K-NN y _linear discriminant analysis_. (_LDA_)
+
+De estas tres técnicas, debemos descartar K-NN por ser no paramétrico. Nos quedan
+pues regresión logística y _LDA_. Si tuvieramos únicamente dos clases a predecir, 
+lo ideal sería usar regresión logística, pero en este caso tenemos más de dos, 
+por lo que es aconsejable usar _LDA_. Sin embargo, de estas dos técnicas solo
+se permite usar regresión logística, así que será esta la que ajustemos.
+
+# Aplicación de la técnica Regresión Logística
+
+```{r Data preprocesing, echo = F, message=FALSE, warning=FALSE, include=F}
+set.seed(1000000271)
 fit <- train %>% dplyr::select(OutcomeType,
                                AnimalTypeDummy,
                                neuteredDummy,
@@ -315,46 +302,135 @@ fit <- train %>% dplyr::select(OutcomeType,
                                BreedDummy,
                                AgeuponOutcome,
                                isSuffering,
-                                isUnknown,
-                                isFoster ,
-                                isPartner,
-                                isSCRP,
-                                isAggressive,
-                                isOffsite,
-                                isBehavior,
-                                isMedical,
-                                isinKennel,
-                                isinFoster,
-                                isRabies,
-                                isBarn,
-                                iscourt,
-                                isEnroute,
-                                isatvet)
+                               isUnknown,
+                               isFoster ,
+                               isPartner,
+                               isSCRP,
+                               isAggressive,
+                               isOffsite,
+                               isBehavior,
+                               isMedical,
+                               isinKennel,
+                               isinFoster,
+                               isRabies,
+                               isBarn,
+                               iscourt,
+                               isEnroute,
+                               isatvet)
+
 fit.test <- test %>% dplyr::select(OutcomeType,
-                               AnimalTypeDummy,
-                               neuteredDummy,
-                               sexDummy,
-                               # AgeuponOutcomeDummy,
-                               # OutcomeSubtype,
-                               NameDummy,
-                               BreedDummy,
-                               AgeuponOutcome,
-                               isSuffering,
-                                isUnknown,
-                                isFoster ,
-                                isPartner,
-                                isSCRP,
-                                isAggressive,
-                                isOffsite,
-                                isBehavior,
-                                isMedical,
-                                isinKennel,
-                                isinFoster,
-                                isRabies,
-                                isBarn,
-                                iscourt,
-                                isEnroute,
-                                isatvet)
+                                   AnimalTypeDummy,
+                                   neuteredDummy,
+                                   sexDummy,
+                                   # AgeuponOutcomeDummy,
+                                   # OutcomeSubtype,
+                                   NameDummy,
+                                   BreedDummy,
+                                   AgeuponOutcome,
+                                   isSuffering,
+                                   isUnknown,
+                                   isFoster ,
+                                   isPartner,
+                                   isSCRP,
+                                   isAggressive,
+                                   isOffsite,
+                                   isBehavior,
+                                   isMedical,
+                                   isinKennel,
+                                   isinFoster,
+                                   isRabies,
+                                   isBarn,
+                                   iscourt,
+                                   isEnroute,
+                                   isatvet)
+
+doParallel::registerDoParallel(4)
+glmnet.fit.dummies <- glmnet::cv.glmnet(
+  as.matrix(dplyr::select(fit, -OutcomeType)),
+  as.matrix(dplyr::select(fit, OutcomeType)),
+  family = "multinomial",
+  type.multinomial = "grouped",
+  parallel = T
+)
+
+prediction.test <- predict(glmnet.fit.dummies,
+                           newx = as.matrix(dplyr::select(fit.test, -OutcomeType)),
+                           s = "lambda.min", type = "class")
+
+glmnet.coeffs <-  predict(glmnet.fit.dummies,
+                       newx = as.matrix(dplyr::select(fit, -OutcomeType)),
+                       s = "lambda.min", type = "coefficients")
+
+summary(glmnet.fit.dummies)
+
+glmnet.test.error <- mean(prediction.test != fit.test$OutcomeType)
+```
+
+Como se ha mencionado, el método paramétrico elegido es regresión logística,
+con estas variables como predictoras:
+
+$$\begin{bmatrix}
+\text{OutcomeType}\\
+\text{AnimalTypeDummy}\\
+\text{neuteredDummy}\\
+\text{sexDummy}\\
+\text{NameDummy}\\
+\text{BreedDummy}\\
+\text{AgeuponOutcome}\\
+\text{isSuffering}\\
+\text{isUnknown}\\
+\text{isFoster }\\
+\text{isPartner}\\
+\text{isSCRP}\\
+\text{isAggressive}\\
+\text{isOffsite}\\
+\text{isBehavior}\\
+\text{isMedical}\\
+\text{isinKennel}\\
+\text{isinFoster}\\
+\text{isRabies}\\
+\text{isBarn}\\
+\text{iscourt}\\
+\text{isEnroute}\\
+\text{isatvet}\\
+\end{bmatrix}$$
+
+Para ajustar el modelo se ha usado validación cruzada de 10-folds y la técnica 
+de regularización _Lasso_, escogiendo el menor valor para $\lambda$:
+
+```r
+doParallel::registerDoParallel(4)
+glmnet.fit.dummies <- glmnet::cv.glmnet(
+  as.matrix(dplyr::select(fit, -OutcomeType)),
+  as.matrix(dplyr::select(fit, OutcomeType)),
+  family = "multinomial",
+  type.multinomial = "grouped",
+  parallel = T
+)
+
+prediction.test <- predict(glmnet.fit.dummies,
+                           newx = as.matrix(dplyr::select(fit.test, -OutcomeType)),
+                           s = "lambda.min", type = "class")
+```
+
+El error de generalización obtenido ha sido del $`r glmnet.test.error * 100`\%$
+
+# Comparación entre Regresión logística y K-NN
+
+Elegimos ahora como modelo no paramétrico K-NN, por su naturaleza de clasificación.
+Este algoritmo tiene una dimensión VC infinita. En comparación con el modelo paramétrico
+aplicado anteriormente, podríamos beneficiarnos en cuanto a rendimiento ya que no se
+hacen asunciones acerca de la forma de la frontera de decisión. En su lugar se 
+aplicará el voto mayoritario de los k vecinos más cercanos. 
+
+Para la elección del k se probó primero con $k=3$, que suele ser un buen valor, luego 
+se realizó una validación cruzada para buscar el mejor k entre el 1 y el 10, y 
+resultó que 10 es el mejor valor encontrado para k.
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+set.seed(1000000271)
+library(kknn)
+library(e1071)
 
 fit <- as.data.frame(fit)
 fit.test <- as.data.frame(fit.test)
@@ -365,20 +441,20 @@ fit$OutcomeType <- as.factor(fit$OutcomeType)
 fit.test$OutcomeType <- as.factor(fit.test$OutcomeType)
 
 fit.test$AgeuponOutcome <- scale(fit.test$AgeuponOutcome, 
-                                attr(fit$AgeuponOutcome, "scaled:center"),
-                                attr(fit$AgeuponOutcome, "scaled:scale"))
+                                 attr(fit$AgeuponOutcome, "scaled:center"),
+                                 attr(fit$AgeuponOutcome, "scaled:scale"))
 
-k <- e1071::tune.knn(fit[,-1],
-                     fit[,1], 
-                     k = 1:10, 
-                     tunecontrol = tune.control(sampling = "cross"))
-
-k <- k$best.parameters$k
+# k <- e1071::tune.knn(fit[,-1],
+#                      fit[,1], 
+#                      k = 1:10, 
+#                      tunecontrol = tune.control(sampling = "cross"))
+# 
+# k <- k$best.parameters$k
 
 pred <- class::knn(fit[,-1],
                    fit.test[,-1],
                    fit[,1],
-                   k = k,
+                   k = 10,
                    prob = T)
 
 prob <- attr(pred, "prob")
@@ -387,47 +463,32 @@ prob <- attr(pred, "prob")
 # the posterior probability of the winning class
 prob[pred == 0] <- 1 - prob[pred == 0]
 
-mean(pred != fit.test$OutcomeType)
+(knn.test.error <- mean(pred != fit.test$OutcomeType))
 
-
-set.seed(1000000271)
-require(parallelSVM)
-
-# fit <- train %>% dplyr::select(OutcomeType,
-#                                AnimalType,
-#                                neutered,
-#                                sex,
-#                                AgeuponOutcome,
-#                                NameDummy,
-#                                OutcomeSubtype,
-#                                BreedDummy)
+# set.seed(1000000271)
+# require(parallelSVM)
 # 
-# fit$OutcomeType <- as.factor(fit$OutcomeType)
-# fit$AnimalType <- as.factor(fit$AnimalType)
-# fit$neutered <- as.factor(fit$neutered)
-# fit$sex <- as.factor(fit$sex)
-# fit$OutcomeSubtype <- as.factor(fit$OutcomeSubtype)
-# fit$SimpleColor <- as.factor(fit$SimpleColor)
-# fit$SimpleBreed <- as.factor(fit$SimpleBreed)
+# svm.model <- parallelSVM::parallelSVM(OutcomeType ~ ., data = fit,
+#                                       type = "C-classification",
+#                                       kernel = "radial",
+#                                       cross = 10,
+#                                       seed = 1000000271,
+#                                       cost = 10)
 # 
-# fit.test <- test %>% dplyr::select(OutcomeType,
-#                                AnimalType,
-#                                neutered,
-#                                sex,
-#                                AgeuponOutcome,
-#                                NameDummy,
-#                                OutcomeSubtype,
-#                                BreedDummy)
+# svm.predicted.test <- predict(svm.model, newdata = dplyr::select(fit.test, -OutcomeType))
+# (svm.test.error <- mean(svm.predicted.test != fit.test$OutcomeType))
 
-svm.model <- parallelSVM::parallelSVM(OutcomeType ~ ., data = fit,
-                        type = "C-classification",
-                        kernel = "radial",
-                        cross = 10,
-                        seed = 1000000271,
-                        cost = 10)
+# RESULTS
 
-svm.predicted.test <- predict(svm.model, newdata = dplyr::select(fit.test, -OutcomeType))
-mean(svm.predicted.test != fit.test$OutcomeType)
+cat("GLM test:", glmnet.test.error)
+# cat("LDA test:", lda.test.error)
+cat("KNN test:", knn.test.error)
+# cat("SVM test:", svm.test.error)
 ```
 
+En este caso se escaló la variable de edad del animal, y se aplicaron el centro y
+escala de los datos de training a los de test. El error de generalización en este
+caso fue del $`r knn.test.error * 100`\%$
 
+La diferencia del error de generalización no es muy abismal entre el modelo
+paramétrico y el no paramétrico, pero aún así se ha mejorado algo.
